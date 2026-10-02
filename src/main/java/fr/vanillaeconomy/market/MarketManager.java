@@ -149,7 +149,8 @@ public final class MarketManager {
         // Prices are always recomputed from the circulation counters (config may have changed).
         recomputePrices();
 
-        boolean layoutChanged = !db.getMeta(META_LAYOUT).orElse("").equals(layoutSignature());
+        String storedLayout = db.getMeta(META_LAYOUT).orElse("");
+        boolean layoutChanged = !storedLayout.isEmpty() && !storedLayout.equals(layoutSignature());
         boolean rotationValid = !layoutChanged && loadRotations();
         nextRotationAt = db.getMeta(META_NEXT_ROTATION).map(Long::parseLong).orElse(0L);
         cycle = db.getMeta(META_CYCLE).map(Long::parseLong).orElse(0L);

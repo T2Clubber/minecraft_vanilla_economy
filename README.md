@@ -1,6 +1,6 @@
 # VanillaEconomy
 
-Plugin Paper (Minecraft 26.2+, Java 25). Il ajoute une monnaie virtuelle et un marché global tenu par les idiots du village. Toute la logique tourne côté serveur : aucun mod n'est requis côté client.
+Plugin Paper pour Minecraft 26.2 et 26.3 (Java 25). Le même jar et le même resource pack fonctionnent sur les deux versions. Il ajoute une monnaie virtuelle et un marché global tenu par les idiots du village. Toute la logique tourne côté serveur : aucun mod n'est requis côté client.
 
 ## Build
 

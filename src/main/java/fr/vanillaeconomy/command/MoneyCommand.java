@@ -94,7 +94,7 @@ public final class MoneyCommand implements TabExecutor {
         var leftovers = player.getInventory().addItem(coins.toArray(ItemStack[]::new));
         // Should not happen (space checked above), but never destroy money.
         leftovers.values().forEach(item -> player.getWorld().dropItem(player.getLocation(), item));
-        Messages.send(player, "<gray>Vous avez retiré <gold><amount></gold> en pièces.", Messages.p("amount", Messages.coins(amount)));
+        Messages.send(player, "<gray>Vous avez retiré <gold><amount></gold>.", Messages.p("amount", Messages.coins(amount)));
     }
 
     private void deposit(Player player) {
