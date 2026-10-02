@@ -36,7 +36,7 @@ public final class CityConfig {
     public final long confirmMillis;
 
     public CityConfig(YamlConfiguration yaml, Logger logger) {
-        creationCost = Math.max(0, yaml.getLong("creation_cost", 500));
+        creationCost = Math.max(0, yaml.getLong("creation_cost", 2500));
         allowedWorlds = new HashSet<>(yaml.getStringList("allowed_worlds"));
         minGap = Math.max(0, yaml.getInt("min_gap_blocks", 16));
         nameMin = Math.max(1, yaml.getInt("name.min_length", 3));
@@ -58,8 +58,8 @@ public final class CityConfig {
         if (!errors.isEmpty()) {
             errors.forEach(e -> logger.warning("cities.yml : " + e));
             logger.warning("cities.yml : paliers invalides, utilisation des paliers par défaut.");
-            parsed = List.of(new Tier(1, 32, 0), new Tier(2, 48, 2000), new Tier(3, 64, 6000),
-                    new Tier(4, 96, 18000), new Tier(5, 128, 50000));
+            parsed = List.of(new Tier(1, 32, 0), new Tier(2, 64, 5000), new Tier(3, 128, 20000),
+                    new Tier(4, 256, 50000), new Tier(5, 512, 100000));
         }
         tiers = List.copyOf(parsed);
 

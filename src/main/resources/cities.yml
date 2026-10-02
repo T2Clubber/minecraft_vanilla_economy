@@ -4,7 +4,7 @@
 # ===================================================================
 
 # Coût de création, prélevé sur le solde personnel du fondateur.
-creation_cost: 500
+creation_cost: 2500
 
 # Mondes où une cité peut être créée (noms des dossiers de monde).
 allowed_worlds:
@@ -22,11 +22,11 @@ name:
 # le SOLDE DE LA CITÉ. Le palier 1 est la création (son prix est ignoré,
 # voir creation_cost). Agrandissement symétrique autour du centre d'origine.
 tiers:
-  1: { size: 32,  price: 0 }
-  2: { size: 48,  price: 2000 }
-  3: { size: 64,  price: 6000 }
-  4: { size: 96,  price: 18000 }
-  5: { size: 128, price: 50000 }
+  1: { size: 32,  price: 2500 }
+  2: { size: 64,  price: 5000 }
+  3: { size: 128,  price: 20000 }
+  4: { size: 256,  price: 50000 }
+  5: { size: 512, price: 100000 }
 
 protection:
   # Empêcher les non-membres de blesser animaux et villageois dans une cité.
