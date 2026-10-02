@@ -1,0 +1,42 @@
+name: VanillaEconomy
+version: '1.0.0'
+main: fr.vanillaeconomy.VanillaEconomyPlugin
+api-version: '26.2'
+description: Monnaie virtuelle + marché global tenu par les idiots du village. 100% vanilla côté client.
+libraries:
+  - org.xerial:sqlite-jdbc:3.53.4.0
+
+commands:
+  money:
+    description: Convertir son solde en pièces physiques et inversement.
+    usage: "/money <drop <montant>|deposit>"
+    permission: vanillaeconomy.money
+  solde:
+    description: Afficher son solde.
+    usage: "/solde"
+    aliases: [balance, bal]
+    permission: vanillaeconomy.solde
+  pay:
+    description: Transférer de l'argent à un joueur proche (10 blocs max, même monde).
+    usage: "/pay <joueur> <montant>"
+    permission: vanillaeconomy.pay
+  marketadmin:
+    description: Administration du marché.
+    usage: "/marketadmin <rotate|info <item>|reload>"
+    permission: vanillaeconomy.admin
+
+permissions:
+  vanillaeconomy.money:
+    default: true
+  vanillaeconomy.solde:
+    default: true
+  vanillaeconomy.pay:
+    default: true
+  vanillaeconomy.market:
+    description: Utiliser les idiots marchands.
+    default: true
+  vanillaeconomy.admin:
+    default: op
+  vanillaeconomy.notify:
+    description: Recevoir les alertes anti-dupe.
+    default: op

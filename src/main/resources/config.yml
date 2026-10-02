@@ -1,0 +1,83 @@
+# ===================================================================
+# VanillaEconomy - configuration générale
+# Les items du marché, leurs prix de base et la répartition des slots
+# sont dans items.yml (chargé tel quel).
+# ===================================================================
+
+currency:
+  # Item vanilla servant de support à la pièce (stack max 64).
+  material: GOLD_NUGGET
+  # CustomModelData lu par le resource pack (resourcepack/, voir README) :
+  # une pépite d'or avec custom_model_data >= 1001 s'affiche en pièce. Un
+  # joueur sans le pack voit une pépite d'or normale. 0 = désactivé.
+  custom_model_data: 1001
+  # Alternative : composant item_model (ex: "vanillaeco:piece"). Sans le
+  # pack, l'item s'affiche alors en texture manquante. Vide = désactivé.
+  item_model: ""
+  display_name: "<gold>Pièce"
+  lore:
+    - "<gray>Monnaie officielle du serveur"
+    - "<dark_gray>/money deposit pour la créditer"
+  # Clé secrète HMAC pour signer les pièces. Générée automatiquement au
+  # premier démarrage si vide. NE PAS la partager : toute pièce signée
+  # avec une autre clé sera considérée comme falsifiée.
+  secret: ""
+  # Retirer de l'inventaire les pièces falsifiées / dupliquées lors
+  # d'un /money deposit.
+  confiscate_invalid: true
+  # Montant maximum par /money drop (en pièces).
+  max_drop: 2304
+
+pay:
+  max_distance: 10.0
+
+market:
+  # Multiplicateur appliqué au prix d'achat pour obtenir le prix de vente
+  # (price_sell = max(price_buy * markup, price_buy + price_floor_per_unit)).
+  markup: 1.4
+  # Paramètres de la décroissance du prix d'achat :
+  # prix_unitaire = max(plancher, base * exp(-k * circulation / échelle))
+  # échelle = base_number * scale_lots (circulation exprimée en "lots").
+  k: 1.0
+  scale_lots: 64
+  # Decay du compteur de circulation à chaque cycle (0.02 = -2%/cycle).
+  circulation_decay: 0.02
+  # Pondération du tirage de la liste ACHAT : poids d'un item en stock
+  # (un item en rupture a un poids de 1).
+  in_stock_weight: 4.0
+  # Vérification de l'échéance de rotation (en secondes). La rotation
+  # elle-même suit rotation_interval_hours (items.yml), même après un
+  # redémarrage.
+  check_interval_seconds: 60
+  # Annonce aux joueurs lors d'une rotation.
+  broadcast_rotation: true
+
+villagers:
+  # Intervalle (en secondes) de vérification des bébés idiots suivis pour
+  # détecter leur passage à l'âge adulte (Paper n'expose pas d'event de
+  # croissance).
+  growth_check_seconds: 10
+  # En Java Edition vanilla, un bébé né d'une reproduction est TOUJOURS sans
+  # métier (jamais idiot) : les idiots naturels ne viennent que de la
+  # génération des villages. Pour que l'élevage puisse produire des idiots
+  # marchands, chaque bébé issu de reproduction devient idiot avec cette
+  # probabilité (0.08 ≈ proportion d'idiots dans un village généré).
+  # 0.0 = comportement 100% vanilla (aucun idiot par reproduction).
+  # Côté client rien ne change (pas de mod requis).
+  breeding_nitwit_chance: 0.08
+  # Sneak + clic droit ouvre l'interface VENTE, clic droit simple ouvre
+  # l'interface ACHAT. Chaque interface a un bouton pour basculer.
+
+# Filtre de pool par biome d'origine (= type de villageois vanilla, donc
+# son skin : desert, jungle, plains, savanna, snow, swamp, taiga).
+# Chaque type a sa propre rotation (tirée dans le marché global :
+# prix/stock partagés, exclusion VENTE/ACHAT garantie sur tout le serveur).
+# Sans entrée pour un type, ce type a accès à tous les items d'items.yml.
+#   include: liste blanche (ids de Material). Si présente, seuls ces items.
+#   exclude: liste noire (ids de Material).
+biome_pools:
+  # Exemples (décommenter / adapter) :
+  # desert:
+  #   exclude: [KELP, PACKED_ICE, BLUE_ICE, COOKED_SALMON, COOKED_COD]
+  # snow:
+  #   exclude: [CACTUS, BAMBOO, SUGAR_CANE]

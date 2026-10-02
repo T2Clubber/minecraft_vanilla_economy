@@ -1,0 +1,198 @@
+# ===================================================================
+# Pool d'items du marché - Idiots du village (market nitwits)
+# ===================================================================
+#
+# RÈGLES GLOBALES À IMPLÉMENTER DANS MarketManager :
+#
+# 1. NO OVERLAP : un item présent dans la rotation VENTE (joueur -> idiot,
+#    idiot achète) ne doit JAMAIS être présent simultanément dans la
+#    rotation ACHAT (idiot -> joueur, idiot vend), et inversement.
+#    => lors du tirage toutes les 2h, exclure de la liste ACHAT les items
+#       déjà tirés dans la liste VENTE pour ce cycle, et vice-versa.
+#
+# 2. SELL >= BUY : à tout instant, price_sell(item) >= price_buy(item).
+#    Même si un item apparaît dans les deux rotations à des cycles
+#    différents, la contrainte doit être vérifiée après CHAQUE recalcul
+#    de prix (toutes les 2h), pas seulement à l'initialisation.
+#    Implémentation suggérée : price_sell = max(price_buy * markup,
+#    price_buy + price_floor_per_unit) pour garantir l'inégalité même
+#    sur les items à prix très faible.
+#
+# 3. PRICE FLOOR : prix plancher global = 1 pièce pour 64 unités d'un
+#    item (price_floor_per_unit = 1/64 ≈ 0.015625). Ce plancher est
+#    TOUJOURS exprimé par unité, indépendamment du base_number de
+#    l'item (voir point 4) : price_unitaire_min = 1/64.
+#
+# 4. BASE_NUMBER : chaque item a son propre "lot de référence". base_price
+#    est le prix de base_number unités de cet item (pas forcément 64).
+#    Exemple : DIRT { base_price: 1, base_number: 64 } => 64 terre pour
+#    1 pièce. DIAMOND { base_price: 250, base_number: 1 } => 1 pièce par
+#    diamant individuel. Calcul du prix unitaire : 
+#       prix_unitaire = base_price / base_number
+#    Pour une transaction de N unités : total = round(prix_unitaire * N),
+#    avec un minimum d'1 pièce facturée/payée par transaction non-nulle.
+#    base_number ne dépasse jamais la stack size vanilla de l'item 
+#    (ex: ENDER_PEARL max 16, MUSIC_DISC_* et NAME_TAG max 1).
+#
+# ===================================================================
+
+global:
+  price_floor_per_unit: 0.015625   # = 1 pièce / 64 unités, plancher absolu
+  sell_must_be_gte_buy: true
+  no_overlap_buy_sell: true
+  rotation_interval_hours: 2
+  favor_in_stock_items_for_buy_rotation: true
+
+# Répartition des 8 slots par catégorie, appliquée identiquement aux
+# deux interfaces (ACHAT et VENTE)
+slots_per_category:
+  minerals: 1
+  food_nature: 3
+  hostile_mob: 1
+  blocks: 2
+  other: 1
+
+# ===================================================================
+# TIERS DE PRIX DE RÉFÉRENCE (pour cohérence, cf. discussion précédente)
+#   common | uncommon | rare | epic | legendary
+# base_price / base_number sont des POINTS DE DÉPART à ajuster après
+# tests en jeu.
+# ===================================================================
+
+categories:
+
+  minerals:
+    - { id: COAL,             tier: common,    base_price: 2,    base_number: 64 }
+    - { id: COPPER_INGOT,     tier: common,    base_price: 3,    base_number: 64 }
+    - { id: IRON_INGOT,       tier: uncommon,  base_price: 8,    base_number: 64 }
+    - { id: LAPIS_LAZULI,     tier: uncommon,  base_price: 6,    base_number: 64 }
+    - { id: REDSTONE,         tier: uncommon,  base_price: 5,    base_number: 64 }
+    - { id: GOLD_INGOT,       tier: rare,      base_price: 20,   base_number: 32 }
+    - { id: EMERALD,          tier: rare,      base_price: 40,   base_number: 32 }
+    - { id: DIAMOND,          tier: epic,      base_price: 250,  base_number: 16 }
+    - { id: NETHERITE_INGOT,  tier: legendary, base_price: 1500, base_number: 8 }
+
+  food_nature:
+    - { id: COOKED_CHICKEN,   tier: common,   base_price: 2,   base_number: 32 }
+    - { id: COOKED_BEEF,      tier: common,   base_price: 3,   base_number: 32 }
+    - { id: COOKED_PORKCHOP,  tier: common,   base_price: 3,   base_number: 32 }
+    - { id: COOKED_MUTTON,    tier: common,   base_price: 2,   base_number: 32 }
+    - { id: COOKED_RABBIT,    tier: common,   base_price: 2,   base_number: 32 }
+    - { id: COOKED_SALMON,    tier: common,   base_price: 2,   base_number: 32 }
+    - { id: COOKED_COD,       tier: common,   base_price: 2,   base_number: 32 }
+    - { id: CARROT,           tier: common,   base_price: 1,   base_number: 32 }
+    - { id: POTATO,           tier: common,   base_price: 1,   base_number: 32 }
+    - { id: BEETROOT,         tier: common,   base_price: 1,   base_number: 32 }
+    - { id: WHEAT,            tier: common,   base_price: 1,   base_number: 32 }
+    - { id: SUGAR_CANE,       tier: common,   base_price: 1,   base_number: 32 }
+    - { id: BAMBOO,           tier: common,   base_price: 1,   base_number: 32 }
+    - { id: KELP,             tier: common,   base_price: 1,   base_number: 32 }
+    - { id: GLOW_BERRIES,     tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: SWEET_BERRIES,    tier: common,   base_price: 2,   base_number: 32 }
+    - { id: PITCHER_PLANT,    tier: uncommon, base_price: 4,   base_number: 32 }
+    - { id: HONEYCOMB,        tier: uncommon, base_price: 5,   base_number: 32 }
+    - { id: PEONY,            tier: common,   base_price: 2,   base_number: 32 }
+    - { id: SUNFLOWER,        tier: common,   base_price: 2,   base_number: 32 }
+    - { id: LILAC,            tier: common,   base_price: 2,   base_number: 32 }
+    - { id: ROSE_BUSH,        tier: common,   base_price: 2,   base_number: 32 }
+    - { id: CACTUS,           tier: common,   base_price: 1,   base_number: 32 }
+    - { id: TORCHFLOWER,      tier: uncommon, base_price: 6,   base_number: 32 }
+    - { id: WITHER_ROSE,      tier: rare,     base_price: 15,  base_number: 1 }
+    - { id: BROWN_MUSHROOM,   tier: common,   base_price: 2,   base_number: 32 }
+    - { id: RED_MUSHROOM,     tier: common,   base_price: 2,   base_number: 32 }
+    - { id: MELON_SLICE,      tier: common,   base_price: 1,   base_number: 32 }
+    - { id: PUMPKIN,          tier: common,   base_price: 2,   base_number: 32 }
+    - { id: LEATHER,          tier: common,   base_price: 4,   base_number: 32 }
+
+  hostile_mob:
+    - { id: SPIDER_EYE,       tier: common,   base_price: 2,   base_number: 32 }
+    - { id: STRING,           tier: common,   base_price: 1,   base_number: 32 }
+    - { id: BONE,             tier: common,   base_price: 1,   base_number: 32 }
+    - { id: ARROW,            tier: common,   base_price: 1,   base_number: 32 }
+    - { id: ROTTEN_FLESH,     tier: common,   base_price: 1,   base_number: 32 }
+    - { id: SLIME_BALL,       tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: BLAZE_ROD,        tier: rare,     base_price: 15,  base_number: 16 }
+    - { id: BREEZE_ROD,       tier: rare,     base_price: 20,  base_number: 16 }
+    - { id: GUNPOWDER,        tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: ENDER_PEARL,      tier: rare,     base_price: 12,  base_number: 16 }
+    - { id: NAUTILUS_SHELL,   tier: rare,     base_price: 25,  base_number: 8 }
+    - { id: SHULKER_SHELL,    tier: epic,     base_price: 40,  base_number: 4 }
+
+  blocks:
+    # base_number = 64 pour toute la catégorie (confirmé)
+    - { id: OAK_LOG,          tier: common, base_price: 2, base_number: 64 }
+    - { id: SPRUCE_LOG,       tier: common, base_price: 2, base_number: 64 }
+    - { id: BIRCH_LOG,        tier: common, base_price: 2, base_number: 64 }
+    - { id: JUNGLE_LOG,       tier: common, base_price: 2, base_number: 64 }
+    - { id: ACACIA_LOG,       tier: common, base_price: 2, base_number: 64 }
+    - { id: DARK_OAK_LOG,     tier: common, base_price: 2, base_number: 64 }
+    - { id: MANGROVE_LOG,     tier: common, base_price: 2, base_number: 64 }
+    - { id: CHERRY_LOG,       tier: common, base_price: 2, base_number: 64 }
+    - { id: PALE_OAK_LOG,     tier: common, base_price: 2, base_number: 64 }
+    - { id: CRIMSON_STEM,     tier: common, base_price: 3, base_number: 64 }
+    - { id: WARPED_STEM,      tier: common, base_price: 3, base_number: 64 }
+    - { id: OCHRE_FROGLIGHT,       tier: rare, base_price: 10, base_number: 64 }
+    - { id: VERDANT_FROGLIGHT,     tier: rare, base_price: 10, base_number: 64 }
+    - { id: PEARLESCENT_FROGLIGHT, tier: rare, base_price: 10, base_number: 64 }
+    - { id: PACKED_ICE,       tier: common,   base_price: 4, base_number: 64 }
+    - { id: BLUE_ICE,         tier: uncommon, base_price: 8, base_number: 64 }
+    - { id: CALCITE,          tier: common,   base_price: 2, base_number: 64 }
+    - { id: WHITE_WOOL,       tier: common, base_price: 2, base_number: 32 }
+    - { id: ORANGE_WOOL,      tier: common, base_price: 2, base_number: 32 }
+    - { id: MAGENTA_WOOL,     tier: common, base_price: 2, base_number: 32 }
+    - { id: LIGHT_BLUE_WOOL,  tier: common, base_price: 2, base_number: 32 }
+    - { id: YELLOW_WOOL,      tier: common, base_price: 2, base_number: 32 }
+    - { id: LIME_WOOL,        tier: common, base_price: 2, base_number: 32 }
+    - { id: PINK_WOOL,        tier: common, base_price: 2, base_number: 32 }
+    - { id: GRAY_WOOL,        tier: common, base_price: 2, base_number: 32 }
+    - { id: LIGHT_GRAY_WOOL,  tier: common, base_price: 2, base_number: 32 }
+    - { id: CYAN_WOOL,        tier: common, base_price: 2, base_number: 32 }
+    - { id: PURPLE_WOOL,      tier: common, base_price: 2, base_number: 32 }
+    - { id: BLUE_WOOL,        tier: common, base_price: 2, base_number: 32 }
+    - { id: BROWN_WOOL,       tier: common, base_price: 2, base_number: 32 }
+    - { id: GREEN_WOOL,       tier: common, base_price: 2, base_number: 32 }
+    - { id: RED_WOOL,         tier: common, base_price: 2, base_number: 32 }
+    - { id: BLACK_WOOL,       tier: common, base_price: 2, base_number: 32 }
+    - { id: HONEY_BLOCK,      tier: uncommon, base_price: 6, base_number: 16 }
+    - { id: SAND,             tier: common,   base_price: 1, base_number: 64 }
+    - { id: RED_SAND,         tier: common,   base_price: 1, base_number: 64 }
+    - { id: BLACKSTONE,       tier: common,   base_price: 1, base_number: 64 }
+    - { id: DIRT,             tier: common,   base_price: 1, base_number: 64 }
+    - { id: MOSS_BLOCK,       tier: uncommon, base_price: 3, base_number: 32 }
+
+  other:
+    - { id: PRISMARINE_SHARD,     tier: common,    base_price: 3,  base_number: 32 }
+    - { id: PRISMARINE_CRYSTALS,  tier: uncommon,  base_price: 4,  base_number: 32 }
+    - { id: NETHER_WART,          tier: common,    base_price: 2,  base_number: 32 }
+    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 2,  base_number: 32 }
+    # Disques musicaux : stack vanilla max = 1, donc base_number = 1
+    - { id: MUSIC_DISC_13,                 tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_CAT,                tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_BLOCKS,             tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_CHIRP,              tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_FAR,                tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_MALL,               tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_MELLOHI,            tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_STAL,               tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_STRAD,              tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_WARD,               tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_11,                 tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_WAIT,               tier: legendary, base_price: 150, base_number: 1 }
+    - { id: MUSIC_DISC_PIGSTEP,            tier: legendary, base_price: 200, base_number: 1 }
+    - { id: MUSIC_DISC_OTHERSIDE,          tier: legendary, base_price: 200, base_number: 1 }
+    - { id: MUSIC_DISC_5,                  tier: legendary, base_price: 250, base_number: 1 }
+    - { id: MUSIC_DISC_RELIC,              tier: legendary, base_price: 200, base_number: 1 }
+    - { id: MUSIC_DISC_PRECIPICE,          tier: legendary, base_price: 200, base_number: 1 }
+    - { id: MUSIC_DISC_CREATOR,            tier: legendary, base_price: 250, base_number: 1 }
+    - { id: MUSIC_DISC_CREATOR_MUSIC_BOX,  tier: legendary, base_price: 250, base_number: 1 }
+    - { id: MUSIC_DISC_TEARS,              tier: legendary, base_price: 250, base_number: 1 }
+    - { id: TURTLE_SCUTE,     tier: rare,     base_price: 20,  base_number: 16 }
+    - { id: RESIN_CLUMP,      tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: AMETHYST_SHARD,   tier: uncommon, base_price: 5,   base_number: 32 }
+    - { id: QUARTZ,           tier: uncommon, base_price: 3,   base_number: 32 }
+    # Nametag : stack vanilla max = 1, donc base_number = 1
+    - { id: NAME_TAG,         tier: rare,     base_price: 15,  base_number: 1 }
+    # Sulfur Spike - item ajouté en MAJ 26.2/26.3 ("Chaos Cubed"), trouvé
+    # dans les Sulfur Caves. Prix calé sur le ratio de vente du marchand
+    # ambulant vanilla (2 Sulfur Spikes pour 1 émeraude, ~20$/unité ici).
+    - { id: SULFUR_SPIKE,     tier: rare,     base_price: 18,  base_number: 64 }
