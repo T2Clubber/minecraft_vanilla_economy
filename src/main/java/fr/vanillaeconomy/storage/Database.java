@@ -111,6 +111,14 @@ public final class Database implements AutoCloseable {
                     )""");
             st.execute("CREATE INDEX IF NOT EXISTS idx_city_contribution ON city_contribution(city_id, timestamp)");
             st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_notification (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        player_uuid TEXT NOT NULL,
+                        message_key TEXT NOT NULL,
+                        vars        TEXT NOT NULL,
+                        created_at  INTEGER NOT NULL
+                    )""");
+            st.execute("""
                     CREATE TABLE IF NOT EXISTS meta (
                         key   TEXT PRIMARY KEY,
                         value TEXT NOT NULL

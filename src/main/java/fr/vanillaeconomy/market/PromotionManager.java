@@ -112,12 +112,14 @@ public final class PromotionManager {
 
     /**
      * SELL interface promotion: the reference lot shrinks, so the villager pays the base
-     * price for fewer units. Only for items whose base_number is greater than 1.
+     * price for fewer units. Only for items whose base_number is greater than 1. The lot is
+     * kept fractional (no rounding) so that the real discount is exactly {@code percent};
+     * it never goes below 1.
      */
-    public static int effectiveBaseNumber(int baseNumber, int percent) {
+    public static double effectiveBaseNumber(int baseNumber, int percent) {
         if (baseNumber <= 1 || percent <= 0) {
             return baseNumber;
         }
-        return (int) Math.max(1, Math.round(baseNumber * (1 - percent / 100.0)));
+        return Math.max(1, baseNumber * (1 - percent / 100.0));
     }
 }

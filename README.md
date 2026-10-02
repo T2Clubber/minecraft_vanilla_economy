@@ -76,7 +76,7 @@ Tout idiot du village adulte devient un marchand. Ça couvre les idiots génér�
   - fréquence : chaque jour, 2 des 12 rotations sont en promotion. Les créneaux et les remises (de 5 à 50 %) sont tirés au hasard et planifiés à l'avance, pour aujourd'hui et demain ;
   - interface Vente : la quantité de référence (`base_number`) est réduite de la remise, uniquement pour les articles dont le `base_number` dépasse 1 : l'idiot paie donc plus cher par unité ;
   - interface Achat : le prix devient `max(prix de rachat, prix de vente × (1 - remise))` ;
-  - affichage : les articles concernés brillent et portent le badge « PROMO -X% », où X est la remise réelle sur le prix (côté Achat, elle est plafonnée par le prix de rachat). L'ancien prix est barré, et l'horloge signale la promo en cours.
+  - affichage : les articles concernés brillent, et le badge « ✦ PROMO -X% ✦ » s'affiche en titre de l'infobulle, au-dessus du nom de l'item. X est la remise réelle sur le prix : côté Vente, elle est égale à la remise annoncée, car le lot réduit n'est pas arrondi ; côté Achat, elle est plafonnée par le prix de rachat. L'ancien prix est barré, et l'horloge signale la promo en cours.
 - **Annonces :** à chaque rotation, un message signé « [Nitwit] » dans le chat annonce les nouveaux étals, l'heure de la prochaine rotation et, le cas échéant, la promo en cours. Il se désactive avec `market.broadcast_rotation`.
 
 Les réglages sont dans `plugins/VanillaEconomy/config.yml` : markup, courbe de prix, decay, promos (`per_day`, `min_percent`, `max_percent`), filtres d'articles par biome, et chance qu'un bébé né d'une reproduction devienne idiot.
@@ -96,6 +96,7 @@ Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `
 - **Protections automatiques :** explosions sans destruction de blocs, pas de propagation du feu, pistons et liquides bloqués à la frontière, pas de grief des mobs.
 - **Messages :** l'entrée et la sortie d'une cité s'affichent dans le chat, et un visiteur reçoit un rappel en actionbar quand une action lui est refusée.
 - **Trésorerie :** chaque versement fait avec `/city contribute` est enregistré. À la dissolution, le solde est remboursé au prorata des contributions.
+- **Notifications :** les joueurs concernés sont prévenus quand ils sont ajoutés ou exclus, nommés ou retirés co-propriétaire, quand leur cité est dissoute ou supprimée, et du montant de leur remboursement. Le propriétaire est aussi prévenu des versements et des départs de ses membres. Un joueur hors ligne reçoit ces messages à sa prochaine connexion : ils sont conservés en base (table `city_notification`) et survivent aux redémarrages.
 - **Performance :** les protections et les messages s'appuient sur un index spatial en mémoire, sans aucune requête en base dans les events.
 
 ### Commandes des cités
@@ -123,7 +124,7 @@ Les alias de `/city` sont `/cite` et `/ville`.
 - `cities.yml` : coût de création, mondes autorisés, écart minimal entre cités, paliers, protections, messages d'entrée et de sortie, bordures.
 - `messages.yml` : textes des cités (MiniMessage, variables `{city}`, `{player}`…).
 - `items.yml` : catalogue des articles (catégorie, tier, `base_price` pour `base_number` unités) et répartition des slots. Si la répartition change, la rotation est retirée automatiquement au démarrage.
-- `economy.db` : base SQLite avec les tables `player_balance`, `coin_serial`, `market_item_state`, `market_rotation`, `villager_instance`, `city`, `city_member`, `city_contribution` et `meta`.
+- `economy.db` : base SQLite avec les tables `player_balance`, `coin_serial`, `market_item_state`, `market_rotation`, `villager_instance`, `city`, `city_member`, `city_contribution`, `city_notification` et `meta`.
 
 ### Articles ajoutés en 26.3
 

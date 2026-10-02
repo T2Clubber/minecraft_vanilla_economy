@@ -53,13 +53,14 @@ public final class PricingEngine {
     }
 
     /**
-     * SELL-interface promotion (villager pays more): the reference lot shrinks to
-     * {@link PromotionManager#effectiveBaseNumber}, which raises the base unit price; the
+     * SELL-interface promotion (villager pays more): the reference lot shrinks by exactly
+     * {@code percent} ({@link PromotionManager#effectiveBaseNumber}, not rounded so that the
+     * real discount equals the announced one), which raises the base unit price; the
      * circulation decay keeps its normal scale. The selling price is raised if needed so
      * that sell &gt;= buy still holds (the item is not on the BUY side during this cycle).
      */
     public Prices promoBuy(MarketItem item, double circulation, Prices regular, int percent) {
-        int effective = PromotionManager.effectiveBaseNumber(item.baseNumber(), percent);
+        double effective = PromotionManager.effectiveBaseNumber(item.baseNumber(), percent);
         if (effective == item.baseNumber()) {
             return regular;
         }

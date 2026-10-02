@@ -6,6 +6,7 @@ import fr.vanillaeconomy.city.CityBoardGUI;
 import fr.vanillaeconomy.city.CityCommand;
 import fr.vanillaeconomy.city.CityConfig;
 import fr.vanillaeconomy.city.CityManager;
+import fr.vanillaeconomy.city.CityNotifier;
 import fr.vanillaeconomy.city.CityPresenceListener;
 import fr.vanillaeconomy.city.CityProtectionListener;
 import fr.vanillaeconomy.command.MarketAdminCommand;
@@ -93,10 +94,13 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             MessageConfig cityMessages = new MessageConfig(this, "cities");
             CityManager cities = new CityManager(this, database, cityConfig);
             cities.load();
-            CityCommand cityCommand = new CityCommand(cities, cityMessages);
+            CityNotifier notifier = new CityNotifier(this, database, cityMessages);
+            notifier.load();
+            CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier);
             register("city", cityCommand);
-            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand));
-            CityBoardGUI.Handler board = new CityBoardGUI.Handler(new CityBoardGUI.Services(this, cities, currency, cityMessages));
+            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier));
+            CityBoardGUI.Handler board = new CityBoardGUI.Handler(
+                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier));
             register("cityboard", board);
             borders = new BorderManager(this, cities, cityMessages);
             register("border", borders);
@@ -106,6 +110,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             pm.registerEvents(presence, this);
             pm.registerEvents(board, this);
             pm.registerEvents(borders, this);
+            pm.registerEvents(notifier, this);
             presence.start();
             borders.start();
         } catch (SQLException | RuntimeException e) {

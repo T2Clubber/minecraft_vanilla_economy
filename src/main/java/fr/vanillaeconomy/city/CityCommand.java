@@ -32,11 +32,13 @@ public final class CityCommand implements TabExecutor {
 
     private final CityManager cities;
     private final MessageConfig msg;
+    private final CityNotifier notifier;
     private final Map<UUID, Confirmation> confirmations = new HashMap<>();
 
-    public CityCommand(CityManager cities, MessageConfig msg) {
+    public CityCommand(CityManager cities, MessageConfig msg, CityNotifier notifier) {
         this.cities = cities;
         this.msg = msg;
+        this.notifier = notifier;
     }
 
     @Override
@@ -110,10 +112,7 @@ public final class CityCommand implements TabExecutor {
         cities.addMember(city, player.getUniqueId(), target);
         String name = CityManager.nameOf(target);
         msg.send(player, "added", "player", name, "city", city.name());
-        Player online = Bukkit.getPlayer(target);
-        if (online != null) {
-            msg.send(online, "added_notify", "city", city.name(), "actor", player.getName());
-        }
+        notifier.notify(target, "added_notify", "city", city.name(), "actor", player.getName());
     }
 
     private void kick(Player player, String[] args) throws CityException {
@@ -125,10 +124,7 @@ public final class CityCommand implements TabExecutor {
         UUID target = resolvePlayer(args[1]);
         cities.kick(city, player.getUniqueId(), target);
         msg.send(player, "kicked", "player", CityManager.nameOf(target), "city", city.name());
-        Player online = Bukkit.getPlayer(target);
-        if (online != null) {
-            msg.send(online, "kicked_notify", "city", city.name());
-        }
+        notifier.notify(target, "kicked_notify", "city", city.name());
     }
 
     private void leave(Player player, String[] args) throws CityException {
@@ -139,6 +135,7 @@ public final class CityCommand implements TabExecutor {
         City city = cities.require(args[1]);
         cities.leave(city, player.getUniqueId());
         msg.send(player, "left", "city", city.name());
+        notifier.notify(city.owner(), "left_notify", "player", player.getName(), "city", city.name());
     }
 
     private void coOwner(Player player, String[] args) throws CityException {
@@ -151,10 +148,7 @@ public final class CityCommand implements TabExecutor {
         boolean set = args[1].equalsIgnoreCase("set");
         cities.setCoOwner(city, player.getUniqueId(), target, set);
         msg.send(player, set ? "coowner_set" : "coowner_unset", "player", CityManager.nameOf(target), "city", city.name());
-        Player online = Bukkit.getPlayer(target);
-        if (online != null) {
-            msg.send(online, set ? "coowner_notify_set" : "coowner_notify_unset", "city", city.name());
-        }
+        notifier.notify(target, set ? "coowner_notify_set" : "coowner_notify_unset", "city", city.name());
     }
 
     private void contribute(Player player, String[] args) throws CityException {
@@ -172,6 +166,10 @@ public final class CityCommand implements TabExecutor {
         cities.contribute(city, player.getUniqueId(), amount);
         msg.send(player, "contributed", "amount", Messages.coins(amount), "city", city.name(),
                 "balance", Messages.coins(city.balance()));
+        if (!city.owner().equals(player.getUniqueId())) {
+            notifier.notify(city.owner(), "contribution_notify", "player", player.getName(),
+                    "amount", Messages.coins(amount), "city", city.name(), "balance", Messages.coins(city.balance()));
+        }
     }
 
     private void upgrade(Player player, String[] args) throws CityException {
@@ -193,9 +191,10 @@ public final class CityCommand implements TabExecutor {
         City city = cities.ownedBy(player.getUniqueId()).orElseThrow(() -> new CityException("no_managed_city"));
         if (args.length == 2 && args[1].equalsIgnoreCase("confirm")) {
             consumeConfirmation(player, Pending.DISBAND, city);
+            List<UUID> members = new ArrayList<>(city.members().keySet());
             Map<UUID, Long> refunds = cities.disband(city, player.getUniqueId());
             msg.send(player, "disbanded", "city", city.name());
-            notifyRefunds(msg, city, refunds);
+            notifier.dissolution(city, members, player.getUniqueId(), refunds, "disbanded_notify");
             return;
         }
         if (!city.roleOf(player.getUniqueId()).canDisband()) {
@@ -205,15 +204,6 @@ public final class CityCommand implements TabExecutor {
                 System.currentTimeMillis() + cities.config().confirmMillis));
         msg.send(player, "disband_confirm", "city", city.name(), "balance", Messages.coins(city.balance()),
                 "seconds", cities.config().confirmMillis / 1000);
-    }
-
-    static void notifyRefunds(MessageConfig msg, City city, Map<UUID, Long> refunds) {
-        refunds.forEach((uuid, amount) -> {
-            Player online = Bukkit.getPlayer(uuid);
-            if (online != null) {
-                msg.send(online, "refund_notify", "city", city.name(), "amount", Messages.coins(amount));
-            }
-        });
     }
 
     private void consumeConfirmation(Player player, Pending action, City city) throws CityException {

@@ -18,11 +18,13 @@ public final class CityAdminCommand implements TabExecutor {
     private final CityManager cities;
     private final MessageConfig msg;
     private final CityCommand cityCommand;
+    private final CityNotifier notifier;
 
-    public CityAdminCommand(CityManager cities, MessageConfig msg, CityCommand cityCommand) {
+    public CityAdminCommand(CityManager cities, MessageConfig msg, CityCommand cityCommand, CityNotifier notifier) {
         this.cities = cities;
         this.msg = msg;
         this.cityCommand = cityCommand;
+        this.notifier = notifier;
     }
 
     @Override
@@ -31,9 +33,10 @@ public final class CityAdminCommand implements TabExecutor {
             String sub = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             if (sub.equals("delete") && args.length == 2) {
                 City city = cities.require(args[1]);
+                List<UUID> members = new ArrayList<>(city.members().keySet());
                 Map<UUID, Long> refunds = cities.delete(city);
                 msg.send(sender, "admin_deleted", "city", city.name());
-                CityCommand.notifyRefunds(msg, city, refunds);
+                notifier.dissolution(city, members, null, refunds, "admin_deleted_notify");
             } else if (sub.equals("settier") && args.length == 3) {
                 City city = cities.require(args[1]);
                 int tier;

@@ -195,13 +195,20 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
         return pane;
     }
 
-    /** Glint + "PROMO -X%" after the item name. */
+    /**
+     * Glint + "PROMO -X%" as the first line of the tooltip: the badge becomes the title and
+     * the item name moves to the line below.
+     */
     protected static ItemStack promoStyle(ItemStack stack, long percent) {
         ItemMeta meta = stack.getItemMeta();
         meta.setEnchantmentGlintOverride(true);
-        meta.displayName(Component.translatable(stack.translationKey(), NamedTextColor.WHITE)
-                .decoration(TextDecoration.ITALIC, false)
-                .append(Messages.item(" <gold><bold>PROMO -<pct>%", Messages.p("pct", percent))));
+        meta.displayName(Messages.item("<gold><bold>✦ PROMO -<pct>% ✦", Messages.p("pct", percent)));
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.translatable(stack.translationKey(), NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false));
+        if (meta.lore() != null) {
+            lore.addAll(meta.lore());
+        }
+        meta.lore(lore);
         stack.setItemMeta(meta);
         return stack;
     }

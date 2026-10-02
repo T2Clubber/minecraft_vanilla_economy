@@ -81,7 +81,8 @@ public final class CityBoardGUI implements InventoryHolder {
     private final Map<Integer, Integer> tierSlots = new HashMap<>();
 
     /** What the board needs, shared by all instances. */
-    public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg) {
+    public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg,
+                           CityNotifier notifier) {
     }
 
     private CityBoardGUI(Services services, Player viewer, City city, Tab tab) {
@@ -385,10 +386,7 @@ public final class CityBoardGUI implements InventoryHolder {
             run(() -> {
                 services.cities().setCoOwner(city, viewer.getUniqueId(), target, promote);
                 services.msg().send(viewer, promote ? "coowner_set" : "coowner_unset", "player", targetName, "city", city.name());
-                Player online = Bukkit.getPlayer(target);
-                if (online != null) {
-                    services.msg().send(online, promote ? "coowner_notify_set" : "coowner_notify_unset", "city", city.name());
-                }
+                services.notifier().notify(target, promote ? "coowner_notify_set" : "coowner_notify_unset", "city", city.name());
             });
             render();
         } else if (click == ClickType.SHIFT_RIGHT && me.canKick(targetRole) && !target.equals(viewer.getUniqueId())) {
@@ -396,10 +394,7 @@ public final class CityBoardGUI implements InventoryHolder {
                 run(() -> {
                     services.cities().kick(city, viewer.getUniqueId(), target);
                     services.msg().send(viewer, "kicked", "player", targetName, "city", city.name());
-                    Player online = Bukkit.getPlayer(target);
-                    if (online != null) {
-                        services.msg().send(online, "kicked_notify", "city", city.name());
-                    }
+                    services.notifier().notify(target, "kicked_notify", "city", city.name());
                 });
                 reopen(Tab.MEMBERS);
             }, () -> reopen(Tab.MEMBERS));

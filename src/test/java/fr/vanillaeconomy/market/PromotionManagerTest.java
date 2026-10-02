@@ -62,13 +62,24 @@ class PromotionManagerTest {
 
     @Test
     void effectiveBaseNumber() {
-        assertEquals(32, PromotionManager.effectiveBaseNumber(64, 50));
-        assertEquals(48, PromotionManager.effectiveBaseNumber(64, 25));
-        assertEquals(61, PromotionManager.effectiveBaseNumber(64, 5));
-        assertEquals(1, PromotionManager.effectiveBaseNumber(1, 50), "base_number 1: no change");
-        assertEquals(1, PromotionManager.effectiveBaseNumber(2, 50));
-        assertEquals(1, PromotionManager.effectiveBaseNumber(2, 99), "never below 1");
-        assertEquals(16, PromotionManager.effectiveBaseNumber(16, 0));
+        assertEquals(32, PromotionManager.effectiveBaseNumber(64, 50), 1e-9);
+        assertEquals(48, PromotionManager.effectiveBaseNumber(64, 25), 1e-9);
+        assertEquals(20.8, PromotionManager.effectiveBaseNumber(32, 35), 1e-9, "not rounded: exactly -35 %");
+        assertEquals(1, PromotionManager.effectiveBaseNumber(1, 50), 1e-9, "base_number 1: no change");
+        assertEquals(1, PromotionManager.effectiveBaseNumber(2, 50), 1e-9);
+        assertEquals(1, PromotionManager.effectiveBaseNumber(2, 99), 1e-9, "never below 1");
+        assertEquals(16, PromotionManager.effectiveBaseNumber(16, 0), 1e-9);
+    }
+
+    @Test
+    void sellBadgeMatchesTheAnnouncedDiscount() {
+        PricingEngine pricing = new PricingEngine(1.0 / 64, 1.0, 64, 1.4);
+        MarketItem item = new MarketItem(Material.GOLD_INGOT, "minerals", "rare", 20, 32);
+        PricingEngine.Prices regular = pricing.compute(item, 0);
+        for (int pct = 5; pct <= 50; pct++) {
+            PricingEngine.Prices promo = pricing.promoBuy(item, 0, regular, pct);
+            assertEquals(pct, Math.round((1 - regular.buyUnit() / promo.buyUnit()) * 100), "badge for -" + pct + " %");
+        }
     }
 
     @Test

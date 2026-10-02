@@ -77,6 +77,15 @@ cities:
   disband_confirm: "<yellow>Dissoudre la cité <aqua>{city}</aqua> ? Son solde (<gold>{balance}</gold>) sera remboursé au prorata des contributions. Tapez <white>/city disband confirm</white> dans les {seconds} s."
   disbanded: "<yellow>La cité <aqua>{city}</aqua> a été dissoute."
   refund_notify: "<green>Dissolution de la cité <aqua>{city}</aqua> : <gold>{amount}</gold> vous ont été remboursées."
+  disbanded_notify: "<yellow>La cité <aqua>{city}</aqua> a été dissoute par son propriétaire."
+  admin_deleted_notify: "<yellow>La cité <aqua>{city}</aqua> a été supprimée par l'administration."
+
+  # --- notifications au propriétaire -----------------------------------
+  left_notify: "<yellow><white>{player}</white> a quitté la cité <aqua>{city}</aqua>."
+  contribution_notify: "<green><white>{player}</white> a versé <gold>{amount}</gold> à la cité <aqua>{city}</aqua> (solde : <gold>{balance}</gold>)."
+
+  # --- notifications reçues hors ligne -------------------------------
+  offline_header: "<gold>Pendant votre absence ({count}) :"
 
   # --- info ----------------------------------------------------------
   info: |-
