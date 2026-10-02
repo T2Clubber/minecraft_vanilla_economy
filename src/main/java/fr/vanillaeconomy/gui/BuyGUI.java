@@ -71,7 +71,9 @@ public final class BuyGUI extends MarketGui {
                     Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), bulk)))));
         }
         ItemStack item = icon(material, lot, lore, false);
-        return s.sellPromo() ? promoStyle(item, market.promoPercent()) : item;
+        // Real reduction of the price (the formula may cap it at the villager's buying price).
+        long percent = Math.round((1 - s.sellUnit() / s.regularSellUnit()) * 100);
+        return percent > 0 ? promoStyle(item, percent) : item;
     }
 
     @Override

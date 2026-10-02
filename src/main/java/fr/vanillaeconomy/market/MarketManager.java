@@ -274,15 +274,22 @@ public final class MarketManager {
                 + (promoPercent > 0 ? ", PROMOTION -" + promoPercent + " %" : "") + ".");
         rotationListeners.forEach(Runnable::run);
         if (broadcastRotation) {
-            Bukkit.getOnlinePlayers().forEach(p -> {
-                if (applyDecay) {
-                    Messages.send(p, "<gray>Les idiots du village ont renouvelé leurs étals ! Nouveaux prix en vigueur.");
-                }
-                if (promoPercent > 0) {
-                    Messages.send(p, "<gold><bold>PROMO -<pct>%</bold> chez les idiots du village jusqu'à la prochaine rotation !",
-                            Messages.p("pct", promoPercent));
-                }
-            });
+            announceRotation();
+        }
+    }
+
+    /** "[Nitwit] ..." chat message to everyone, at every rotation (scheduled or forced). */
+    private void announceRotation() {
+        String next = java.time.format.DateTimeFormatter.ofPattern("HH'h'mm")
+                .format(java.time.Instant.ofEpochMilli(nextRotationAt).atZone(zone));
+        Bukkit.getServer().broadcast(Messages.parse(
+                "<dark_green>[Nitwit]</dark_green> <white>Les idiots du village ont renouvelé leurs étals ! "
+                        + "Prochaine rotation à <yellow><next></yellow>.", Messages.p("next", next)));
+        if (promoPercent > 0) {
+            Bukkit.getServer().broadcast(Messages.parse(
+                    "<dark_green>[Nitwit]</dark_green> <gold><bold>PROMO</bold> jusqu'à -<pct> % sur les étals "
+                            + "jusqu'à <next> : je paie plus cher et je vends moins cher !",
+                    Messages.p("pct", promoPercent), Messages.p("next", next)));
         }
     }
 

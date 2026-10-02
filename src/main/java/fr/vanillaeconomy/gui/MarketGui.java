@@ -196,7 +196,7 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     }
 
     /** Glint + "PROMO -X%" after the item name. */
-    protected static ItemStack promoStyle(ItemStack stack, int percent) {
+    protected static ItemStack promoStyle(ItemStack stack, long percent) {
         ItemMeta meta = stack.getItemMeta();
         meta.setEnchantmentGlintOverride(true);
         meta.displayName(Component.translatable(stack.translationKey(), NamedTextColor.WHITE)

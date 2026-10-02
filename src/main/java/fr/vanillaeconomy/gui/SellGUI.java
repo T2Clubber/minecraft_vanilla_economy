@@ -68,7 +68,9 @@ public final class SellGUI extends MarketGui {
             lore.add(Messages.item("<red>Il vous en faut au moins <n>", Messages.p("n", lot)));
         }
         ItemStack item = icon(material, lot, lore, false);
-        return s.buyPromo() ? promoStyle(item, market.promoPercent()) : item;
+        // Real reduction of the reference lot: the villager pays the same price for fewer units.
+        long percent = Math.round((1 - s.regularBuyUnit() / s.buyUnit()) * 100);
+        return percent > 0 ? promoStyle(item, percent) : item;
     }
 
     @Override
