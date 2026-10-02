@@ -1,0 +1,99 @@
+# ===================================================================
+# VanillaEconomy - textes affichés aux joueurs
+# Format MiniMessage (https://docs.advntr.dev/minimessage/format.html).
+# Les variables entre accolades ({city}, {player}...) sont remplacées.
+# Une clé supprimée reprend sa valeur par défaut.
+# ===================================================================
+
+cities:
+  prefix: "<dark_gray>[<aqua>Cité</aqua>]</dark_gray> "
+
+  # --- entrée / sortie ---------------------------------------------
+  enter: "<gray>Vous entrez dans la cité <aqua>{city}</aqua> (propriétaire : <white>{owner}</white>)"
+  exit: "<gray>Vous quittez la cité <aqua>{city}</aqua>"
+
+  # --- protection (actionbar) ---------------------------------------
+  denied: "<red>Cette parcelle appartient à la cité <aqua>{city}</aqua>"
+
+  # --- commandes générales -------------------------------------------
+  players_only: "<red>Commande réservée aux joueurs."
+  unknown_city: "<red>Aucune cité nommée <white>{city}</white>."
+  unknown_player: "<red>Joueur inconnu : <white>{player}</white> (il doit s'être connecté au moins une fois)."
+  not_member: "<red>Vous n'êtes pas membre de la cité <aqua>{city}</aqua>."
+  no_permission_role: "<red>Votre rôle dans la cité <aqua>{city}</aqua> ne permet pas cette action."
+  insufficient_funds: "<red>Solde insuffisant : il faut <gold>{amount}</gold>."
+  invalid_amount: "<red>Le montant doit être un entier strictement positif."
+  internal_error: "<red>Erreur interne, aucune modification n'a été faite."
+  confirm_expired: "<red>Aucune action à confirmer (ou délai dépassé)."
+  usage: |-
+    <gold>Commandes des cités :</gold>
+    <yellow>/city create <nom></yellow> <gray>- fonder une cité ({cost})</gray>
+    <yellow>/city info [nom]</yellow> <gray>- informations sur une cité</gray>
+    <yellow>/city add <joueur> [cité]</yellow> <gray>- ajouter un membre</gray>
+    <yellow>/city kick <joueur> [cité]</yellow> <gray>- exclure un membre</gray>
+    <yellow>/city coowner set|unset <joueur></yellow> <gray>- gérer les co-propriétaires</gray>
+    <yellow>/city contribute <nom> <montant></yellow> <gray>- verser au solde de la cité</gray>
+    <yellow>/city upgrade</yellow> <gray>- acheter le palier suivant</gray>
+    <yellow>/city leave <nom></yellow> <gray>- quitter une cité</gray>
+    <yellow>/city disband</yellow> <gray>- dissoudre votre cité</gray>
+    <yellow>/cityboard <nom></yellow> <gray>- tableau de bord (membres)</gray>
+    <yellow>/border <nom> on|off</yellow> <gray>- afficher les bordures</gray>
+
+  # --- création ------------------------------------------------------
+  create_world_denied: "<red>Les cités ne peuvent pas être fondées dans ce monde."
+  create_already_owner: "<red>Vous possédez déjà la cité <aqua>{city}</aqua> : un joueur ne peut posséder qu'une cité."
+  create_invalid_name: "<red>Nom invalide : {min} à {max} caractères, lettres sans accent, chiffres, - et _."
+  create_name_taken: "<red>Le nom <white>{city}</white> est déjà pris."
+  create_conflict: "<red>Trop près de la cité <aqua>{city}</aqua> (au moins {gap} blocs d'écart sont requis)."
+  created: "<green>La cité <aqua>{city}</aqua> est fondée ! <gray>Territoire {size}x{size} centré sur vous, <gold>{cost}</gold> débitées."
+
+  # --- membres -------------------------------------------------------
+  ambiguous_city: "<red>Vous gérez plusieurs cités : précisez laquelle (dernier argument)."
+  no_managed_city: "<red>Vous ne gérez aucune cité."
+  add_already_member: "<red><white>{player}</white> est déjà membre de <aqua>{city}</aqua>."
+  added: "<green><white>{player}</white> a été ajouté à la cité <aqua>{city}</aqua>."
+  added_notify: "<green>Vous avez été ajouté à la cité <aqua>{city}</aqua> par <white>{actor}</white>."
+  kick_not_member: "<red><white>{player}</white> n'est pas membre de <aqua>{city}</aqua>."
+  kicked: "<yellow><white>{player}</white> a été exclu de la cité <aqua>{city}</aqua>."
+  kicked_notify: "<red>Vous avez été exclu de la cité <aqua>{city}</aqua>."
+  leave_owner: "<red>Le propriétaire ne peut pas quitter sa cité : utilisez /city disband."
+  left: "<yellow>Vous avez quitté la cité <aqua>{city}</aqua>."
+  coowner_set: "<green><white>{player}</white> est maintenant co-propriétaire de <aqua>{city}</aqua>."
+  coowner_unset: "<yellow><white>{player}</white> n'est plus co-propriétaire de <aqua>{city}</aqua>."
+  coowner_notify_set: "<green>Vous êtes maintenant co-propriétaire de la cité <aqua>{city}</aqua>."
+  coowner_notify_unset: "<yellow>Vous n'êtes plus co-propriétaire de la cité <aqua>{city}</aqua>."
+
+  # --- trésorerie ----------------------------------------------------
+  contributed: "<green>Vous avez versé <gold>{amount}</gold> à la cité <aqua>{city}</aqua>. Solde de la cité : <gold>{balance}</gold>."
+
+  # --- paliers -------------------------------------------------------
+  upgrade_max: "<red>La cité <aqua>{city}</aqua> a déjà atteint le palier maximum."
+  upgrade_funds: "<red>Solde de la cité insuffisant : <gold>{price}</gold> requises, <gold>{balance}</gold> disponibles."
+  upgrade_conflict: "<red>Agrandissement impossible : le territoire toucherait la cité <aqua>{other}</aqua>."
+  upgrade_confirm: "<yellow>Acheter le palier {tier} ({size}x{size}) pour <gold>{price}</gold> du solde de la cité ? Tapez <white>/city upgrade confirm</white> dans les {seconds} s."
+  upgraded: "<green>La cité <aqua>{city}</aqua> passe au palier {tier} : territoire {size}x{size} !"
+
+  # --- dissolution ---------------------------------------------------
+  disband_confirm: "<yellow>Dissoudre la cité <aqua>{city}</aqua> ? Son solde (<gold>{balance}</gold>) sera remboursé au prorata des contributions. Tapez <white>/city disband confirm</white> dans les {seconds} s."
+  disbanded: "<yellow>La cité <aqua>{city}</aqua> a été dissoute."
+  refund_notify: "<green>Dissolution de la cité <aqua>{city}</aqua> : <gold>{amount}</gold> vous ont été remboursées."
+
+  # --- info ----------------------------------------------------------
+  info: |-
+    <gold>Cité <aqua>{city}</aqua></gold>
+    <gray>Propriétaire : <white>{owner}</white>
+    <gray>Palier : <white>{tier}</white> (<white>{size}x{size}</white>), centre <white>{x} {z}</white> dans <white>{world}</white>
+    <gray>Membres : <white>{members}</white> · Solde : <gold>{balance}</gold>
+
+  # --- bordures et tableau de bord ------------------------------------
+  border_usage: "<red>Usage : /border <cité> on|off"
+  cityboard_usage: "<red>Usage : /cityboard <cité>"
+  border_on: "<green>Bordures de <aqua>{city}</aqua> affichées."
+  border_off: "<yellow>Bordures masquées."
+  border_other_world: "<red>La cité <aqua>{city}</aqua> est dans un autre monde."
+
+  # --- administration ------------------------------------------------
+  admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité>"
+  admin_deleted: "<yellow>Cité <aqua>{city}</aqua> supprimée (solde remboursé)."
+  admin_tier: "<green>Cité <aqua>{city}</aqua> passée au palier {tier}."
+  admin_renamed: "<green>Cité renommée en <aqua>{city}</aqua>."

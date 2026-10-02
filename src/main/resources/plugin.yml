@@ -22,8 +22,25 @@ commands:
     permission: vanillaeconomy.pay
   marketadmin:
     description: Administration du marché.
-    usage: "/marketadmin <rotate|info <item>|setstock <item> <quantité>>"
+    usage: "/marketadmin <rotate [promo [%]]|promos|info <item>|setstock <item> <quantité>>"
     permission: vanillaeconomy.admin
+  city:
+    description: Fonder et gérer une cité.
+    usage: "/city help"
+    aliases: [cite, ville]
+    permission: cities.use
+  cityboard:
+    description: Tableau de bord d'une cité (membres).
+    usage: "/cityboard <cité>"
+    permission: cities.use
+  border:
+    description: Afficher les bordures d'une cité.
+    usage: "/border <cité> on|off"
+    permission: cities.use
+  cityadmin:
+    description: Administration des cités.
+    usage: "/cityadmin delete|settier|rename|info"
+    permission: cities.admin
 
 permissions:
   vanillaeconomy.money:
@@ -39,4 +56,13 @@ permissions:
     default: op
   vanillaeconomy.notify:
     description: Recevoir les alertes anti-dupe.
+    default: op
+  cities.use:
+    description: Commandes des cités.
+    default: true
+  cities.admin:
+    description: Supprimer / modifier n'importe quelle cité.
+    default: op
+  cities.admin.bypass:
+    description: Ignorer la protection des territoires.
     default: op

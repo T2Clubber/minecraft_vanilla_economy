@@ -157,6 +157,13 @@ public final class MarketManager {
         for (MarketItem item : config.items().values()) {
             states.computeIfAbsent(item.material(), x -> new ItemState());
         }
+        // Keys of the former promotion system (before the clock-aligned plans).
+        db.transaction(c -> {
+            try (Statement st = c.createStatement()) {
+                st.executeUpdate("DELETE FROM meta WHERE key IN ('promo_history', 'promo_items')");
+            }
+            return null;
+        });
         // Prices are always recomputed from the circulation counters (config may have changed).
         recomputePrices();
 

@@ -1,0 +1,58 @@
+# ===================================================================
+# VanillaEconomy - Cités
+# Les textes affichés aux joueurs sont dans messages.yml (section cities).
+# ===================================================================
+
+# Coût de création, prélevé sur le solde personnel du fondateur.
+creation_cost: 500
+
+# Mondes où une cité peut être créée (noms des dossiers de monde).
+allowed_worlds:
+  - world
+
+# Nombre minimal de blocs libres entre deux cités (paliers compris).
+min_gap_blocks: 16
+
+name:
+  min_length: 3
+  max_length: 16
+  # Caractères autorisés : lettres sans accent, chiffres, - et _
+
+# Paliers d'agrandissement : taille du carré (en blocs) et prix payé avec
+# le SOLDE DE LA CITÉ. Le palier 1 est la création (son prix est ignoré,
+# voir creation_cost). Agrandissement symétrique autour du centre d'origine.
+tiers:
+  1: { size: 32,  price: 0 }
+  2: { size: 48,  price: 2000 }
+  3: { size: 64,  price: 6000 }
+  4: { size: 96,  price: 18000 }
+  5: { size: 128, price: 50000 }
+
+protection:
+  # Empêcher les non-membres de blesser animaux et villageois dans une cité.
+  protect_animals: true
+  # Message court en actionbar quand un visiteur tente une action refusée.
+  actionbar_message: true
+  # Blocs que les visiteurs peuvent ouvrir / fermer. "#tag" = tag de blocs
+  # Minecraft, sinon un id de Material. Les portillons sont exclus par
+  # défaut (ajouter "#fence_gates" pour les autoriser).
+  visitor_interactions:
+    - "#doors"
+    - "#trapdoors"
+
+presence:
+  # Messages dans le chat à l'entrée / sortie d'une cité.
+  messages: true
+  # Message d'entrée à la connexion si le joueur se trouve dans une cité.
+  message_on_join: true
+
+border:
+  # Rayon horizontal (blocs) autour du joueur où la bordure est dessinée.
+  radius: 24
+  # Hauteur dessinée au-dessus et au-dessous du joueur.
+  height: 8
+  # Rafraîchissement des particules (ticks, 20 = 1 seconde).
+  refresh_ticks: 10
+
+# Délai (secondes) pour confirmer /city disband et /city upgrade.
+confirm_seconds: 30

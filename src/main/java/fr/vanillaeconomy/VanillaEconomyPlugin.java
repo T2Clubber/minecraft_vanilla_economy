@@ -1,5 +1,13 @@
 package fr.vanillaeconomy;
 
+import fr.vanillaeconomy.city.BorderManager;
+import fr.vanillaeconomy.city.CityAdminCommand;
+import fr.vanillaeconomy.city.CityBoardGUI;
+import fr.vanillaeconomy.city.CityCommand;
+import fr.vanillaeconomy.city.CityConfig;
+import fr.vanillaeconomy.city.CityManager;
+import fr.vanillaeconomy.city.CityPresenceListener;
+import fr.vanillaeconomy.city.CityProtectionListener;
 import fr.vanillaeconomy.command.MarketAdminCommand;
 import fr.vanillaeconomy.command.MoneyCommand;
 import fr.vanillaeconomy.command.PayCommand;
@@ -12,6 +20,7 @@ import fr.vanillaeconomy.gui.SellGUI;
 import fr.vanillaeconomy.market.ItemConfigLoader;
 import fr.vanillaeconomy.market.MarketManager;
 import fr.vanillaeconomy.storage.Database;
+import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.villager.NitwitVillagerManager;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
@@ -28,6 +37,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     private Database database;
     private MarketManager market;
     private NitwitVillagerManager villagers;
+    private BorderManager borders;
 
     @Override
     public void onEnable() {
@@ -74,6 +84,30 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             // keeps the "next rotation" clock of open GUIs up to date
             getServer().getScheduler().runTaskTimer(this, MarketGuiListener::refreshAll, 20L * 20, 20L * 20);
             villagers.start();
+
+            // 5. Cities
+            if (!new File(getDataFolder(), "cities.yml").exists()) {
+                saveResource("cities.yml", false);
+            }
+            CityConfig cityConfig = new CityConfig(YamlConfiguration.loadConfiguration(new File(getDataFolder(), "cities.yml")), getLogger());
+            MessageConfig cityMessages = new MessageConfig(this, "cities");
+            CityManager cities = new CityManager(this, database, cityConfig);
+            cities.load();
+            CityCommand cityCommand = new CityCommand(cities, cityMessages);
+            register("city", cityCommand);
+            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand));
+            CityBoardGUI.Handler board = new CityBoardGUI.Handler(new CityBoardGUI.Services(this, cities, currency, cityMessages));
+            register("cityboard", board);
+            borders = new BorderManager(this, cities, cityMessages);
+            register("border", borders);
+            CityPresenceListener presence = new CityPresenceListener(cities, cityMessages);
+            var pm = getServer().getPluginManager();
+            pm.registerEvents(new CityProtectionListener(cities, cityMessages), this);
+            pm.registerEvents(presence, this);
+            pm.registerEvents(board, this);
+            pm.registerEvents(borders, this);
+            presence.start();
+            borders.start();
         } catch (SQLException | RuntimeException e) {
             getLogger().log(Level.SEVERE, "Initialisation impossible, plugin désactivé", e);
             getServer().getPluginManager().disablePlugin(this);
@@ -83,6 +117,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         MarketGuiListener.closeAll();
+        if (borders != null) {
+            borders.stop();
+        }
         if (villagers != null) {
             villagers.stop();
         }

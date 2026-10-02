@@ -83,6 +83,34 @@ public final class Database implements AutoCloseable {
                         ended_at      INTEGER
                     )""");
             st.execute("""
+                    CREATE TABLE IF NOT EXISTS city (
+                        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name       TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                        owner_uuid TEXT NOT NULL UNIQUE,
+                        world      TEXT NOT NULL,
+                        center_x   INTEGER NOT NULL,
+                        center_z   INTEGER NOT NULL,
+                        tier       INTEGER NOT NULL DEFAULT 1,
+                        balance    INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0),
+                        created_at INTEGER NOT NULL
+                    )""");
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_member (
+                        city_id     INTEGER NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+                        player_uuid TEXT NOT NULL,
+                        role        TEXT NOT NULL,
+                        PRIMARY KEY (city_id, player_uuid)
+                    )""");
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_contribution (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        city_id     INTEGER NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+                        player_uuid TEXT NOT NULL,
+                        amount      INTEGER NOT NULL CHECK (amount > 0),
+                        timestamp   INTEGER NOT NULL
+                    )""");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_city_contribution ON city_contribution(city_id, timestamp)");
+            st.execute("""
                     CREATE TABLE IF NOT EXISTS meta (
                         key   TEXT PRIMARY KEY,
                         value TEXT NOT NULL

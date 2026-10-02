@@ -1,13 +1,11 @@
 # VanillaEconomy
 
-Plugin Paper pour **Minecraft 26.3** (compatible 26.2). Il ajoute une monnaie virtuelle et un marché global tenu par les idiots du village. Toute la logique tourne côté serveur : les joueurs n'ont aucun mod à installer, seul un petit resource pack optionnel donne son apparence à la pièce.
+Plugin Paper pour **Minecraft 26.3**. Il ajoute une monnaie virtuelle, un marché global tenu par les idiots du village et des cités protégées. Toute la logique tourne côté serveur : les joueurs n'ont aucun mod à installer, seul un petit resource pack optionnel donne son apparence à la pièce.
 
 ## Prérequis
 
-- Paper 26.3 (testé sur le build 142) ou Paper 26.2 (testé sur le build 129).
+- Paper 26.3 (testé sur le build 143).
 - Java 25.
-
-Le même jar et le même resource pack fonctionnent sur les deux versions. Sur un serveur 26.2, les items propres à la 26.3 sont ignorés au chargement d'`items.yml`, avec un avertissement dans les logs.
 
 ## Installation sur le serveur
 
@@ -22,7 +20,6 @@ Le même jar et le même resource pack fonctionnent sur les deux versions. Sur u
 
    Le pack s'ajoute par-dessus les packs du joueur, il ne les remplace pas. Un joueur qui le refuse voit simplement une pépite d'or à la place de la pièce.
 3. Gérer la liste blanche. En 26.3, un nouveau serveur est créé avec `white-list=true` : il faut ajouter les joueurs avec `/whitelist add <pseudo>`, ou passer `white-list=false`.
-4. Optionnel : pour accepter à la fois des clients 26.2 et 26.3 sur un serveur 26.2, installer le plugin [ViaVersion](https://modrinth.com/plugin/viaversion) (5.12.0 ou plus récent).
 
 ## Commandes
 
@@ -40,7 +37,8 @@ Le même jar et le même resource pack fonctionnent sur les deux versions. Sur u
 | Commande | Effet |
 |---|---|
 | `/marketadmin rotate` | Force une nouvelle rotation du marché |
-| `/marketadmin rotate promo` | Force une rotation avec des prix promotionnels |
+| `/marketadmin rotate promo [%]` | Force une rotation en promotion (remise aléatoire de 5 à 50 % si aucun pourcentage n'est donné) |
+| `/marketadmin promos` | Affiche le planning des promotions d'aujourd'hui et de demain |
 | `/marketadmin info <item>` | Affiche l'état d'un item : catégorie, prix, promo, stock, circulation |
 | `/marketadmin setstock <item> <quantité>` | Fixe le stock global d'un item |
 
@@ -52,6 +50,9 @@ Le même jar et le même resource pack fonctionnent sur les deux versions. Sur u
 | `vanillaeconomy.market` | tous | Utiliser les idiots marchands |
 | `vanillaeconomy.admin` | op | `/marketadmin` |
 | `vanillaeconomy.notify` | op | Recevoir les alertes de pièces falsifiées ou dupliquées |
+| `cities.use` | tous | `/city`, `/cityboard`, `/border` |
+| `cities.admin` | op | `/cityadmin` |
+| `cities.admin.bypass` | op | Ignorer la protection des territoires |
 
 ## Les idiots marchands
 
@@ -67,22 +68,61 @@ Tout idiot du village adulte devient un marchand. Ça couvre les idiots génér�
 ## Le marché
 
 - **Global :** prix et stock sont communs à tous les idiots. Seul le choix des articles proposés dépend du biome (du skin) de l'idiot.
-- **Rotation :** toutes les 2 h. Un article proposé à la vente n'est jamais proposé à l'achat en même temps, sur tout le serveur.
+- **Rotation :** toutes les 2 h, calée sur l'horloge (00 h, 02 h… 22 h). Un article proposé à la vente n'est jamais proposé à l'achat en même temps, sur tout le serveur.
 - **Prix de rachat :** ce que l'idiot paie au joueur. Il baisse avec la quantité vendue au marché, sans jamais descendre sous le plancher de 1 pièce pour 64 unités. Le compteur de quantité vendue diminue de 2 % par rotation, ce qui permet aux prix de remonter.
 - **Prix de vente :** ce que l'idiot facture au joueur. Il vaut toujours au moins le prix de rachat + le plancher.
 - **Stock :** il est alimenté par les ventes des joueurs. La rotation de l'interface Achat favorise les articles en stock, et ceux en rupture restent visibles mais grisés.
 - **Promotions :**
-  - fréquence : sur toute série de 12 rotations consécutives, au moins 2 sont des rotations promo, soit environ 2 par 24 h ;
-  - contenu : chaque biome a au moins un article de l'interface Achat en promo, à -25 % par défaut, sans jamais passer sous le prix de rachat + plancher ;
-  - affichage : les articles en promo brillent, et l'horloge signale les promos en cours.
+  - fréquence : chaque jour, 2 des 12 rotations sont en promotion. Les créneaux et les remises (de 5 à 50 %) sont tirés au hasard et planifiés à l'avance, pour aujourd'hui et demain ;
+  - interface Vente : la quantité de référence (`base_number`) est réduite de la remise, uniquement pour les articles dont le `base_number` dépasse 1 : l'idiot paie donc plus cher par unité ;
+  - interface Achat : le prix devient `max(prix de rachat, prix de vente × (1 - remise))` ;
+  - affichage : les articles concernés brillent et portent le badge « PROMO -X% », avec l'ancien prix barré ; l'horloge signale la promo en cours.
 
-Les réglages sont dans `plugins/VanillaEconomy/config.yml` : markup, courbe de prix, decay, promos, filtres d'articles par biome, et chance qu'un bébé né d'une reproduction devienne idiot.
+Les réglages sont dans `plugins/VanillaEconomy/config.yml` : markup, courbe de prix, decay, promos (`per_day`, `min_percent`, `max_percent`), filtres d'articles par biome, et chance qu'un bébé né d'une reproduction devienne idiot.
+
+## Les cités
+
+Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `/city create <nom>` et centré sur le fondateur. Elle démarre en 32×32 et s'agrandit par paliers, payés avec le solde de la cité : 48×48 (2 000), 64×64 (6 000), 96×96 (18 000), 128×128 (50 000). Les valeurs sont réglables dans `cities.yml`.
+
+- **Rôles :**
+  - **Propriétaire** : gère tout, achète les paliers, dissout la cité. Un joueur ne peut posséder qu'une cité.
+  - **Co-propriétaire** : ajoute et exclut des membres simples.
+  - **Membre** : construit, contribue, peut quitter la cité. Un joueur peut être membre de plusieurs cités.
+- **Accès :** une cité n'est jamais fermée. Les visiteurs entrent et circulent librement, mais en lecture seule :
+  - ils ne peuvent ni construire, ni casser, ni ouvrir de conteneur, ni utiliser boutons, leviers ou plaques ;
+  - ils peuvent ouvrir les portes et les trappes, sans jamais utiliser l'objet tenu en main ;
+  - ils peuvent toujours commercer avec les idiots marchands.
+- **Protections automatiques :** explosions sans destruction de blocs, pas de propagation du feu, pistons et liquides bloqués à la frontière, pas de grief des mobs.
+- **Messages :** l'entrée et la sortie d'une cité s'affichent dans le chat, et un visiteur reçoit un rappel en actionbar quand une action lui est refusée.
+- **Trésorerie :** chaque versement fait avec `/city contribute` est enregistré. À la dissolution, le solde est remboursé au prorata des contributions.
+- **Performance :** les protections et les messages s'appuient sur un index spatial en mémoire, sans aucune requête en base dans les events.
+
+### Commandes des cités
+
+| Commande | Effet |
+|---|---|
+| `/city create <nom>` | Fonde une cité centrée sur le joueur (coût prélevé sur son solde) |
+| `/city info [nom]` | Informations sur une cité |
+| `/city add <joueur> [cité]` | Ajoute un membre ; les joueurs hors ligne déjà venus sur le serveur sont acceptés |
+| `/city kick <joueur> [cité]` | Exclut un membre |
+| `/city coowner set\|unset <joueur>` | Nomme ou retire un co-propriétaire |
+| `/city contribute <nom> <montant>` | Verse des pièces du solde personnel au solde de la cité |
+| `/city upgrade [confirm]` | Achète le palier suivant |
+| `/city leave <nom>` | Quitte une cité (impossible pour le propriétaire) |
+| `/city disband [confirm]` | Dissout la cité et rembourse son solde |
+| `/cityboard <nom>` | Tableau de bord des membres : onglets Membres, Paliers, Trésorerie |
+| `/border <nom> on\|off` | Affiche les bordures de la cité en particules, visibles par ce seul joueur |
+| `/cityadmin info\|delete\|settier\|rename` | Administration |
+
+Les alias de `/city` sont `/cite` et `/ville`.
 
 ## Fichiers générés dans `plugins/VanillaEconomy/`
 
 - `config.yml` : monnaie, `/pay`, paramètres du marché et des promos, filtres de pool par biome.
+- `cities.yml` : coût de création, mondes autorisés, écart minimal entre cités, paliers, protections, messages d'entrée et de sortie, bordures.
+- `messages.yml` : textes des cités (MiniMessage, variables `{city}`, `{player}`…).
 - `items.yml` : catalogue des articles (catégorie, tier, `base_price` pour `base_number` unités) et répartition des slots. Si la répartition change, la rotation est retirée automatiquement au démarrage.
-- `economy.db` : base SQLite avec les tables `player_balance`, `coin_serial`, `market_item_state`, `market_rotation`, `villager_instance` et `meta`.
+- `economy.db` : base SQLite avec les tables `player_balance`, `coin_serial`, `market_item_state`, `market_rotation`, `villager_instance`, `city`, `city_member`, `city_contribution` et `meta`.
 
 ### Articles ajoutés en 26.3
 
@@ -124,10 +164,4 @@ Le build exige un JDK 25 :
 JAVA_HOME=/chemin/vers/jdk-25 mvn package
 ```
 
-Le jar produit est `target/VanillaEconomy-1.0.0.jar`. Les tests unitaires (prix, rotation, promotions) sont lancés par `mvn package`.
-
-Pour vérifier la compilation contre l'API Paper 26.3 :
-
-```bash
-JAVA_HOME=/chemin/vers/jdk-25 mvn package -Dpaper.version=26.3.build.142-beta
-```
+Le jar produit est `target/VanillaEconomy-1.0.0.jar`. Les tests unitaires (prix, rotation, promotions, règles des cités) sont lancés par `mvn package`.
