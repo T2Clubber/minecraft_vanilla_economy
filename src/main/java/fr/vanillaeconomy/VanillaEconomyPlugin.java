@@ -71,6 +71,8 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new MarketGuiListener(this), this);
             market.onChange(MarketGuiListener::refreshAll);
             market.onRotation(MarketGuiListener::closeAll);
+            // keeps the "next rotation" clock of open GUIs up to date
+            getServer().getScheduler().runTaskTimer(this, MarketGuiListener::refreshAll, 20L * 20, 20L * 20);
             villagers.start();
         } catch (SQLException | RuntimeException e) {
             getLogger().log(Level.SEVERE, "Initialisation impossible, plugin désactivé", e);

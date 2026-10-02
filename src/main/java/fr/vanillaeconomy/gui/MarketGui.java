@@ -25,7 +25,9 @@ import java.util.UUID;
 
 /**
  * Common layout of the two market interfaces: one slot per rotation entry (8 by
- * default, ordered by category) followed by a button switching to the other interface.
+ * default, ordered by category) on the top row(s), then a bottom row with the
+ * balance, the time left before the next rotation and the button switching to the
+ * other interface.
  * Items shown come from the rotation of the clicked villager's biome group; prices and
  * stock come from the global {@link MarketManager}.
  */
@@ -33,6 +35,9 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
 
     /** Max distance between the player and the villager while trading. */
     private static final double MAX_DISTANCE_SQ = 8 * 8;
+    /** custom_model_data of the navigation icons, see resourcepack/assets/minecraft/items/gold_nugget.json. */
+    private static final int ICON_GO_TO_BUY = 1002;
+    private static final int ICON_GO_TO_SELL = 1003;
 
     protected final MarketManager market;
     protected final CurrencyManager currency;
@@ -40,6 +45,8 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     protected final UUID villagerId;
     protected final String group;
     private final Inventory inventory;
+    private final int balanceSlot;
+    private final int clockSlot;
     private final int toggleSlot;
     private List<Material> slots = List.of();
 
@@ -50,7 +57,9 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
         this.villagerId = villager.getUniqueId();
         this.group = MarketManager.groupOf(villager);
         int entries = market.rotationFor(group).buy().size();
-        int size = Math.min(54, ((entries + 1 + 8) / 9) * 9);
+        int size = Math.min(54, ((entries + 8) / 9 + 1) * 9);
+        this.balanceSlot = size - 9;
+        this.clockSlot = size - 5;
         this.toggleSlot = size - 1;
         this.inventory = Bukkit.createInventory(this, size, title);
     }
@@ -64,7 +73,10 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
 
     protected abstract MarketGui opposite(Villager villager);
 
-    protected abstract String toggleLabel();
+    /** Name and hint of the button leading to the other interface. */
+    protected abstract String toggleName();
+
+    protected abstract String toggleHint();
 
     @Override
     public @NotNull Inventory getInventory() {
@@ -83,12 +95,18 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     public void render() {
         var rotation = market.rotationFor(group);
         slots = new ArrayList<>(side() == Side.SELL ? rotation.sell() : rotation.buy());
-        inventory.clear();
-        for (int i = 0; i < slots.size() && i < toggleSlot; i++) {
+        ItemStack[] contents = new ItemStack[inventory.getSize()];
+        java.util.Arrays.fill(contents, filler());
+        for (int i = 0; i < slots.size() && i < balanceSlot; i++) {
             Material material = slots.get(i);
-            inventory.setItem(i, material == null ? filler() : renderItem(material));
+            if (material != null) {
+                contents[i] = renderItem(material);
+            }
         }
-        inventory.setItem(toggleSlot, toggleButton());
+        contents[balanceSlot] = balanceItem();
+        contents[clockSlot] = clockItem();
+        contents[toggleSlot] = toggleButton();
+        inventory.setContents(contents);
     }
 
     /** Routes a click on the top inventory. */
@@ -120,17 +138,38 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     }
 
     private ItemStack toggleButton() {
-        ItemStack button = ItemStack.of(side() == Side.BUY ? Material.CHEST : Material.EMERALD);
+        ItemStack button = currency.icon(side() == Side.BUY ? ICON_GO_TO_SELL : ICON_GO_TO_BUY);
         ItemMeta meta = button.getItemMeta();
-        meta.displayName(Messages.item("<yellow>" + toggleLabel()));
-        List<Component> lore = new ArrayList<>();
-        lore.add(Messages.item("<gray>Solde : <gold><balance>", Messages.p("balance", Messages.coins(balance()))));
-        long minutes = Math.max(0, (market.nextRotationAt() - System.currentTimeMillis()) / 60_000L);
-        lore.add(Messages.item("<dark_gray>Nouvel étal dans <time>",
-                Messages.p("time", minutes >= 60 ? (minutes / 60) + " h " + (minutes % 60) + " min" : minutes + " min")));
-        meta.lore(lore);
+        meta.displayName(Messages.item(toggleName()));
+        meta.lore(List.of(Messages.item("<gray>" + toggleHint())));
         button.setItemMeta(meta);
         return button;
+    }
+
+    private ItemStack balanceItem() {
+        ItemStack coin = currency.icon(currency.customModelData());
+        ItemMeta meta = coin.getItemMeta();
+        meta.displayName(Messages.item("<gold>Solde : <yellow><balance>", Messages.p("balance", Messages.coins(balance()))));
+        coin.setItemMeta(meta);
+        return coin;
+    }
+
+    private ItemStack clockItem() {
+        ItemStack clock = ItemStack.of(Material.CLOCK);
+        ItemMeta meta = clock.getItemMeta();
+        meta.displayName(Messages.item("<aqua>Prochaine rotation : <white><time>",
+                Messages.p("time", timeLeft(market.nextRotationAt() - System.currentTimeMillis()))));
+        meta.lore(List.of(Messages.item("<gray>Les étals et les prix changent à chaque rotation.")));
+        clock.setItemMeta(meta);
+        return clock;
+    }
+
+    static String timeLeft(long millis) {
+        long minutes = Math.max(0, millis) / 60_000L;
+        if (minutes < 1) {
+            return "moins d'une minute";
+        }
+        return minutes >= 60 ? (minutes / 60) + " h " + String.format("%02d", minutes % 60) + " min" : minutes + " min";
     }
 
     protected long balance() {

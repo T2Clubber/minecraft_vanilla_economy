@@ -7,6 +7,14 @@
       {
         "threshold": 1001,
         "model": { "type": "minecraft:model", "model": "vanillaeco:item/piece" }
+      },
+      {
+        "threshold": 1002,
+        "model": { "type": "minecraft:model", "model": "vanillaeco:item/piece_achat" }
+      },
+      {
+        "threshold": 1003,
+        "model": { "type": "minecraft:model", "model": "vanillaeco:item/piece_vente" }
       }
     ],
     "fallback": { "type": "minecraft:model", "model": "minecraft:item/gold_nugget" }

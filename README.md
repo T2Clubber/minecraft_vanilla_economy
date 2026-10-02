@@ -18,10 +18,14 @@ Le jar produit est `target/VanillaEconomy-1.0.0.jar`, à placer dans `plugins/`.
 
 ## Resource pack (texture de la pièce)
 
-La pièce est une pépite d'or portant `custom_model_data = 1001`. Le pack (`resourcepack/`) l'affiche avec la texture `art/coin_model.jpeg` convertie en 48×48. Un joueur qui refuse le pack voit simplement une pépite d'or, et ses propres packs restent actifs.
+La pièce est une pépite d'or portant `custom_model_data = 1001`. Le pack (`resourcepack/`) l'affiche avec la texture `art/coin_model.jpeg` convertie en 48×48. Les valeurs 1002 et 1003 sont les icônes de navigation des interfaces (pièce + « A » vert vers l'Achat, pièce + « V » rouge vers la Vente). Un joueur qui refuse le pack voit simplement une pépite d'or, et ses propres packs restent actifs.
 
 ```bash
 python3 tools/convert_coin.py art/coin_model.jpeg resourcepack/assets/vanillaeco/textures/item/piece.png
+```
+
+```bash
+python3 tools/make_icons.py
 ```
 
 ```bash

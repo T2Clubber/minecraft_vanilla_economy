@@ -20,7 +20,7 @@ import java.util.List;
 public final class SellGUI extends MarketGui {
 
     public SellGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager) {
-        super(market, currency, viewer, villager, Messages.parse("<dark_red>Idiot du village — Vente"));
+        super(market, currency, viewer, villager, Messages.parse("<dark_red>Vente"));
     }
 
     @Override
@@ -29,8 +29,13 @@ public final class SellGUI extends MarketGui {
     }
 
     @Override
-    protected String toggleLabel() {
-        return "Acheter des objets à l'idiot →";
+    protected String toggleName() {
+        return "<green><bold>Achat";
+    }
+
+    @Override
+    protected String toggleHint() {
+        return "Acheter des objets à l'idiot";
     }
 
     @Override

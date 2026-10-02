@@ -231,6 +231,27 @@ public final class CurrencyManager {
         return stack;
     }
 
+    /** custom_model_data of real coins (0 = none). */
+    public int customModelData() {
+        return customModelData;
+    }
+
+    /**
+     * Display-only item on the coin material with the given custom_model_data (resource
+     * pack variant). It carries no serial: it is not money and cannot be deposited.
+     */
+    public ItemStack icon(int modelData) {
+        ItemStack stack = ItemStack.of(coinMaterial);
+        if (modelData > 0) {
+            ItemMeta meta = stack.getItemMeta();
+            CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+            cmd.setFloats(List.of((float) modelData));
+            meta.setCustomModelDataComponent(cmd);
+            stack.setItemMeta(meta);
+        }
+        return stack;
+    }
+
     /** True for anything carrying the coin tag, valid or not. */
     public boolean isCoin(ItemStack stack) {
         if (stack == null || stack.isEmpty() || !stack.hasItemMeta()) {
