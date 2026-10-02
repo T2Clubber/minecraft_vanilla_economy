@@ -45,11 +45,28 @@ public final class PricingEngine {
     }
 
     /**
-     * Promotional villager selling price: {@code sell * (1 - discount)}, never below
-     * {@code buy + floor} so that sell &gt;= buy still holds during a promotion.
+     * BUY-interface promotion (villager sells cheaper):
+     * {@code sell_promo = max(buy, sell * (1 - percent))}, so sell &gt;= buy still holds.
      */
-    public double promoSellUnit(Prices prices, double discount) {
-        return Math.max(prices.sellUnit() * (1 - discount), prices.buyUnit() + floorPerUnit);
+    public Prices promoSell(Prices regular, int percent) {
+        return new Prices(regular.buyUnit(), Math.max(regular.buyUnit(), regular.sellUnit() * (1 - percent / 100.0)));
+    }
+
+    /**
+     * SELL-interface promotion (villager pays more): the reference lot shrinks to
+     * {@link PromotionManager#effectiveBaseNumber}, which raises the base unit price; the
+     * circulation decay keeps its normal scale. The selling price is raised if needed so
+     * that sell &gt;= buy still holds (the item is not on the BUY side during this cycle).
+     */
+    public Prices promoBuy(MarketItem item, double circulation, Prices regular, int percent) {
+        int effective = PromotionManager.effectiveBaseNumber(item.baseNumber(), percent);
+        if (effective == item.baseNumber()) {
+            return regular;
+        }
+        double scale = item.baseNumber() * scaleLots;
+        double buy = Math.max(floorPerUnit,
+                item.basePrice() / effective * Math.exp(-k * Math.max(0, circulation) / scale));
+        return new Prices(buy, Math.max(regular.sellUnit(), buy));
     }
 
     /** Hard constraints, verified after every recalculation. */

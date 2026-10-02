@@ -8,13 +8,10 @@ import fr.vanillaeconomy.market.PricingEngine;
 import fr.vanillaeconomy.market.RotationEngine.Side;
 import fr.vanillaeconomy.util.Messages;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +49,7 @@ public final class BuyGUI extends MarketGui {
         int lot = PricingEngine.lotSize(s.sellUnit());
         int stack = material.getMaxStackSize();
         List<Component> lore = new ArrayList<>();
-        if (s.promo()) {
+        if (s.sellPromo()) {
             lore.add(Messages.item("<gray>Prix : <dark_gray><st><old></st></dark_gray> <gold><price></gold> les <n>",
                     Messages.p("old", Messages.coins(PricingEngine.total(s.regularSellUnit(), lot))),
                     Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), lot))), Messages.p("n", lot)));
@@ -74,19 +71,7 @@ public final class BuyGUI extends MarketGui {
                     Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), bulk)))));
         }
         ItemStack item = icon(material, lot, lore, false);
-        return s.promo() ? promoStyle(item, s) : item;
-    }
-
-    /** Glint + "PROMO -25%" after the item name. */
-    private static ItemStack promoStyle(ItemStack stack, ItemState s) {
-        long percent = Math.round((1 - s.sellUnit() / s.regularSellUnit()) * 100);
-        ItemMeta meta = stack.getItemMeta();
-        meta.setEnchantmentGlintOverride(true);
-        meta.displayName(Component.translatable(stack.translationKey(), NamedTextColor.WHITE)
-                .decoration(TextDecoration.ITALIC, false)
-                .append(Messages.item(" <gold><bold>PROMO -<pct>%", Messages.p("pct", percent))));
-        stack.setItemMeta(meta);
-        return stack;
+        return s.sellPromo() ? promoStyle(item, market.promoPercent()) : item;
     }
 
     @Override

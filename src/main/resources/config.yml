@@ -51,19 +51,16 @@ market:
   check_interval_seconds: 60
   # Annonce aux joueurs lors d'une rotation.
   broadcast_rotation: true
-  # Prix promotionnels (interface ACHAT : l'idiot vend moins cher).
-  # Une rotation "promo" met au moins un article en promotion par biome ; la
-  # remise est globale (même prix chez tous les idiots qui le proposent) et
-  # ne fait jamais passer le prix sous prix_rachat + plancher.
+  # Promotions : chaque jour, per_day rotations sur 12 (créneaux tirés au
+  # hasard et planifiés à l'avance, rotations calées sur 00h, 02h, ... 22h)
+  # appliquent une réduction aléatoire entre min_percent et max_percent :
+  #  - interface VENTE : base_number effectif réduit (items avec base_number > 1)
+  #    -> l'idiot paie plus cher par unité ;
+  #  - interface ACHAT : prix_vente = max(prix_achat, prix_vente * (1 - réduction)).
   promo:
-    # Garantie : au moins min_per_window rotations promo sur toute fenêtre
-    # de window rotations consécutives (2 sur 12 = au moins 2 par 24 h).
-    window: 12
-    min_per_window: 2
-    # Probabilité d'une promo supplémentaire à chaque rotation.
-    chance: 0.15
-    # Remise appliquée au prix de vente de l'idiot (0.25 = -25 %).
-    discount: 0.25
+    per_day: 2
+    min_percent: 5
+    max_percent: 50
 
 villagers:
   # Intervalle (en secondes) de vérification des bébés idiots suivis pour

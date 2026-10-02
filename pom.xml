@@ -14,8 +14,8 @@
         <!-- Minecraft 26.x / Paper 26.x requires Java 25 -->
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- 26.2 is the first version shipping minecraft:sulfur_spike; the plugin also runs on 26.3 -->
-        <paper.version>26.2.build.129-stable</paper.version>
+        <!-- Target: Paper 26.3 (Minecraft 26.3) -->
+        <paper.version>26.3.build.143-beta</paper.version>
         <sqlite.version>3.53.4.0</sqlite.version>
         <junit.version>5.11.4</junit.version>
     </properties>

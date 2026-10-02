@@ -161,8 +161,9 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
                 Messages.p("time", timeLeft(market.nextRotationAt() - System.currentTimeMillis()))));
         List<Component> lore = new ArrayList<>();
         lore.add(Messages.item("<gray>Les étals et les prix changent à chaque rotation."));
-        if (market.promoActive()) {
-            lore.add(Messages.item("<gold>✦ Promotions en cours jusqu'à la prochaine rotation ✦"));
+        if (market.promoPercent() > 0) {
+            lore.add(Messages.item("<gold>✦ PROMO -<pct>% jusqu'à la prochaine rotation ✦",
+                    Messages.p("pct", market.promoPercent())));
             meta.setEnchantmentGlintOverride(true);
         }
         meta.lore(lore);
@@ -192,6 +193,17 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
         meta.setHideTooltip(true);
         pane.setItemMeta(meta);
         return pane;
+    }
+
+    /** Glint + "PROMO -X%" after the item name. */
+    protected static ItemStack promoStyle(ItemStack stack, int percent) {
+        ItemMeta meta = stack.getItemMeta();
+        meta.setEnchantmentGlintOverride(true);
+        meta.displayName(Component.translatable(stack.translationKey(), NamedTextColor.WHITE)
+                .decoration(TextDecoration.ITALIC, false)
+                .append(Messages.item(" <gold><bold>PROMO -<pct>%", Messages.p("pct", percent))));
+        stack.setItemMeta(meta);
+        return stack;
     }
 
     /** Item icon with the given lore; {@code greyed} also greys out its name. */

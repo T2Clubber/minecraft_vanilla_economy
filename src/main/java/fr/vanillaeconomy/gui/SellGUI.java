@@ -49,8 +49,14 @@ public final class SellGUI extends MarketGui {
         int lot = PricingEngine.lotSize(s.buyUnit());
         int owned = MarketManager.countPlain(viewer, material);
         List<Component> lore = new ArrayList<>();
-        lore.add(Messages.item("<gray>Rachat : <gold><price></gold> les <n>",
-                Messages.p("price", Messages.coins(PricingEngine.total(s.buyUnit(), lot))), Messages.p("n", lot)));
+        if (s.buyPromo()) {
+            lore.add(Messages.item("<gray>Rachat : <dark_gray><st><old></st></dark_gray> <gold><price></gold> les <n>",
+                    Messages.p("old", Messages.coins(PricingEngine.total(s.regularBuyUnit(), lot))),
+                    Messages.p("price", Messages.coins(PricingEngine.total(s.buyUnit(), lot))), Messages.p("n", lot)));
+        } else {
+            lore.add(Messages.item("<gray>Rachat : <gold><price></gold> les <n>",
+                    Messages.p("price", Messages.coins(PricingEngine.total(s.buyUnit(), lot))), Messages.p("n", lot)));
+        }
         lore.add(Messages.item("<dark_gray><unit> pièce / unité", Messages.p("unit", Messages.unitPrice(s.buyUnit()))));
         lore.add(Messages.item("<gray>Vous en avez : <white><owned>", Messages.p("owned", owned)));
         lore.add(Component.empty());
@@ -61,7 +67,8 @@ public final class SellGUI extends MarketGui {
         } else {
             lore.add(Messages.item("<red>Il vous en faut au moins <n>", Messages.p("n", lot)));
         }
-        return icon(material, lot, lore, false);
+        ItemStack item = icon(material, lot, lore, false);
+        return s.buyPromo() ? promoStyle(item, market.promoPercent()) : item;
     }
 
     @Override
