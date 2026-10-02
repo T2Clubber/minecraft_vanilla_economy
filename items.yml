@@ -103,6 +103,11 @@ categories:
     - { id: MELON_SLICE,      tier: common,   base_price: 1,   base_number: 32 }
     - { id: PUMPKIN,          tier: common,   base_price: 2,   base_number: 32 }
     - { id: LEATHER,          tier: common,   base_price: 4,   base_number: 32 }
+    # Ajouts 26.3 (Wilderness Bound) - forêt mouchetée. Ignorés avec un
+    # avertissement sur un serveur 26.2. Prix calés sur RED/BROWN_MUSHROOM
+    # et les fleurs.
+    - { id: SHELF_MUSHROOM,   tier: common,   base_price: 2,   base_number: 32 }
+    - { id: RED_SHRUB,        tier: common,   base_price: 2,   base_number: 32 }
 
   hostile_mob:
     - { id: SPIDER_EYE,       tier: common,   base_price: 2,   base_number: 32 }
@@ -129,6 +134,8 @@ categories:
     - { id: MANGROVE_LOG,     tier: common, base_price: 2, base_number: 64 }
     - { id: CHERRY_LOG,       tier: common, base_price: 2, base_number: 64 }
     - { id: PALE_OAK_LOG,     tier: common, base_price: 2, base_number: 64 }
+    # Ajout 26.3 : bûche de peuplier, même prix que les autres bûches
+    - { id: POPLAR_LOG,       tier: common, base_price: 2, base_number: 64 }
     - { id: CRIMSON_STEM,     tier: common, base_price: 3, base_number: 64 }
     - { id: WARPED_STEM,      tier: common, base_price: 3, base_number: 64 }
     - { id: OCHRE_FROGLIGHT,       tier: rare, base_price: 10, base_number: 64 }
@@ -159,6 +166,11 @@ categories:
     - { id: BLACKSTONE,       tier: common,   base_price: 1, base_number: 64 }
     - { id: DIRT,             tier: common,   base_price: 1, base_number: 64 }
     - { id: MOSS_BLOCK,       tier: uncommon, base_price: 3, base_number: 32 }
+    # Ajouts 26.3 : feuilles de peuplier (cisailles, forêt mouchetée
+    # uniquement), abondantes : prix du sable / de la terre
+    - { id: RED_POPLAR_LEAVES,    tier: common, base_price: 1, base_number: 64 }
+    - { id: ORANGE_POPLAR_LEAVES, tier: common, base_price: 1, base_number: 64 }
+    - { id: YELLOW_POPLAR_LEAVES, tier: common, base_price: 1, base_number: 64 }
 
   other:
     - { id: PRISMARINE_SHARD,     tier: common,    base_price: 3,  base_number: 32 }
