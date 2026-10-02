@@ -49,13 +49,18 @@ public final class MarketManager {
         private long stock;
         private double buyUnit;
         private double sellUnit;
+        private double regularSellUnit;
+        private boolean promo;
 
         public double circulation() { return circulation; }
         public long stock() { return stock; }
         /** What a villager pays the player per unit (SELL interface). */
         public double buyUnit() { return buyUnit; }
-        /** What a villager charges the player per unit (BUY interface). */
+        /** What a villager charges the player per unit (BUY interface), promotion included. */
         public double sellUnit() { return sellUnit; }
+        /** Selling price without the promotion. */
+        public double regularSellUnit() { return regularSellUnit; }
+        public boolean promo() { return promo; }
     }
 
     public enum TradeStatus { OK, NOT_OFFERED, OUT_OF_STOCK, NOT_ENOUGH_ITEMS, NOT_ENOUGH_MONEY, NO_SPACE, ERROR }
@@ -69,6 +74,9 @@ public final class MarketManager {
 
     private static final String META_NEXT_ROTATION = "next_rotation_at";
     private static final String META_CYCLE = "rotation_cycle";
+    private static final String META_LAYOUT = "rotation_layout";
+    private static final String META_PROMO_HISTORY = "promo_history";
+    private static final String META_PROMO_ITEMS = "promo_items";
 
     private final Plugin plugin;
     private final Database db;
@@ -79,12 +87,16 @@ public final class MarketManager {
     private final long intervalMillis;
     private final boolean broadcastRotation;
     private final ConfigurationSection biomePools;
+    private final PromoScheduler promoScheduler;
+    private final double promoDiscount;
     private final Random random = new Random();
 
     private final Map<Material, ItemState> states = new HashMap<>();
     private final Map<String, Rotation<Material>> rotations = new HashMap<>();
     private long nextRotationAt;
     private long cycle;
+    private String promoHistory = "";
+    private Set<Material> promoItems = Set.of();
     private BukkitTask task;
     private final List<Runnable> changeListeners = new ArrayList<>();
     private final List<Runnable> rotationListeners = new ArrayList<>();
@@ -106,6 +118,12 @@ public final class MarketManager {
         this.rotationEngine = new RotationEngine<>(config.slotsPerCategory(),
                 mat -> favor && stockOf(mat) > 0 ? inStockWeight : 1.0);
         this.biomePools = plugin.getConfig().getConfigurationSection("biome_pools");
+        ConfigurationSection promo = m == null ? null : m.getConfigurationSection("promo");
+        this.promoScheduler = new PromoScheduler(
+                promo == null ? 12 : promo.getInt("window", 12),
+                promo == null ? 2 : promo.getInt("min_per_window", 2),
+                promo == null ? 0.15 : promo.getDouble("chance", 0.15));
+        this.promoDiscount = Math.clamp(promo == null ? 0.25 : promo.getDouble("discount", 0.25), 0.0, 0.9);
     }
 
     // ------------------------------------------------------------------
@@ -131,12 +149,20 @@ public final class MarketManager {
         // Prices are always recomputed from the circulation counters (config may have changed).
         recomputePrices();
 
-        boolean rotationValid = loadRotations();
+        boolean layoutChanged = !db.getMeta(META_LAYOUT).orElse("").equals(layoutSignature());
+        boolean rotationValid = !layoutChanged && loadRotations();
         nextRotationAt = db.getMeta(META_NEXT_ROTATION).map(Long::parseLong).orElse(0L);
         cycle = db.getMeta(META_CYCLE).map(Long::parseLong).orElse(0L);
+        promoHistory = db.getMeta(META_PROMO_HISTORY).orElse("");
+        if (rotationValid) {
+            promoItems = parsePromoItems(db.getMeta(META_PROMO_ITEMS).orElse(""));
+            applyPromos(promoItems);
+        }
         if (!rotationValid || nextRotationAt == 0) {
-            plugin.getLogger().info("Aucune rotation valide en base : tirage initial du marché.");
-            runCycle(false);
+            plugin.getLogger().info(layoutChanged
+                    ? "Répartition des slots modifiée (" + layoutSignature() + ") : nouveau tirage du marché."
+                    : "Aucune rotation valide en base : tirage initial du marché.");
+            runCycle(false, null);
         } else {
             persistStates();
         }
@@ -145,7 +171,7 @@ public final class MarketManager {
     public void start(long checkIntervalTicks) {
         task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (System.currentTimeMillis() >= nextRotationAt) {
-                runCycle(true);
+                runCycle(true, null);
             }
         }, checkIntervalTicks, checkIntervalTicks);
     }
@@ -168,14 +194,24 @@ public final class MarketManager {
     // Rotation cycle (every rotation_interval_hours)
     // ------------------------------------------------------------------
 
-    /** Decay → reprice → check constraints → draw rotations → persist. */
-    public void runCycle(boolean applyDecay) {
+    /**
+     * Decay → reprice → draw rotations → promotions → check constraints → persist.
+     *
+     * @param forcePromo null = let the {@link PromoScheduler} decide, otherwise force it
+     */
+    public void runCycle(boolean applyDecay, Boolean forcePromo) {
         if (applyDecay) {
             states.values().forEach(s -> s.circulation = PricingEngine.decay(s.circulation, circulationDecay));
         }
         recomputePrices();
         Map<String, Rotation<Material>> drawn = rotationEngine.draw(buildPools(allGroups()), random);
         verifyNoOverlap(drawn.values());
+        boolean wanted = forcePromo != null ? forcePromo : promoScheduler.decide(promoHistory, random);
+        Set<Material> promos = wanted ? pickPromos(drawn) : Set.of();
+        applyPromos(promos);
+        // Only a cycle that really shows promotions counts towards the "2 out of 12" guarantee.
+        boolean promo = !promos.isEmpty();
+        String history = promoScheduler.push(promoHistory, promo);
         long next = System.currentTimeMillis() + intervalMillis;
         try {
             db.transaction(c -> {
@@ -186,6 +222,9 @@ public final class MarketManager {
                 writeRotations(c, drawn);
                 Database.setMeta(c, META_NEXT_ROTATION, Long.toString(next));
                 Database.setMeta(c, META_CYCLE, Long.toString(cycle + 1));
+                Database.setMeta(c, META_LAYOUT, layoutSignature());
+                Database.setMeta(c, META_PROMO_HISTORY, history);
+                Database.setMeta(c, META_PROMO_ITEMS, String.join(",", promos.stream().map(Material::name).sorted().toList()));
                 return null;
             });
         } catch (SQLException e) {
@@ -197,12 +236,76 @@ public final class MarketManager {
         rotations.putAll(drawn);
         nextRotationAt = next;
         cycle++;
-        plugin.getLogger().info("Rotation du marché n°" + cycle + " effectuée (" + drawn.size() + " biomes).");
+        promoHistory = history;
+        promoItems = promos;
+        plugin.getLogger().info("Rotation du marché n°" + cycle + " effectuée (" + drawn.size() + " biomes)"
+                + (promo ? ", promotions : " + promos : "") + ".");
         rotationListeners.forEach(Runnable::run);
-        if (broadcastRotation && applyDecay) {
-            Bukkit.getOnlinePlayers().forEach(p -> Messages.send(p,
-                    "<gray>Les idiots du village ont renouvelé leurs étals ! Nouveaux prix en vigueur."));
+        if (broadcastRotation) {
+            Bukkit.getOnlinePlayers().forEach(p -> {
+                if (applyDecay) {
+                    Messages.send(p, "<gray>Les idiots du village ont renouvelé leurs étals ! Nouveaux prix en vigueur.");
+                }
+                if (promo) {
+                    Messages.send(p, "<gold><bold>Promotions</bold> chez les idiots du village jusqu'à la prochaine rotation !");
+                }
+            });
         }
+    }
+
+    /**
+     * One promoted item per biome group (unless its BUY list already holds an item
+     * promoted for another group), preferably in stock and with a real discount. The
+     * promotion is global like every price: it applies at every villager showing the item.
+     */
+    private Set<Material> pickPromos(Map<String, Rotation<Material>> drawn) {
+        Set<Material> chosen = new HashSet<>();
+        List<String> groups = new ArrayList<>(drawn.keySet());
+        Collections.shuffle(groups, random);
+        for (String group : groups) {
+            List<Material> buy = drawn.get(group).buy().stream().filter(java.util.Objects::nonNull).toList();
+            if (buy.stream().anyMatch(chosen::contains)) {
+                continue;
+            }
+            List<Material> candidates = buy.stream().filter(mat -> {
+                ItemState s = states.get(mat);
+                return pricing.promoSellUnit(new PricingEngine.Prices(s.buyUnit, s.regularSellUnit), promoDiscount) < s.regularSellUnit;
+            }).toList();
+            List<Material> inStock = candidates.stream().filter(mat -> stockOf(mat) > 0).toList();
+            List<Material> pool = inStock.isEmpty() ? candidates : inStock;
+            if (!pool.isEmpty()) {
+                chosen.add(pool.get(random.nextInt(pool.size())));
+            }
+        }
+        return Collections.unmodifiableSet(chosen);
+    }
+
+    /** Applies promotional prices on top of freshly computed regular prices. */
+    private void applyPromos(Set<Material> promos) {
+        for (Material mat : promos) {
+            ItemState s = states.get(mat);
+            if (s == null) {
+                continue;
+            }
+            s.sellUnit = pricing.promoSellUnit(new PricingEngine.Prices(s.buyUnit, s.regularSellUnit), promoDiscount);
+            s.promo = true;
+            pricing.check(config.items().get(mat), new PricingEngine.Prices(s.buyUnit, s.sellUnit));
+        }
+    }
+
+    private Set<Material> parsePromoItems(String raw) {
+        Set<Material> set = new HashSet<>();
+        for (String id : raw.split(",")) {
+            Material mat = id.isBlank() ? null : Material.matchMaterial(id);
+            if (mat != null && states.containsKey(mat)) {
+                set.add(mat);
+            }
+        }
+        return Collections.unmodifiableSet(set);
+    }
+
+    public boolean promoActive() {
+        return !promoItems.isEmpty();
     }
 
     private void recomputePrices() {
@@ -211,12 +314,21 @@ public final class MarketManager {
             PricingEngine.Prices prices = pricing.compute(item, s.circulation);
             s.buyUnit = prices.buyUnit();
             s.sellUnit = prices.sellUnit();
+            s.regularSellUnit = prices.sellUnit();
+            s.promo = false;
         }
         // Hard constraint re-checked on every recalculation, not only at init.
         for (MarketItem item : config.items().values()) {
             ItemState s = states.get(item.material());
             pricing.check(item, new PricingEngine.Prices(s.buyUnit, s.sellUnit));
         }
+    }
+
+    /** e.g. "minerals:1,food_nature:3,hostile_mob:1,blocks:3,other:1": a change invalidates stored rotations. */
+    private String layoutSignature() {
+        StringBuilder sb = new StringBuilder();
+        config.slotsPerCategory().forEach((category, n) -> sb.append(sb.isEmpty() ? "" : ",").append(category).append(':').append(n));
+        return sb.toString();
     }
 
     private static void verifyNoOverlap(Iterable<Rotation<Material>> drawn) {
@@ -382,6 +494,26 @@ public final class MarketManager {
         givePlain(player, material, (int) quantity);
         changeListeners.forEach(Runnable::run);
         return new TradeResult(TradeStatus.OK, quantity, cost, lot);
+    }
+
+    /** Admin: sets the global stock of an item. Returns false if the item is not in items.yml. */
+    public boolean setStock(Material material, long stock) {
+        ItemState s = states.get(material);
+        if (s == null || stock < 0) {
+            return false;
+        }
+        try {
+            db.transaction(c -> {
+                updateState(c, material, stock, s.circulation);
+                return null;
+            });
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "setstock impossible pour " + material, e);
+            return false;
+        }
+        s.stock = stock;
+        changeListeners.forEach(Runnable::run);
+        return true;
     }
 
     // ------------------------------------------------------------------
@@ -578,7 +710,8 @@ public final class MarketManager {
         if (item == null || s == null) {
             return material + " n'est pas dans items.yml";
         }
-        return String.format(Locale.ROOT, "%s [%s/%s] base=%.4f/u achat-PNJ=%.4f/u vente-PNJ=%.4f/u stock=%d circulation=%.1f",
-                material, item.category(), item.tier(), item.baseUnitPrice(), s.buyUnit, s.sellUnit, s.stock, s.circulation);
+        return String.format(Locale.ROOT, "%s [%s/%s] base=%.4f/u achat-PNJ=%.4f/u vente-PNJ=%.4f/u%s stock=%d circulation=%.1f",
+                material, item.category(), item.tier(), item.baseUnitPrice(), s.buyUnit, s.sellUnit,
+                s.promo ? String.format(Locale.ROOT, " (PROMO, normal %.4f/u)", s.regularSellUnit) : "", s.stock, s.circulation);
     }
 }

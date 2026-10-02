@@ -44,6 +44,14 @@ public final class PricingEngine {
         return prices;
     }
 
+    /**
+     * Promotional villager selling price: {@code sell * (1 - discount)}, never below
+     * {@code buy + floor} so that sell &gt;= buy still holds during a promotion.
+     */
+    public double promoSellUnit(Prices prices, double discount) {
+        return Math.max(prices.sellUnit() * (1 - discount), prices.buyUnit() + floorPerUnit);
+    }
+
     /** Hard constraints, verified after every recalculation. */
     public void check(MarketItem item, Prices prices) {
         if (!(prices.buyUnit() >= floorPerUnit) || !(prices.sellUnit() >= prices.buyUnit())

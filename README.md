@@ -48,10 +48,11 @@ require-resource-pack=false
 | `/pay <joueur> <montant>` | Transfert atomique (même monde, 10 blocs max) |
 | `/money drop <montant>` | Convertit du solde en pièces physiques (nouvelle série signée) |
 | `/money deposit` | Crédite les pièces tenues en main (vérification signature + registre anti-dupe) |
-| `/marketadmin rotate` / `info <item>` | Admin : force une rotation / affiche l'état d'un item |
+| `/marketadmin rotate [promo]` / `info <item>` / `setstock <item> <n>` | Admin : force une rotation (avec promotions si `promo`) / affiche l'état d'un item / fixe son stock global |
 
 ## Idiots marchands
 
 - Clic droit : interface **ACHAT** (l'idiot vend). Sneak + clic droit : interface **VENTE** (l'idiot achète). Un bouton permet de passer de l'une à l'autre.
 - Clic : 1 lot (la plus petite quantité qui vaut au moins 1 pièce). Shift-clic : une stack (achat) ou tout l'inventaire (vente).
 - Avec un name tag ou une laisse en main, le clic garde son comportement vanilla.
+- Promotions : au moins 2 rotations sur 12 consécutives (≈ 2 par 24 h) mettent au moins un article par biome en promo dans l'interface Achat (-25 % par défaut, jamais sous prix de rachat + plancher). Réglages dans `config.yml`, section `market.promo`.

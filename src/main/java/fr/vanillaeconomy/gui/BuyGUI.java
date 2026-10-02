@@ -8,10 +8,13 @@ import fr.vanillaeconomy.market.PricingEngine;
 import fr.vanillaeconomy.market.RotationEngine.Side;
 import fr.vanillaeconomy.util.Messages;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,8 +52,14 @@ public final class BuyGUI extends MarketGui {
         int lot = PricingEngine.lotSize(s.sellUnit());
         int stack = material.getMaxStackSize();
         List<Component> lore = new ArrayList<>();
-        lore.add(Messages.item("<gray>Prix : <gold><price></gold> les <n>",
-                Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), lot))), Messages.p("n", lot)));
+        if (s.promo()) {
+            lore.add(Messages.item("<gray>Prix : <dark_gray><st><old></st></dark_gray> <gold><price></gold> les <n>",
+                    Messages.p("old", Messages.coins(PricingEngine.total(s.regularSellUnit(), lot))),
+                    Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), lot))), Messages.p("n", lot)));
+        } else {
+            lore.add(Messages.item("<gray>Prix : <gold><price></gold> les <n>",
+                    Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), lot))), Messages.p("n", lot)));
+        }
         lore.add(Messages.item("<dark_gray><unit> pièce / unité", Messages.p("unit", Messages.unitPrice(s.sellUnit()))));
         if (s.stock() <= 0) {
             lore.add(Messages.item("<red><bold>Rupture de stock"));
@@ -64,7 +73,20 @@ public final class BuyGUI extends MarketGui {
             lore.add(Messages.item("<yellow>Shift-clic : acheter <n> (<price>)", Messages.p("n", bulk),
                     Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), bulk)))));
         }
-        return icon(material, lot, lore, false);
+        ItemStack item = icon(material, lot, lore, false);
+        return s.promo() ? promoStyle(item, s) : item;
+    }
+
+    /** Glint + "PROMO -25%" after the item name. */
+    private static ItemStack promoStyle(ItemStack stack, ItemState s) {
+        long percent = Math.round((1 - s.sellUnit() / s.regularSellUnit()) * 100);
+        ItemMeta meta = stack.getItemMeta();
+        meta.setEnchantmentGlintOverride(true);
+        meta.displayName(Component.translatable(stack.translationKey(), NamedTextColor.WHITE)
+                .decoration(TextDecoration.ITALIC, false)
+                .append(Messages.item(" <gold><bold>PROMO -<pct>%", Messages.p("pct", percent))));
+        stack.setItemMeta(meta);
+        return stack;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package fr.vanillaeconomy.currency;
 
+import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -10,7 +11,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.inventory.PrepareInventoryResultEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
@@ -67,7 +67,7 @@ public final class CoinProtectionListener implements Listener {
 
     /** Anvil, smithing table, grindstone, cartography, loom, stonecutter... */
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPrepareResult(PrepareInventoryResultEvent event) {
+    public void onPrepareResult(PrepareResultEvent event) {
         if (containsCoin(event.getInventory().getContents())) {
             event.setResult(null);
         }

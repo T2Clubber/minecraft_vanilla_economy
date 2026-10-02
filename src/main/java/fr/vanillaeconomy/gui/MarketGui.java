@@ -159,7 +159,13 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
         ItemMeta meta = clock.getItemMeta();
         meta.displayName(Messages.item("<aqua>Prochaine rotation : <white><time>",
                 Messages.p("time", timeLeft(market.nextRotationAt() - System.currentTimeMillis()))));
-        meta.lore(List.of(Messages.item("<gray>Les étals et les prix changent à chaque rotation.")));
+        List<Component> lore = new ArrayList<>();
+        lore.add(Messages.item("<gray>Les étals et les prix changent à chaque rotation."));
+        if (market.promoActive()) {
+            lore.add(Messages.item("<gold>✦ Promotions en cours jusqu'à la prochaine rotation ✦"));
+            meta.setEnchantmentGlintOverride(true);
+        }
+        meta.lore(lore);
         clock.setItemMeta(meta);
         return clock;
     }

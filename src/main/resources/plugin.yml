@@ -22,7 +22,7 @@ commands:
     permission: vanillaeconomy.pay
   marketadmin:
     description: Administration du marché.
-    usage: "/marketadmin <rotate|info <item>|reload>"
+    usage: "/marketadmin <rotate|info <item>|setstock <item> <quantité>>"
     permission: vanillaeconomy.admin
 
 permissions:

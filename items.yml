@@ -43,13 +43,13 @@ global:
   rotation_interval_hours: 2
   favor_in_stock_items_for_buy_rotation: true
 
-# Répartition des 8 slots par catégorie, appliquée identiquement aux
+# Répartition des 9 slots par catégorie, appliquée identiquement aux
 # deux interfaces (ACHAT et VENTE)
 slots_per_category:
   minerals: 1
   food_nature: 3
   hostile_mob: 1
-  blocks: 2
+  blocks: 3
   other: 1
 
 # ===================================================================
