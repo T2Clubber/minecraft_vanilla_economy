@@ -130,6 +130,7 @@ Les alias de `/city` sont `/cite` et `/ville`.
 - `cities.yml` : coût de création, mondes autorisés, écart minimal entre cités, paliers, protections, messages d'entrée et de sortie, bordures.
 - `messages.yml` : textes des cités (MiniMessage, variables `{city}`, `{player}`…).
 - `items.yml` : catalogue des articles (catégorie, tier, `base_price` pour `base_number` unités) et répartition des slots. Si la répartition change, la rotation est retirée automatiquement au démarrage.
+- Les **données** ne sont pas dans ce dossier mais **dans le monde** : `world/vanillaeconomy/economy.db` (selon `level-name`). Un nouveau monde démarre donc une économie neuve, et une sauvegarde du monde contient ses soldes, cités et marché. Les versions précédentes gardaient la base dans `plugins/VanillaEconomy/` : elle est déplacée automatiquement dans le monde actuel au premier démarrage.
 - `economy.db` : base SQLite avec les tables `player_balance`, `coin_serial`, `market_item_state`, `market_rotation`, `villager_instance`, `city`, `city_member`, `city_contribution`, `city_notification` et `meta`.
 
 ### Articles ajoutés en 26.3

@@ -34,6 +34,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.logging.Level;
 
@@ -55,7 +58,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
         ServerTime.configure(config.getString("timezone", "Europe/Paris"), getLogger());
 
         try {
-            database = new Database(new File(getDataFolder(), "economy.db"));
+            database = new Database(worldDatabaseFile());
 
             // 1. Currency
             CurrencyManager currency = new CurrencyManager(this, database);
@@ -133,7 +136,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
                 staffLog.serverStarted("**Paper :** " + getServer().getVersion() + "\n**VanillaEconomy :** "
                         + getPluginMeta().getVersion() + "\n**Cités :** " + cities.all().size());
             }
-        } catch (SQLException | RuntimeException e) {
+        } catch (SQLException | IOException | RuntimeException e) {
             getLogger().log(Level.SEVERE, "Initialisation impossible, plugin désactivé", e);
             getServer().getPluginManager().disablePlugin(this);
         }
@@ -161,6 +164,40 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
                 getLogger().log(Level.WARNING, "Fermeture de la base impossible", e);
             }
         }
+    }
+
+    /**
+     * The economy belongs to the Minecraft world: its database lives in the main world
+     * folder (level-name), so a new world starts a fresh economy and a restored world
+     * comes back with its balances and cities. The database of former versions
+     * (plugins/VanillaEconomy/economy.db) is moved into the current world once.
+     */
+    private File worldDatabaseFile() throws IOException {
+        File dir = new File(saveFolder(getServer().getWorlds().getFirst().getWorldFolder()), "vanillaeconomy");
+        Files.createDirectories(dir.toPath());
+        File target = new File(dir, "economy.db");
+        File legacy = new File(getDataFolder(), "economy.db");
+        if (!target.exists() && legacy.exists()) {
+            for (String suffix : new String[]{"", "-wal", "-shm"}) {
+                Path from = Path.of(legacy.getPath() + suffix);
+                if (Files.exists(from)) {
+                    Files.move(from, Path.of(target.getPath() + suffix));
+                }
+            }
+            getLogger().info("Données économiques déplacées dans le monde : " + target.getPath());
+        }
+        getLogger().info("Base de données de ce monde : " + target.getPath());
+        return target;
+    }
+
+    /** Root of the world save (the folder holding level.dat), above dimensions/minecraft/overworld since 26.x. */
+    private static File saveFolder(File worldFolder) {
+        for (File f = worldFolder.getAbsoluteFile(); f != null; f = f.getParentFile()) {
+            if (new File(f, "level.dat").isFile()) {
+                return f;
+            }
+        }
+        return worldFolder;
     }
 
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
