@@ -16,6 +16,7 @@ import fr.vanillaeconomy.command.PayCommand;
 import fr.vanillaeconomy.command.SoldeCommand;
 import fr.vanillaeconomy.currency.CoinProtectionListener;
 import fr.vanillaeconomy.discord.DiscordAnnouncer;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.currency.CurrencyManager;
 import fr.vanillaeconomy.gui.BuyGUI;
 import fr.vanillaeconomy.gui.MarketGuiListener;
@@ -41,6 +42,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     private MarketManager market;
     private NitwitVillagerManager villagers;
     private BorderManager borders;
+    private StaffLog staffLog;
 
     @Override
     public void onEnable() {
@@ -60,9 +62,10 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
 
             // 2. Commands
             register("solde", new SoldeCommand(currency, getLogger()));
-            register("pay", new PayCommand(currency, getLogger(), config.getDouble("pay.max_distance", 10.0)));
+            staffLog = new StaffLog(config.getConfigurationSection("discord"), getLogger());
+            register("pay", new PayCommand(currency, getLogger(), config.getDouble("pay.max_distance", 10.0), staffLog));
             register("money", new MoneyCommand(currency, getLogger(),
-                    config.getLong("currency.max_drop", 2304), config.getBoolean("currency.confiscate_invalid", true)));
+                    config.getLong("currency.max_drop", 2304), config.getBoolean("currency.confiscate_invalid", true), staffLog));
 
             // 3. Global market (items.yml loaded as is)
             var items = ItemConfigLoader.load(YamlConfiguration.loadConfiguration(new File(getDataFolder(), "items.yml")), getLogger());
@@ -76,8 +79,8 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
                         discord.announceUpcomingPromo(pct, start, market.intervalMillis(), market.zone()));
                 getLogger().info("Annonces Discord des promotions activées (webhook).");
             }
-            register("marketadmin", new MarketAdminCommand(market, discord, this));
-            register("eco", new EcoCommand(currency, getLogger()));
+            register("marketadmin", new MarketAdminCommand(market, discord, this, staffLog));
+            register("eco", new EcoCommand(currency, getLogger(), staffLog));
 
             // 4. Market villagers + GUIs
             villagers = new NitwitVillagerManager(this, database,
@@ -107,7 +110,8 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             notifier.load();
             CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier);
             register("city", cityCommand);
-            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier));
+            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog));
+            cities.setAudit(staffLog::city);
             CityBoardGUI.Handler board = new CityBoardGUI.Handler(
                     new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier));
             register("cityboard", board);
@@ -122,6 +126,11 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             pm.registerEvents(notifier, this);
             presence.start();
             borders.start();
+            if (staffLog.enabled()) {
+                getLogger().info("Journal staff Discord activé (webhook #logs-serveur).");
+                staffLog.serverStarted("**Paper :** " + getServer().getVersion() + "\n**VanillaEconomy :** "
+                        + getPluginMeta().getVersion() + "\n**Cités :** " + cities.all().size());
+            }
         } catch (SQLException | RuntimeException e) {
             getLogger().log(Level.SEVERE, "Initialisation impossible, plugin désactivé", e);
             getServer().getPluginManager().disablePlugin(this);
@@ -131,6 +140,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         MarketGuiListener.closeAll();
+        if (staffLog != null) {
+            staffLog.serverStopped();
+        }
         if (borders != null) {
             borders.stop();
         }

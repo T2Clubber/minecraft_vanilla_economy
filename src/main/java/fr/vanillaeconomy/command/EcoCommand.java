@@ -1,6 +1,7 @@
 package fr.vanillaeconomy.command;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.Messages;
 import fr.vanillaeconomy.util.Players;
 import org.bukkit.Bukkit;
@@ -31,8 +32,10 @@ public final class EcoCommand implements TabExecutor {
 
     private final CurrencyManager currency;
     private final Logger logger;
+    private final StaffLog staffLog;
 
-    public EcoCommand(CurrencyManager currency, Logger logger) {
+    public EcoCommand(CurrencyManager currency, Logger logger, StaffLog staffLog) {
+        this.staffLog = staffLog;
         this.currency = currency;
         this.logger = logger;
     }
@@ -98,6 +101,12 @@ public final class EcoCommand implements TabExecutor {
             return true;
         }
         logger.info("[Admin] " + sender.getName() + " : eco " + sub + " " + name + " " + amount);
+        try {
+            staffLog.admin(sender.getName(), "`/eco " + sub + "` **" + name + "** " + amount + " pièces → solde "
+                    + currency.getBalance(uuid) + " pièces");
+        } catch (SQLException ignored) {
+            staffLog.admin(sender.getName(), "`/eco " + sub + "` **" + name + "** " + amount + " pièces");
+        }
         return true;
     }
 

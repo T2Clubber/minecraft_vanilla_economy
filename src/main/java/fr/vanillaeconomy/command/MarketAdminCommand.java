@@ -3,6 +3,7 @@ package fr.vanillaeconomy.command;
 import fr.vanillaeconomy.market.MarketManager;
 import fr.vanillaeconomy.util.Messages;
 import fr.vanillaeconomy.discord.DiscordAnnouncer;
+import fr.vanillaeconomy.discord.StaffLog;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -20,8 +21,10 @@ public final class MarketAdminCommand implements TabExecutor {
     private final MarketManager market;
     private final DiscordAnnouncer discord;
     private final Plugin plugin;
+    private final StaffLog staffLog;
 
-    public MarketAdminCommand(MarketManager market, DiscordAnnouncer discord, Plugin plugin) {
+    public MarketAdminCommand(MarketManager market, DiscordAnnouncer discord, Plugin plugin, StaffLog staffLog) {
+        this.staffLog = staffLog;
         this.market = market;
         this.discord = discord;
         this.plugin = plugin;
@@ -43,6 +46,8 @@ public final class MarketAdminCommand implements TabExecutor {
                 }
             }
             market.runCycle(true, forced);
+            staffLog.admin(sender.getName(), "`/marketadmin rotate" + (forced != null ? " promo " + forced : "")
+                    + "` → rotation n°" + market.cycle() + (market.promoPercent() > 0 ? ", PROMO -" + market.promoPercent() + " %" : ""));
             Messages.send(sender, "<green>Rotation forcée (cycle n°<n>)<promo>.", Messages.p("n", market.cycle()),
                     Messages.p("promo", market.promoPercent() > 0 ? " avec PROMO -" + market.promoPercent() + " %" : ""));
         } else if (args.length == 1 && args[0].equalsIgnoreCase("discordtest")) {
@@ -77,6 +82,7 @@ public final class MarketAdminCommand implements TabExecutor {
                 stock = -1;
             }
             if (material != null && market.setStock(material, stock)) {
+                staffLog.admin(sender.getName(), "`/marketadmin setstock` " + material.name() + " → stock " + stock);
                 Messages.send(sender, "<green>Stock de <item> fixé à <n>.", Messages.p("item", material.name()), Messages.p("n", stock));
             } else {
                 Messages.send(sender, "<red>Item absent d'items.yml ou quantité invalide.");

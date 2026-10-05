@@ -74,6 +74,13 @@ discord:
   # Identifiant du rôle à mentionner (ex : @Notif Marché, clic droit > Copier
   # l'identifiant du rôle). Vide = aucune mention.
   mention_role_id: ""
+  # Journal staff dans #logs-serveur (webhook de ce salon, vide = désactivé) :
+  # pièces falsifiées / dupliquées, commandes /eco, /marketadmin, /cityadmin,
+  # création / agrandissement / dissolution des cités, gros /pay, démarrage et
+  # arrêt du serveur.
+  logs_webhook_url: ""
+  # Montant à partir duquel un /pay est journalisé.
+  logs_pay_threshold: 1000
 
 villagers:
   # Intervalle (en secondes) de vérification des bébés idiots suivis pour

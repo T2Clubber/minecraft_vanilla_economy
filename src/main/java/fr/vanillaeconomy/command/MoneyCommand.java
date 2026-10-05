@@ -2,6 +2,7 @@ package fr.vanillaeconomy.command;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
 import fr.vanillaeconomy.currency.CurrencyManager.DepositResult;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.Messages;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -23,8 +24,10 @@ public final class MoneyCommand implements TabExecutor {
     private final Logger logger;
     private final long maxDrop;
     private final boolean confiscateInvalid;
+    private final StaffLog staffLog;
 
-    public MoneyCommand(CurrencyManager currency, Logger logger, long maxDrop, boolean confiscateInvalid) {
+    public MoneyCommand(CurrencyManager currency, Logger logger, long maxDrop, boolean confiscateInvalid, StaffLog staffLog) {
+        this.staffLog = staffLog;
         this.currency = currency;
         this.logger = logger;
         this.maxDrop = maxDrop;
@@ -140,6 +143,7 @@ public final class MoneyCommand implements TabExecutor {
         String line = "Dépôt suspect de " + player.getName() + " : " + result.status() + ", " + result.rejected()
                 + " pièce(s) refusée(s), série " + serial;
         logger.warning(line);
+        staffLog.antiDupe(player.getName(), result.status().name(), result.rejected(), serial);
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p.hasPermission("vanillaeconomy.notify"))
                 .forEach(p -> Messages.send(p, "<red><line>", Messages.p("line", line)));

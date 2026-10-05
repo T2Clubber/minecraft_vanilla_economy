@@ -1,5 +1,6 @@
 package fr.vanillaeconomy.city;
 
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.MessageConfig;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -19,8 +20,11 @@ public final class CityAdminCommand implements TabExecutor {
     private final MessageConfig msg;
     private final CityCommand cityCommand;
     private final CityNotifier notifier;
+    private final StaffLog staffLog;
 
-    public CityAdminCommand(CityManager cities, MessageConfig msg, CityCommand cityCommand, CityNotifier notifier) {
+    public CityAdminCommand(CityManager cities, MessageConfig msg, CityCommand cityCommand, CityNotifier notifier,
+                            StaffLog staffLog) {
+        this.staffLog = staffLog;
         this.cities = cities;
         this.msg = msg;
         this.cityCommand = cityCommand;
@@ -36,6 +40,8 @@ public final class CityAdminCommand implements TabExecutor {
                 List<UUID> members = new ArrayList<>(city.members().keySet());
                 Map<UUID, Long> refunds = cities.delete(city);
                 msg.send(sender, "admin_deleted", "city", city.name());
+                staffLog.admin(sender.getName(), "`/cityadmin delete` cité **" + city.name() + "** supprimée, "
+                        + refunds.values().stream().mapToLong(Long::longValue).sum() + " pièces remboursées");
                 notifier.dissolution(city, members, null, refunds, "admin_deleted_notify");
             } else if (sub.equals("settier") && args.length == 3) {
                 City city = cities.require(args[1]);
@@ -47,9 +53,12 @@ public final class CityAdminCommand implements TabExecutor {
                 }
                 cities.adminSetTier(city, tier);
                 msg.send(sender, "admin_tier", "city", city.name(), "tier", tier);
+                staffLog.admin(sender.getName(), "`/cityadmin settier` cité **" + city.name() + "** → palier " + tier);
             } else if (sub.equals("rename") && args.length == 3) {
                 City city = cities.require(args[1]);
+                String oldName = city.name();
                 cities.adminRename(city, args[2]);
+                staffLog.admin(sender.getName(), "`/cityadmin rename` **" + oldName + "** → **" + city.name() + "**");
                 msg.send(sender, "admin_renamed", "city", city.name());
             } else if (sub.equals("info") && args.length == 2) {
                 cityCommand.sendInfo(sender, cities.require(args[1]));

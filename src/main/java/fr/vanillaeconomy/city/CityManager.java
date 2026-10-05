@@ -45,6 +45,8 @@ public final class CityManager {
     private final List<Consumer<City>> territoryListeners = new ArrayList<>();
     /** City removed (disbanded, deleted). */
     private final List<Consumer<City>> removalListeners = new ArrayList<>();
+    /** Staff journal of player actions (title, details): creation, tier purchase, disband. */
+    private java.util.function.BiConsumer<String, String> audit = (title, details) -> { };
 
     public CityManager(Plugin plugin, Database db, CityConfig config) {
         this.plugin = plugin;
@@ -62,6 +64,10 @@ public final class CityManager {
 
     public void onRemoval(Consumer<City> listener) {
         removalListeners.add(listener);
+    }
+
+    public void setAudit(java.util.function.BiConsumer<String, String> audit) {
+        this.audit = audit;
     }
 
     // ------------------------------------------------------------------
@@ -232,6 +238,9 @@ public final class CityManager {
         byId.put(id, city);
         indexAdd(city);
         territoryListeners.forEach(l -> l.accept(city));
+        audit.accept("Cité fondée : " + name, "**Fondateur :** " + founder.getName() + "\n**Territoire :** "
+                + first.size() + "x" + first.size() + " centré en " + territory.centerX() + " " + territory.centerZ()
+                + " (" + world + ")\n**Coût :** " + config.creationCost + " pièces");
         return city;
     }
 
@@ -414,6 +423,9 @@ public final class CityManager {
         city.setTier(next.level(), next.size());
         index.add(city);
         territoryListeners.forEach(l -> l.accept(city));
+        audit.accept("Agrandissement : " + city.name(), "**Palier " + next.level() + "** (" + next.size() + "x"
+                + next.size() + ") acheté par " + nameOf(actor) + " pour " + next.price()
+                + " pièces\n**Solde restant :** " + city.balance() + " pièces");
         return next;
     }
 
@@ -426,7 +438,11 @@ public final class CityManager {
         if (!roleOrThrow(city, actor).canDisband()) {
             throw new CityException("no_permission_role", "city", city.name());
         }
-        return delete(city);
+        long balance = city.balance();
+        Map<UUID, Long> refunds = delete(city);
+        audit.accept("Cité dissoute : " + city.name(), "**Par :** " + nameOf(actor) + "\n**Solde remboursé :** "
+                + balance + " pièces entre " + refunds.size() + " contributeur(s)");
+        return refunds;
     }
 
     public Map<UUID, Long> delete(City city) throws CityException {

@@ -1,6 +1,7 @@
 package fr.vanillaeconomy.command;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.Messages;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -20,8 +21,10 @@ public final class PayCommand implements TabExecutor {
     private final CurrencyManager currency;
     private final Logger logger;
     private final double maxDistance;
+    private final StaffLog staffLog;
 
-    public PayCommand(CurrencyManager currency, Logger logger, double maxDistance) {
+    public PayCommand(CurrencyManager currency, Logger logger, double maxDistance, StaffLog staffLog) {
+        this.staffLog = staffLog;
         this.currency = currency;
         this.logger = logger;
         this.maxDistance = maxDistance;
@@ -74,6 +77,7 @@ public final class PayCommand implements TabExecutor {
                 Messages.p("amount", Messages.coins(amount)), Messages.p("target", target.getName()));
         Messages.send(target, "<white><payer></white> <gray>vous a envoyé <gold><amount></gold>.",
                 Messages.p("amount", Messages.coins(amount)), Messages.p("payer", payer.getName()));
+        staffLog.pay(payer.getName(), target.getName(), amount);
         return true;
     }
 
