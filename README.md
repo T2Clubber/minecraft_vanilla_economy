@@ -4,7 +4,7 @@ Plugin Paper pour **Minecraft 26.3**. Il ajoute une monnaie virtuelle, un march�
 
 ## Prérequis
 
-- Paper 26.3 (testé sur le build 143).
+- Paper 26.3 (testé sur le build 152, y compris en chargement « legacy » des plugins).
 - Java 25.
 
 ## Installation sur le serveur
