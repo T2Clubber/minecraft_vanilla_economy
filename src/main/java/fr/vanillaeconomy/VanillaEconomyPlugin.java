@@ -15,6 +15,7 @@ import fr.vanillaeconomy.command.MoneyCommand;
 import fr.vanillaeconomy.command.PayCommand;
 import fr.vanillaeconomy.command.SoldeCommand;
 import fr.vanillaeconomy.currency.CoinProtectionListener;
+import fr.vanillaeconomy.discord.DiscordAnnouncer;
 import fr.vanillaeconomy.currency.CurrencyManager;
 import fr.vanillaeconomy.gui.BuyGUI;
 import fr.vanillaeconomy.gui.MarketGuiListener;
@@ -69,7 +70,13 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             market = new MarketManager(this, database, items);
             market.load();
             market.start(20L * Math.max(1, config.getLong("market.check_interval_seconds", 60)));
-            register("marketadmin", new MarketAdminCommand(market));
+            DiscordAnnouncer discord = new DiscordAnnouncer(config.getConfigurationSection("discord"), getLogger());
+            if (discord.enabled()) {
+                market.onUpcomingPromo((start, pct) ->
+                        discord.announceUpcomingPromo(pct, start, market.intervalMillis(), market.zone()));
+                getLogger().info("Annonces Discord des promotions activées (webhook).");
+            }
+            register("marketadmin", new MarketAdminCommand(market, discord, this));
             register("eco", new EcoCommand(currency, getLogger()));
 
             // 4. Market villagers + GUIs

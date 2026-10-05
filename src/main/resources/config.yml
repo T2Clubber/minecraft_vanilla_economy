@@ -62,6 +62,19 @@ market:
     min_percent: 5
     max_percent: 50
 
+discord:
+  # Annonce « Nitwit » sur Discord quand la PROCHAINE rotation est une promo
+  # (pourcentage et horaire ; le détail des articles n'est pas encore connu).
+  # URL du webhook du salon : Paramètres du salon > Intégrations > Webhooks >
+  # Nouveau webhook > Copier l'URL. Vide = désactivé. Gardez-la secrète.
+  webhook_url: ""
+  username: "Nitwit"
+  # Image du profil (URL https), vide = avatar du webhook.
+  avatar_url: ""
+  # Identifiant du rôle à mentionner (ex : @Notif Marché, clic droit > Copier
+  # l'identifiant du rôle). Vide = aucune mention.
+  mention_role_id: ""
+
 villagers:
   # Intervalle (en secondes) de vérification des bébés idiots suivis pour
   # détecter leur passage à l'âge adulte (Paper n'expose pas d'event de

@@ -84,6 +84,7 @@ public final class MarketManager {
     private static final String META_CYCLE_START = "rotation_started_at";
     private static final String META_PROMO_PLAN = "promo_plan:";      // + yyyy-mm-dd
     private static final String META_PROMO_FORCED = "promo_forced";    // "<cycleStart>:<percent>"
+    private static final String META_PROMO_ANNOUNCED = "promo_announced_for"; // start of the announced slot
 
     private final Plugin plugin;
     private final Database db;
@@ -107,6 +108,8 @@ public final class MarketManager {
     private BukkitTask task;
     private final List<Runnable> changeListeners = new ArrayList<>();
     private final List<Runnable> rotationListeners = new ArrayList<>();
+    /** (start of the next rotation, its planned discount): called once per upcoming promotion. */
+    private final List<java.util.function.BiConsumer<Long, Integer>> upcomingPromoListeners = new ArrayList<>();
 
     public MarketManager(Plugin plugin, Database db, ItemConfig config) {
         this.plugin = plugin;
@@ -213,6 +216,18 @@ public final class MarketManager {
         rotationListeners.add(listener);
     }
 
+    public void onUpcomingPromo(java.util.function.BiConsumer<Long, Integer> listener) {
+        upcomingPromoListeners.add(listener);
+    }
+
+    public long intervalMillis() {
+        return intervalMillis;
+    }
+
+    public ZoneId zone() {
+        return zone;
+    }
+
     // ------------------------------------------------------------------
     // Rotation cycle (every rotation_interval_hours)
     // ------------------------------------------------------------------
@@ -275,6 +290,26 @@ public final class MarketManager {
         rotationListeners.forEach(Runnable::run);
         if (broadcastRotation) {
             announceRotation();
+        }
+        announceUpcomingPromo(next);
+    }
+
+    /** If the rotation starting at {@code nextStart} is a planned promotion, tell the listeners (once). */
+    private void announceUpcomingPromo(long nextStart) {
+        try {
+            Map<Integer, Integer> plan = PromotionManager.decode(
+                    db.getMeta(META_PROMO_PLAN + PromotionManager.dayOf(nextStart, zone)).orElse(""));
+            int pct = plan.getOrDefault(PromotionManager.slotIndex(nextStart, zone, intervalMillis), 0);
+            if (pct <= 0 || db.getMeta(META_PROMO_ANNOUNCED).orElse("").equals(Long.toString(nextStart))) {
+                return;
+            }
+            db.transaction(c -> {
+                Database.setMeta(c, META_PROMO_ANNOUNCED, Long.toString(nextStart));
+                return null;
+            });
+            upcomingPromoListeners.forEach(l -> l.accept(nextStart, pct));
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Annonce de la prochaine promotion impossible", e);
         }
     }
 

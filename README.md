@@ -39,6 +39,7 @@ Plugin Paper pour **Minecraft 26.3**. Il ajoute une monnaie virtuelle, un march�
 | `/marketadmin rotate` | Force une nouvelle rotation du marché |
 | `/marketadmin rotate promo [%]` | Force une rotation en promotion (remise aléatoire de 5 à 50 % si aucun pourcentage n'est donné) |
 | `/marketadmin promos` | Affiche le planning des promotions d'aujourd'hui et de demain |
+| `/marketadmin discordtest` | Envoie un message de test au webhook Discord |
 | `/marketadmin info <item>` | Affiche l'état d'un item : catégorie, prix, promo, stock, circulation |
 | `/marketadmin setstock <item> <quantité>` | Fixe le stock global d'un item |
 | `/eco give <joueur> <montant>` | Donne des pièces sur le solde d'un joueur, même hors ligne s'il est déjà venu sur le serveur |
@@ -80,7 +81,8 @@ Tout idiot du village adulte devient un marchand. Ça couvre les idiots génér�
   - interface Vente : la quantité de référence (`base_number`) est réduite de la remise, uniquement pour les articles dont le `base_number` dépasse 1 : l'idiot paie donc plus cher par unité ;
   - interface Achat : le prix devient `max(prix de rachat, prix de vente × (1 - remise))` ;
   - affichage : les articles concernés brillent, et le badge « ✦ PROMO -X% ✦ » s'affiche en titre de l'infobulle, au-dessus du nom de l'item. X est la remise réelle sur le prix : côté Vente, elle est égale à la remise annoncée, car le lot réduit n'est pas arrondi ; côté Achat, elle est plafonnée par le prix de rachat. L'ancien prix est barré, et l'horloge signale la promo en cours.
-- **Annonces :** à chaque rotation, un message signé « [Nitwit] » dans le chat annonce les nouveaux étals, l'heure de la prochaine rotation et, le cas échéant, la promo en cours. Il se désactive avec `market.broadcast_rotation`.
+- **Annonce Discord :** quand la rotation suivante est une promo, le plugin poste une annonce « Nitwit » sur Discord, avec le pourcentage et l'horaire. Il passe par un webhook, donc sans bot ni hébergement. L'URL se met dans `config.yml`, section `discord`, et un rôle peut être mentionné.
+- **Annonces en jeu :** à chaque rotation, un message signé « [Nitwit] » dans le chat annonce les nouveaux étals, l'heure de la prochaine rotation et, le cas échéant, la promo en cours. Il se désactive avec `market.broadcast_rotation`.
 
 Les réglages sont dans `plugins/VanillaEconomy/config.yml` : markup, courbe de prix, decay, promos (`per_day`, `min_percent`, `max_percent`), filtres d'articles par biome, et chance qu'un bébé né d'une reproduction devienne idiot.
 

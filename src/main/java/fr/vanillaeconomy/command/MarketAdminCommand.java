@@ -2,22 +2,29 @@ package fr.vanillaeconomy.command;
 
 import fr.vanillaeconomy.market.MarketManager;
 import fr.vanillaeconomy.util.Messages;
+import fr.vanillaeconomy.discord.DiscordAnnouncer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** /marketadmin rotate [promo [%]] | promos | info &lt;item&gt; | setstock &lt;item&gt; &lt;quantité&gt; */
+/** /marketadmin rotate [promo [%]] | promos | discordtest | info &lt;item&gt; | setstock &lt;item&gt; &lt;quantité&gt; */
 public final class MarketAdminCommand implements TabExecutor {
 
     private final MarketManager market;
+    private final DiscordAnnouncer discord;
+    private final Plugin plugin;
 
-    public MarketAdminCommand(MarketManager market) {
+    public MarketAdminCommand(MarketManager market, DiscordAnnouncer discord, Plugin plugin) {
         this.market = market;
+        this.discord = discord;
+        this.plugin = plugin;
     }
 
     @Override
@@ -38,6 +45,19 @@ public final class MarketAdminCommand implements TabExecutor {
             market.runCycle(true, forced);
             Messages.send(sender, "<green>Rotation forcée (cycle n°<n>)<promo>.", Messages.p("n", market.cycle()),
                     Messages.p("promo", market.promoPercent() > 0 ? " avec PROMO -" + market.promoPercent() + " %" : ""));
+        } else if (args.length == 1 && args[0].equalsIgnoreCase("discordtest")) {
+            if (!discord.enabled()) {
+                Messages.send(sender, "<red>Aucun webhook configuré (discord.webhook_url dans config.yml).");
+                return true;
+            }
+            Messages.send(sender, "<gray>Envoi d'un message de test au webhook…");
+            discord.send("🔧 Test de l'annonceur Nitwit",
+                    "Le webhook fonctionne : les promotions à venir seront annoncées ici. "
+                            + "Ce message de test peut être supprimé.", 0x95A5A6)
+                    .thenAccept(status -> Bukkit.getScheduler().runTask(plugin, () -> Messages.send(sender,
+                            status >= 200 && status < 300 ? "<green>Message reçu par Discord (HTTP <status>)."
+                                    : "<red>Échec de l'envoi (HTTP <status>), voir les logs du serveur.",
+                            Messages.p("status", status))));
         } else if (args.length == 1 && args[0].equalsIgnoreCase("promos")) {
             try {
                 Messages.send(sender, "<gray>Promotions prévues : <white><plan>", Messages.p("plan", market.upcomingPromotions()));
@@ -62,7 +82,7 @@ public final class MarketAdminCommand implements TabExecutor {
                 Messages.send(sender, "<red>Item absent d'items.yml ou quantité invalide.");
             }
         } else {
-            Messages.send(sender, "<red>Usage : /marketadmin rotate [promo [pourcentage]] | promos | info <item> | setstock <item> <quantité>");
+            Messages.send(sender, "<red>Usage : /marketadmin rotate [promo [pourcentage]] | promos | discordtest | info <item> | setstock <item> <quantité>");
         }
         return true;
     }
@@ -79,7 +99,7 @@ public final class MarketAdminCommand implements TabExecutor {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return List.of("rotate", "promos", "info", "setstock").stream().filter(s -> s.startsWith(args[0].toLowerCase())).toList();
+            return List.of("rotate", "promos", "discordtest", "info", "setstock").stream().filter(s -> s.startsWith(args[0].toLowerCase())).toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("rotate")) {
             return List.of("promo");
