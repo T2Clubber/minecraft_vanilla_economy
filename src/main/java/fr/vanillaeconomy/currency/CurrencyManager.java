@@ -158,6 +158,41 @@ public final class CurrencyManager {
         }
     }
 
+    /** Admin: adds {@code amount} to a balance (account created if needed). Returns the new balance. */
+    public long adminGive(UUID player, long amount) throws SQLException {
+        db.transaction(c -> {
+            credit(c, player, amount);
+            return null;
+        });
+        return getBalance(player);
+    }
+
+    /** Admin: removes up to {@code amount} (never below 0). Returns the amount actually removed. */
+    public long adminTake(UUID player, long amount) throws SQLException {
+        return db.transaction(c -> {
+            long removed = Math.min(amount, getBalance(player));
+            if (removed > 0 && !debit(c, player, removed)) {
+                return 0L;
+            }
+            return removed;
+        });
+    }
+
+    /** Admin: sets a balance to an exact value. */
+    public void adminSet(UUID player, long amount) throws SQLException {
+        db.transaction(c -> {
+            credit(c, player, 0);
+            try (PreparedStatement ps = c.prepareStatement(
+                    "UPDATE player_balance SET balance = ?, updated_at = ? WHERE uuid = ?")) {
+                ps.setLong(1, amount);
+                ps.setLong(2, System.currentTimeMillis());
+                ps.setString(3, player.toString());
+                ps.executeUpdate();
+            }
+            return null;
+        });
+    }
+
     /** Atomic transfer. Returns false (nothing changed) if the payer cannot afford it. */
     public boolean transfer(UUID from, UUID to, long amount) throws SQLException {
         return db.transaction(c -> {

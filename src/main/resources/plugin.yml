@@ -24,6 +24,10 @@ commands:
     description: Administration du marché.
     usage: "/marketadmin <rotate [promo [%]]|promos|info <item>|setstock <item> <quantité>>"
     permission: vanillaeconomy.admin
+  eco:
+    description: "Administration des soldes : donner, retirer ou fixer des pièces."
+    usage: "/eco give|take|set <joueur> <montant>"
+    permission: vanillaeconomy.admin
   city:
     description: Fonder et gérer une cité.
     usage: "/city help"

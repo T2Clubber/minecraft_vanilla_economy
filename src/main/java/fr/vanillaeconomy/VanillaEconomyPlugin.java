@@ -9,6 +9,7 @@ import fr.vanillaeconomy.city.CityManager;
 import fr.vanillaeconomy.city.CityNotifier;
 import fr.vanillaeconomy.city.CityPresenceListener;
 import fr.vanillaeconomy.city.CityProtectionListener;
+import fr.vanillaeconomy.command.EcoCommand;
 import fr.vanillaeconomy.command.MarketAdminCommand;
 import fr.vanillaeconomy.command.MoneyCommand;
 import fr.vanillaeconomy.command.PayCommand;
@@ -69,6 +70,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             market.load();
             market.start(20L * Math.max(1, config.getLong("market.check_interval_seconds", 60)));
             register("marketadmin", new MarketAdminCommand(market));
+            register("eco", new EcoCommand(currency, getLogger()));
 
             // 4. Market villagers + GUIs
             villagers = new NitwitVillagerManager(this, database,

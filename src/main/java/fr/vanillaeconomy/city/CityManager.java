@@ -4,9 +4,8 @@ import fr.vanillaeconomy.city.CityRules.Tier;
 import fr.vanillaeconomy.currency.CurrencyManager;
 import fr.vanillaeconomy.storage.Database;
 import fr.vanillaeconomy.util.Messages;
-import org.bukkit.Bukkit;
+import fr.vanillaeconomy.util.Players;
 import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -154,8 +153,7 @@ public final class CityManager {
 
     /** Player name (first characters of the UUID if the server has never seen him). */
     public static String nameOf(UUID player) {
-        OfflinePlayer p = Bukkit.getOfflinePlayer(player);
-        return p.getName() != null ? p.getName() : player.toString().substring(0, 8);
+        return Players.name(player);
     }
 
     public City require(String name) throws CityException {

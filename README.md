@@ -41,6 +41,9 @@ Plugin Paper pour **Minecraft 26.3**. Il ajoute une monnaie virtuelle, un march�
 | `/marketadmin promos` | Affiche le planning des promotions d'aujourd'hui et de demain |
 | `/marketadmin info <item>` | Affiche l'état d'un item : catégorie, prix, promo, stock, circulation |
 | `/marketadmin setstock <item> <quantité>` | Fixe le stock global d'un item |
+| `/eco give <joueur> <montant>` | Donne des pièces sur le solde d'un joueur, même hors ligne s'il est déjà venu sur le serveur |
+| `/eco take <joueur> <montant>` | Retire des pièces, sans jamais passer le solde sous 0 |
+| `/eco set <joueur> <montant>` | Fixe un solde exact |
 
 ### Permissions
 
@@ -48,7 +51,7 @@ Plugin Paper pour **Minecraft 26.3**. Il ajoute une monnaie virtuelle, un march�
 |---|---|---|
 | `vanillaeconomy.solde`, `vanillaeconomy.pay`, `vanillaeconomy.money` | tous | Commandes joueur |
 | `vanillaeconomy.market` | tous | Utiliser les idiots marchands |
-| `vanillaeconomy.admin` | op | `/marketadmin` |
+| `vanillaeconomy.admin` | op | `/marketadmin`, `/eco` |
 | `vanillaeconomy.notify` | op | Recevoir les alertes de pièces falsifiées ou dupliquées |
 | `cities.use` | tous | `/city`, `/cityboard`, `/border` |
 | `cities.admin` | op | `/cityadmin` |

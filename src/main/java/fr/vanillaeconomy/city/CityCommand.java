@@ -3,8 +3,8 @@ package fr.vanillaeconomy.city;
 import fr.vanillaeconomy.city.CityRules.Tier;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.Messages;
+import fr.vanillaeconomy.util.Players;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -213,22 +213,8 @@ public final class CityCommand implements TabExecutor {
         }
     }
 
-    /** Online name, UUID, or a player the server has already seen (never a blocking web lookup). */
     static UUID resolvePlayer(String raw) throws CityException {
-        Player online = Bukkit.getPlayerExact(raw);
-        if (online != null) {
-            return online.getUniqueId();
-        }
-        try {
-            return UUID.fromString(raw);
-        } catch (IllegalArgumentException ignored) {
-            // not a UUID
-        }
-        OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(raw);
-        if (cached == null) {
-            throw new CityException("unknown_player", "player", raw);
-        }
-        return cached.getUniqueId();
+        return Players.resolve(raw).orElseThrow(() -> new CityException("unknown_player", "player", raw));
     }
 
     // ------------------------------------------------------------------
