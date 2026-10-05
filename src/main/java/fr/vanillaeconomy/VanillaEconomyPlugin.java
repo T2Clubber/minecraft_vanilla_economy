@@ -190,14 +190,20 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
         return target;
     }
 
-    /** Root of the world save (the folder holding level.dat), above dimensions/minecraft/overworld since 26.x. */
+    /**
+     * Root of the world save. Since 26.x the overworld folder is
+     * {@code <level-name>/dimensions/minecraft/overworld}: the save is the parent of
+     * "dimensions". Derived from the path (not from level.dat, which a brand-new world
+     * only writes after the plugins are enabled).
+     */
     private static File saveFolder(File worldFolder) {
-        for (File f = worldFolder.getAbsoluteFile(); f != null; f = f.getParentFile()) {
-            if (new File(f, "level.dat").isFile()) {
-                return f;
+        File folder = worldFolder.getAbsoluteFile().toPath().normalize().toFile();
+        for (File f = folder; f != null; f = f.getParentFile()) {
+            if (f.getName().equals("dimensions") && f.getParentFile() != null) {
+                return f.getParentFile();
             }
         }
-        return worldFolder;
+        return folder;
     }
 
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
