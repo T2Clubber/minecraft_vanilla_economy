@@ -5,6 +5,7 @@ import fr.vanillaeconomy.city.CityRules.Tier;
 import fr.vanillaeconomy.currency.CurrencyManager;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.Messages;
+import fr.vanillaeconomy.util.ServerTime;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,7 +28,6 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -62,8 +62,7 @@ public final class CityBoardGUI implements InventoryHolder {
     private static final int RANKING_SIZE = 7;
     private static final int RECENT_FIRST = 18;         // slots 18..44
     private static final int RECENT_PER_PAGE = 27;
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM HH:mm", Locale.FRANCE)
-            .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM HH:mm", Locale.FRANCE);
 
     /** Completed skins, shared by every board. */
     private static final Map<UUID, PlayerProfile> PROFILES = new ConcurrentHashMap<>();
@@ -245,7 +244,7 @@ public final class CityBoardGUI implements InventoryHolder {
             City.Contribution c = recent.get(from + i);
             contents[RECENT_FIRST + i] = named(Material.PAPER,
                     "<white>" + escape(CityManager.nameOf(c.player())) + " <green>+" + Messages.coins(c.amount()),
-                    List.of(Messages.item("<dark_gray>" + DATE.format(Instant.ofEpochMilli(c.timestamp())))));
+                    List.of(Messages.item("<dark_gray>" + DATE.format(Instant.ofEpochMilli(c.timestamp()).atZone(ServerTime.zone())))));
         }
         return pages;
     }

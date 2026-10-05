@@ -4,6 +4,11 @@
 # sont dans items.yml (chargé tel quel).
 # ===================================================================
 
+# Fuseau horaire de la communauté, indépendant de l'horloge de l'hébergeur :
+# créneaux de rotation (00h, 02h...), planning des promos, heures annoncées
+# en jeu et sur Discord. Heure d'été / d'hiver gérée automatiquement.
+timezone: "Europe/Paris"
+
 currency:
   # Item vanilla servant de support à la pièce (stack max 64).
   material: GOLD_NUGGET

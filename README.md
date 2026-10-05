@@ -72,7 +72,7 @@ Tout idiot du village adulte devient un marchand. Ça couvre les idiots génér�
 ## Le marché
 
 - **Global :** prix et stock sont communs à tous les idiots. Seul le choix des articles proposés dépend du biome (du skin) de l'idiot.
-- **Rotation :** toutes les 2 h, calée sur l'horloge (00 h, 02 h… 22 h). Un article proposé à la vente n'est jamais proposé à l'achat en même temps, sur tout le serveur.
+- **Rotation :** toutes les 2 h, calée sur l'horloge (00 h, 02 h… 22 h) du fuseau `timezone` de `config.yml` (`Europe/Paris` par défaut), quel que soit le fuseau de l'hébergeur. Un article proposé à la vente n'est jamais proposé à l'achat en même temps, sur tout le serveur.
 - **Prix de rachat :** ce que l'idiot paie au joueur. Il baisse avec la quantité vendue au marché, sans jamais descendre sous le plancher de 1 pièce pour 64 unités. Le compteur de quantité vendue diminue de 2 % par rotation, ce qui permet aux prix de remonter.
 - **Prix de vente :** ce que l'idiot facture au joueur. Il vaut toujours au moins le prix de rachat + le plancher.
 - **Stock :** il est alimenté par les ventes des joueurs. La rotation de l'interface Achat favorise les articles en stock, et ceux en rupture restent visibles mais grisés.

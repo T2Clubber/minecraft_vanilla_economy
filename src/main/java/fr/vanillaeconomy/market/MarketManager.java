@@ -6,6 +6,7 @@ import fr.vanillaeconomy.market.RotationEngine.Rotation;
 import fr.vanillaeconomy.market.RotationEngine.Side;
 import fr.vanillaeconomy.storage.Database;
 import fr.vanillaeconomy.util.Messages;
+import fr.vanillaeconomy.util.ServerTime;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Bukkit;
@@ -96,7 +97,7 @@ public final class MarketManager {
     private final boolean broadcastRotation;
     private final ConfigurationSection biomePools;
     private final PromotionManager promotions;
-    private final ZoneId zone = ZoneId.systemDefault();
+    private final ZoneId zone = ServerTime.zone();
     private final Random random = new Random();
 
     private final Map<Material, ItemState> states = new HashMap<>();

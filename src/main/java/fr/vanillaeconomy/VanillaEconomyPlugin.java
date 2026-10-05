@@ -25,6 +25,7 @@ import fr.vanillaeconomy.market.ItemConfigLoader;
 import fr.vanillaeconomy.market.MarketManager;
 import fr.vanillaeconomy.storage.Database;
 import fr.vanillaeconomy.util.MessageConfig;
+import fr.vanillaeconomy.util.ServerTime;
 import fr.vanillaeconomy.villager.NitwitVillagerManager;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
@@ -51,6 +52,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             saveResource("items.yml", false);
         }
         FileConfiguration config = getConfig();
+        ServerTime.configure(config.getString("timezone", "Europe/Paris"), getLogger());
 
         try {
             database = new Database(new File(getDataFolder(), "economy.db"));
