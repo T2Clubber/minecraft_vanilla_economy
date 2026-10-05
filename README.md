@@ -97,7 +97,7 @@ Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `
   - **Membre** : construit, contribue, peut quitter la cité. Un joueur peut être membre de plusieurs cités.
 - **Accès :** une cité n'est jamais fermée. Les visiteurs entrent et circulent librement, mais en lecture seule :
   - ils ne peuvent ni construire, ni casser, ni ouvrir de conteneur, ni utiliser boutons, leviers ou plaques ;
-  - ils peuvent ouvrir les portes et les trappes, sans jamais utiliser l'objet tenu en main ;
+  - ils peuvent ouvrir les portes et les trappes, et utiliser les coffres de l'Ender (stockage personnel), sans jamais utiliser l'objet tenu en main ;
   - ils peuvent toujours commercer avec les idiots marchands.
 - **Protections automatiques :** explosions sans destruction de blocs, pas de propagation du feu, pistons et liquides bloqués à la frontière, pas de grief des mobs.
 - **Messages :** l'entrée et la sortie d'une cité s'affichent dans le chat, et un visiteur reçoit un rappel en actionbar quand une action lui est refusée.

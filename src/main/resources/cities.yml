@@ -34,7 +34,8 @@ protection:
   # Message court en actionbar quand un visiteur tente une action refusée.
   actionbar_message: true
   # Blocs que les visiteurs peuvent ouvrir / fermer. "#tag" = tag de blocs
-  # Minecraft, sinon un id de Material. Les portillons sont exclus par
+  # Minecraft, sinon un id de Material. Les coffres de l'Ender (stockage
+  # personnel) sont toujours autorisés. Les portillons sont exclus par
   # défaut (ajouter "#fence_gates" pour les autoriser).
   visitor_interactions:
     - "#doors"

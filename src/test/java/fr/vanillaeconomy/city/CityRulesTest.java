@@ -172,6 +172,10 @@ class CityRulesTest {
         Set<Material> allowed = Set.of(Material.OAK_DOOR, Material.SPRUCE_DOOR, Material.OAK_TRAPDOOR, Material.IRON_TRAPDOOR);
         assertTrue(CityRules.visitorMayInteract(Material.OAK_DOOR, allowed));
         assertTrue(CityRules.visitorMayInteract(Material.OAK_TRAPDOOR, allowed));
+        Set<Material> withEnderChest = new java.util.HashSet<>(allowed);
+        withEnderChest.add(Material.ENDER_CHEST);
+        assertTrue(CityRules.visitorMayInteract(Material.ENDER_CHEST, withEnderChest), "personal storage");
+        assertFalse(CityRules.visitorMayInteract(Material.CHEST, withEnderChest));
         for (Material denied : List.of(Material.CHEST, Material.BARREL, Material.FURNACE, Material.HOPPER,
                 Material.SHULKER_BOX, Material.STONE_BUTTON, Material.LEVER, Material.OAK_PRESSURE_PLATE,
                 Material.OAK_FENCE_GATE, Material.CRAFTING_TABLE, Material.ANVIL, Material.LECTERN, Material.OAK_SIGN)) {

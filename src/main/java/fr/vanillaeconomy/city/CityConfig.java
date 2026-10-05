@@ -68,6 +68,8 @@ public final class CityConfig {
         List<String> interactions = yaml.isList("protection.visitor_interactions")
                 ? yaml.getStringList("protection.visitor_interactions") : List.of("#doors", "#trapdoors");
         visitorInteractions = parseMaterials(interactions, logger);
+        // Personal storage: a visitor only ever sees his own items, nothing of the city.
+        visitorInteractions.add(Material.ENDER_CHEST);
         presenceMessages = yaml.getBoolean("presence.messages", true);
         presenceOnJoin = yaml.getBoolean("presence.message_on_join", true);
         borderRadius = Math.max(4, yaml.getInt("border.radius", 24));
