@@ -69,56 +69,56 @@ categories:
     - { id: REDSTONE,         tier: uncommon,  base_price: 5,    base_number: 64 }
     - { id: GOLD_INGOT,       tier: rare,      base_price: 20,   base_number: 32 }
     - { id: EMERALD,          tier: rare,      base_price: 40,   base_number: 32 }
-    - { id: DIAMOND,          tier: epic,      base_price: 250,  base_number: 16 }
-    - { id: NETHERITE_INGOT,  tier: legendary, base_price: 1500, base_number: 8 }
+    - { id: DIAMOND,          tier: epic,      base_price: 30,  base_number: 1 }
+    - { id: ANCIENT_DEBRIS,   tier: legendary, base_price: 60,  base_number: 1 }
 
   food_nature:
-    - { id: COOKED_CHICKEN,   tier: common,   base_price: 2,   base_number: 32 }
-    - { id: COOKED_BEEF,      tier: common,   base_price: 3,   base_number: 32 }
-    - { id: COOKED_PORKCHOP,  tier: common,   base_price: 3,   base_number: 32 }
-    - { id: COOKED_MUTTON,    tier: common,   base_price: 2,   base_number: 32 }
-    - { id: COOKED_RABBIT,    tier: common,   base_price: 2,   base_number: 32 }
-    - { id: COOKED_SALMON,    tier: common,   base_price: 2,   base_number: 32 }
-    - { id: COOKED_COD,       tier: common,   base_price: 2,   base_number: 32 }
-    - { id: CARROT,           tier: common,   base_price: 1,   base_number: 32 }
-    - { id: POTATO,           tier: common,   base_price: 1,   base_number: 32 }
-    - { id: BEETROOT,         tier: common,   base_price: 1,   base_number: 32 }
-    - { id: WHEAT,            tier: common,   base_price: 1,   base_number: 32 }
-    - { id: SUGAR_CANE,       tier: common,   base_price: 1,   base_number: 32 }
-    - { id: BAMBOO,           tier: common,   base_price: 1,   base_number: 32 }
-    - { id: KELP,             tier: common,   base_price: 1,   base_number: 32 }
-    - { id: GLOW_BERRIES,     tier: uncommon, base_price: 3,   base_number: 32 }
-    - { id: SWEET_BERRIES,    tier: common,   base_price: 2,   base_number: 32 }
-    - { id: PITCHER_PLANT,    tier: uncommon, base_price: 4,   base_number: 32 }
-    - { id: HONEYCOMB,        tier: uncommon, base_price: 5,   base_number: 32 }
-    - { id: PEONY,            tier: common,   base_price: 2,   base_number: 32 }
-    - { id: SUNFLOWER,        tier: common,   base_price: 2,   base_number: 32 }
-    - { id: LILAC,            tier: common,   base_price: 2,   base_number: 32 }
-    - { id: ROSE_BUSH,        tier: common,   base_price: 2,   base_number: 32 }
-    - { id: CACTUS,           tier: common,   base_price: 1,   base_number: 32 }
-    - { id: TORCHFLOWER,      tier: uncommon, base_price: 6,   base_number: 32 }
+    - { id: COOKED_CHICKEN,   tier: common,   base_price: 2,   base_number: 16 }
+    - { id: COOKED_BEEF,      tier: common,   base_price: 3,   base_number: 16 }
+    - { id: COOKED_PORKCHOP,  tier: common,   base_price: 3,   base_number: 16 }
+    - { id: COOKED_MUTTON,    tier: common,   base_price: 2,   base_number: 16 }
+    - { id: COOKED_RABBIT,    tier: common,   base_price: 2,   base_number: 16 }
+    - { id: COOKED_SALMON,    tier: common,   base_price: 2,   base_number: 16 }
+    - { id: COOKED_COD,       tier: common,   base_price: 2,   base_number: 16 }
+    - { id: CARROT,           tier: common,   base_price: 1,   base_number: 16 }
+    - { id: POTATO,           tier: common,   base_price: 1,   base_number: 16 }
+    - { id: BEETROOT,         tier: common,   base_price: 1,   base_number: 16 }
+    - { id: WHEAT,            tier: common,   base_price: 1,   base_number: 16 }
+    - { id: SUGAR_CANE,       tier: common,   base_price: 1,   base_number: 16 }
+    - { id: BAMBOO,           tier: common,   base_price: 1,   base_number: 16 }
+    - { id: KELP,             tier: common,   base_price: 1,   base_number: 16 }
+    - { id: GLOW_BERRIES,     tier: uncommon, base_price: 3,   base_number: 16 }
+    - { id: SWEET_BERRIES,    tier: common,   base_price: 2,   base_number: 16 }
+    - { id: PITCHER_PLANT,    tier: uncommon, base_price: 4,   base_number: 16 }
+    - { id: HONEYCOMB,        tier: uncommon, base_price: 5,   base_number: 16 }
+    - { id: PEONY,            tier: common,   base_price: 2,   base_number: 16 }
+    - { id: SUNFLOWER,        tier: common,   base_price: 2,   base_number: 16 }
+    - { id: LILAC,            tier: common,   base_price: 2,   base_number: 16 }
+    - { id: ROSE_BUSH,        tier: common,   base_price: 2,   base_number: 16 }
+    - { id: CACTUS,           tier: common,   base_price: 1,   base_number: 16 }
+    - { id: TORCHFLOWER,      tier: uncommon, base_price: 6,   base_number: 16 }
     - { id: WITHER_ROSE,      tier: rare,     base_price: 15,  base_number: 1 }
-    - { id: BROWN_MUSHROOM,   tier: common,   base_price: 2,   base_number: 32 }
-    - { id: RED_MUSHROOM,     tier: common,   base_price: 2,   base_number: 32 }
-    - { id: MELON_SLICE,      tier: common,   base_price: 1,   base_number: 32 }
-    - { id: PUMPKIN,          tier: common,   base_price: 2,   base_number: 32 }
-    - { id: LEATHER,          tier: common,   base_price: 4,   base_number: 32 }
+    - { id: BROWN_MUSHROOM,   tier: common,   base_price: 2,   base_number: 16 }
+    - { id: RED_MUSHROOM,     tier: common,   base_price: 2,   base_number: 16 }
+    - { id: MELON_SLICE,      tier: common,   base_price: 1,   base_number: 16 }
+    - { id: PUMPKIN,          tier: common,   base_price: 2,   base_number: 16 }
+    - { id: LEATHER,          tier: common,   base_price: 4,   base_number: 16 }
     # Ajouts 26.3 (Wilderness Bound) - forêt mouchetée. Ignorés avec un
     # avertissement sur un serveur 26.2. Prix calés sur RED/BROWN_MUSHROOM
     # et les fleurs.
-    - { id: SHELF_MUSHROOM,   tier: common,   base_price: 2,   base_number: 32 }
-    - { id: RED_SHRUB,        tier: common,   base_price: 2,   base_number: 32 }
+    - { id: SHELF_MUSHROOM,   tier: common,   base_price: 2,   base_number: 16 }
+    - { id: RED_SHRUB,        tier: common,   base_price: 2,   base_number: 16 }
 
   hostile_mob:
-    - { id: SPIDER_EYE,       tier: common,   base_price: 2,   base_number: 32 }
-    - { id: STRING,           tier: common,   base_price: 1,   base_number: 32 }
-    - { id: BONE,             tier: common,   base_price: 1,   base_number: 32 }
-    - { id: ARROW,            tier: common,   base_price: 1,   base_number: 32 }
-    - { id: ROTTEN_FLESH,     tier: common,   base_price: 1,   base_number: 32 }
-    - { id: SLIME_BALL,       tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: SPIDER_EYE,       tier: common,   base_price: 2,   base_number: 16 }
+    - { id: STRING,           tier: common,   base_price: 1,   base_number: 16 }
+    - { id: BONE,             tier: common,   base_price: 1,   base_number: 16 }
+    - { id: ARROW,            tier: common,   base_price: 1,   base_number: 16 }
+    - { id: ROTTEN_FLESH,     tier: common,   base_price: 1,   base_number: 16 }
+    - { id: SLIME_BALL,       tier: uncommon, base_price: 3,   base_number: 16 }
     - { id: BLAZE_ROD,        tier: rare,     base_price: 15,  base_number: 16 }
     - { id: BREEZE_ROD,       tier: rare,     base_price: 20,  base_number: 16 }
-    - { id: GUNPOWDER,        tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: GUNPOWDER,        tier: uncommon, base_price: 3,   base_number: 16 }
     - { id: ENDER_PEARL,      tier: rare,     base_price: 12,  base_number: 16 }
     - { id: NAUTILUS_SHELL,   tier: rare,     base_price: 25,  base_number: 8 }
     - { id: SHULKER_SHELL,    tier: epic,     base_price: 40,  base_number: 4 }
@@ -173,10 +173,10 @@ categories:
     - { id: YELLOW_POPLAR_LEAVES, tier: common, base_price: 1, base_number: 64 }
 
   other:
-    - { id: PRISMARINE_SHARD,     tier: common,    base_price: 3,  base_number: 32 }
-    - { id: PRISMARINE_CRYSTALS,  tier: uncommon,  base_price: 4,  base_number: 32 }
-    - { id: NETHER_WART,          tier: common,    base_price: 2,  base_number: 32 }
-    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 2,  base_number: 32 }
+    - { id: PRISMARINE_SHARD,     tier: common,    base_price: 3,  base_number: 16 }
+    - { id: PRISMARINE_CRYSTALS,  tier: uncommon,  base_price: 4,  base_number: 16 }
+    - { id: NETHER_WART,          tier: common,    base_price: 2,  base_number: 16 }
+    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 2,  base_number: 16 }
     # Disques musicaux : stack vanilla max = 1, donc base_number = 1
     - { id: MUSIC_DISC_13,                 tier: legendary, base_price: 150, base_number: 1 }
     - { id: MUSIC_DISC_CAT,                tier: legendary, base_price: 150, base_number: 1 }
@@ -199,9 +199,9 @@ categories:
     - { id: MUSIC_DISC_CREATOR_MUSIC_BOX,  tier: legendary, base_price: 250, base_number: 1 }
     - { id: MUSIC_DISC_TEARS,              tier: legendary, base_price: 250, base_number: 1 }
     - { id: TURTLE_SCUTE,     tier: rare,     base_price: 20,  base_number: 16 }
-    - { id: RESIN_CLUMP,      tier: uncommon, base_price: 3,   base_number: 32 }
-    - { id: AMETHYST_SHARD,   tier: uncommon, base_price: 5,   base_number: 32 }
-    - { id: QUARTZ,           tier: uncommon, base_price: 3,   base_number: 32 }
+    - { id: RESIN_CLUMP,      tier: uncommon, base_price: 3,   base_number: 16 }
+    - { id: AMETHYST_SHARD,   tier: uncommon, base_price: 5,   base_number: 16 }
+    - { id: QUARTZ,           tier: uncommon, base_price: 3,   base_number: 16 }
     # Nametag : stack vanilla max = 1, donc base_number = 1
     - { id: NAME_TAG,         tier: rare,     base_price: 15,  base_number: 1 }
     # Sulfur Spike - item ajouté en MAJ 26.2/26.3 ("Chaos Cubed"), trouvé
