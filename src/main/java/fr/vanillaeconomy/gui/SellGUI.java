@@ -51,19 +51,25 @@ public final class SellGUI extends MarketGui {
         List<Component> lore = new ArrayList<>();
         if (s.buyPromo()) {
             lore.add(Messages.item("<gray>Rachat : <dark_gray><st><old></st></dark_gray> <gold><price></gold> les <n>",
-                    Messages.p("old", Messages.coins(PricingEngine.total(s.regularBuyUnit(), lot))),
-                    Messages.p("price", Messages.coins(PricingEngine.total(s.buyUnit(), lot))), Messages.p("n", lot)));
+                    Messages.p("old", Messages.coins(PricingEngine.payout(s.regularBuyUnit(), lot))),
+                    Messages.p("price", Messages.coins(PricingEngine.payout(s.buyUnit(), lot))), Messages.p("n", lot)));
         } else {
             lore.add(Messages.item("<gray>Rachat : <gold><price></gold> les <n>",
-                    Messages.p("price", Messages.coins(PricingEngine.total(s.buyUnit(), lot))), Messages.p("n", lot)));
+                    Messages.p("price", Messages.coins(PricingEngine.payout(s.buyUnit(), lot))), Messages.p("n", lot)));
         }
         lore.add(Messages.item("<dark_gray><unit> pièce / unité", Messages.p("unit", Messages.unitPrice(s.buyUnit()))));
         lore.add(Messages.item("<gray>Vous en avez : <white><owned>", Messages.p("owned", owned)));
         lore.add(Component.empty());
         if (owned >= lot) {
             lore.add(Messages.item("<yellow>Clic : vendre <n>", Messages.p("n", lot)));
-            lore.add(Messages.item("<yellow>Shift-clic : tout vendre (<n> → <price>)", Messages.p("n", owned),
-                    Messages.p("price", Messages.coins(PricingEngine.total(s.buyUnit(), owned)))));
+            // Only whole coins are paid: the remainder stays in the inventory.
+            long sellable = PricingEngine.sellableQuantity(s.buyUnit(), owned);
+            lore.add(Messages.item("<yellow>Shift-clic : vendre <n> → <price>", Messages.p("n", sellable),
+                    Messages.p("price", Messages.coins(PricingEngine.payout(s.buyUnit(), sellable)))));
+            if (sellable < owned) {
+                lore.add(Messages.item("<dark_gray>(<rest> gardés : pas assez pour une pièce de plus)",
+                        Messages.p("rest", owned - sellable)));
+            }
         } else {
             lore.add(Messages.item("<red>Il vous en faut au moins <n>", Messages.p("n", lot)));
         }

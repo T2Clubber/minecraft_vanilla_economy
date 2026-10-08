@@ -527,11 +527,15 @@ public final class MarketManager {
         ItemState s = states.get(material);
         int lot = PricingEngine.lotSize(s.buyUnit);
         int owned = countPlain(player, material);
-        long quantity = all ? owned : lot;
         if (owned < lot) {
             return new TradeResult(TradeStatus.NOT_ENOUGH_ITEMS, 0, 0, lot);
         }
-        long payout = PricingEngine.total(s.buyUnit, quantity);
+        // Whole coins only: the player keeps the units that would make a fraction of a coin.
+        long quantity = PricingEngine.sellableQuantity(s.buyUnit, all ? owned : lot);
+        long payout = PricingEngine.payout(s.buyUnit, quantity);
+        if (quantity <= 0 || payout <= 0) {
+            return new TradeResult(TradeStatus.NOT_ENOUGH_ITEMS, 0, 0, lot);
+        }
         long newStock = s.stock + quantity;
         double newCirculation = s.circulation + quantity;
         try {

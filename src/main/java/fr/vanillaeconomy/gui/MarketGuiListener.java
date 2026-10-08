@@ -1,5 +1,6 @@
 package fr.vanillaeconomy.gui;
 
+import fr.vanillaeconomy.util.InventoryGuard;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,7 +14,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
-/** Market GUIs are read-only views: every click is cancelled and routed to the GUI. */
+/** Market GUIs are read-only: clicks on them are cancelled and routed to the GUI, the player's inventory stays usable. */
 public final class MarketGuiListener implements Listener {
 
     private final Plugin plugin;
@@ -27,8 +28,15 @@ public final class MarketGuiListener implements Listener {
         if (!(event.getView().getTopInventory().getHolder(false) instanceof MarketGui gui)) {
             return;
         }
-        event.setCancelled(true);
-        if (event.getClickedInventory() == null || !event.getClickedInventory().equals(gui.getInventory())) {
+        if (!InventoryGuard.guardClick(event)) {
+            // The player's own inventory stays usable; refresh "Vous en avez" once the move is done.
+            if (!event.isCancelled()) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (event.getWhoClicked().getOpenInventory().getTopInventory().getHolder(false) == gui) {
+                        gui.render();
+                    }
+                });
+            }
             return;
         }
         boolean bulk;
@@ -52,7 +60,7 @@ public final class MarketGuiListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder(false) instanceof MarketGui) {
-            event.setCancelled(true);
+            InventoryGuard.guardDrag(event);
         }
     }
 

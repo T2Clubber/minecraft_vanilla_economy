@@ -3,6 +3,7 @@ package fr.vanillaeconomy.city;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import fr.vanillaeconomy.city.CityRules.Tier;
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.util.InventoryGuard;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.Messages;
 import fr.vanillaeconomy.util.ServerTime;
@@ -498,9 +499,8 @@ public final class CityBoardGUI implements InventoryHolder {
             if (!(holder instanceof CityBoardGUI) && !(holder instanceof ConfirmGUI)) {
                 return;
             }
-            event.setCancelled(true);
-            if (event.getClickedInventory() == null || !event.getClickedInventory().equals(event.getView().getTopInventory())) {
-                return;
+            if (!InventoryGuard.guardClick(event)) {
+                return; // the player's own inventory stays usable
             }
             int slot = event.getSlot();
             ClickType click = event.getClick();
@@ -521,7 +521,7 @@ public final class CityBoardGUI implements InventoryHolder {
         public void onDrag(InventoryDragEvent event) {
             InventoryHolder holder = event.getView().getTopInventory().getHolder(false);
             if (holder instanceof CityBoardGUI || holder instanceof ConfirmGUI) {
-                event.setCancelled(true);
+                InventoryGuard.guardDrag(event);
             }
         }
 

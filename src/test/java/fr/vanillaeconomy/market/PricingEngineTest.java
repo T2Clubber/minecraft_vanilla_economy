@@ -62,6 +62,29 @@ class PricingEngineTest {
     }
 
     @Test
+    void salesPayWholeCoinsOnlyAndKeepTheRest() {
+        double cane = 1.0 / 32;
+        assertEquals(1, PricingEngine.payout(cane, 48), "1.5 coins pay 1 coin, never 2");
+        assertEquals(32, PricingEngine.sellableQuantity(cane, 48), "only the 32 paid canes are taken");
+        assertEquals(64, PricingEngine.sellableQuantity(cane, 64));
+        assertEquals(2, PricingEngine.payout(cane, 64));
+        assertEquals(0, PricingEngine.sellableQuantity(cane, 31), "not even one coin: nothing sold");
+        assertEquals(5, PricingEngine.sellableQuantity(0.4, 7), "7 x 0.4 = 2.8 -> 2 coins for 5 units");
+        assertEquals(2, PricingEngine.payout(0.4, 5));
+        // never pays more than the value of the units taken, never takes units it does not pay
+        for (double unit : new double[]{1.0 / 64, 0.0287, 0.1, 0.33, 0.7, 1.0, 2.4, 15.625}) {
+            for (long n = 1; n <= 640; n++) {
+                long q = PricingEngine.sellableQuantity(unit, n);
+                long coins = PricingEngine.payout(unit, q);
+                assertTrue(q <= n);
+                assertTrue(coins <= unit * q + 1e-9, "overpaid " + unit + " x " + q);
+                assertEquals(PricingEngine.payout(unit, n), coins, "same coins as for the whole offer");
+                assertTrue(q == 0 || PricingEngine.payout(unit, q - 1) < coins, "no unit taken for free");
+            }
+        }
+    }
+
+    @Test
     void lotSizeIsSmallestQuantityWorthOneCoin() {
         assertEquals(64, PricingEngine.lotSize(1.0 / 64));
         assertEquals(32, PricingEngine.lotSize(1.0 / 32));

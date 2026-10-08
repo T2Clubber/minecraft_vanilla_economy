@@ -87,6 +87,23 @@ public final class PricingEngine {
     }
 
     /**
+     * Coins paid by a villager for {@code quantity} units: whole coins only, never rounded
+     * up (48 sugar canes at 1/32 = 1.5 coins pay 1 coin).
+     */
+    public static long payout(double unitPrice, long quantity) {
+        return quantity <= 0 ? 0 : (long) Math.floor(unitPrice * quantity + 1e-9);
+    }
+
+    /**
+     * Units actually taken from the player for {@code offered} units: only those covered by
+     * the whole coins paid (48 sugar canes at 1/32: 32 are sold for 1 coin, 16 are kept).
+     */
+    public static long sellableQuantity(double unitPrice, long offered) {
+        long coins = payout(unitPrice, offered);
+        return coins <= 0 ? 0 : Math.min(offered, (long) Math.ceil(coins / unitPrice - 1e-9));
+    }
+
+    /**
      * Smallest quantity worth at least one coin. Sales to the villager are made in
      * multiples of at least this lot so the "minimum 1 coin" rule can never pay a
      * player 1 coin for a single dirt block (which would be a 64x money exploit).
