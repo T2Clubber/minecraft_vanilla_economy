@@ -29,10 +29,19 @@
 #    1 pièce. DIAMOND { base_price: 250, base_number: 1 } => 1 pièce par
 #    diamant individuel. Calcul du prix unitaire : 
 #       prix_unitaire = base_price / base_number
-#    Pour une transaction de N unités : total = round(prix_unitaire * N),
-#    avec un minimum d'1 pièce facturée/payée par transaction non-nulle.
+#    Les transactions se font en pièces entières, jamais arrondies en
+#    faveur du joueur :
+#     - VENTE (le joueur vend à l'idiot) : paiement = arrondi INFÉRIEUR de
+#       prix_unitaire * N, et seuls les objets payés sont pris (48 cannes
+#       à 1 pièce les 32 => 32 vendues pour 1 pièce, 16 gardées) ;
+#     - ACHAT (l'idiot vend au joueur) : prix = arrondi SUPÉRIEUR de
+#       prix_unitaire * N (minimum 1 pièce) ; un clic achète ce que vaut
+#       1 pièce, un shift-clic s'arrête sur des pièces entières.
 #    base_number ne dépasse jamais la stack size vanilla de l'item 
 #    (ex: ENDER_PEARL max 16, MUSIC_DISC_* et NAME_TAG max 1).
+#    La baisse du prix de rachat suit une échelle de base_number x
+#    scale_lots unités (config.yml) : un petit base_number fait baisser
+#    le prix plus vite quand les joueurs vendent beaucoup.
 #
 # ===================================================================
 
