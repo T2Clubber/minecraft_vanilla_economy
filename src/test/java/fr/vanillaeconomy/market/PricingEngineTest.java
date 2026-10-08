@@ -53,12 +53,26 @@ class PricingEngineTest {
     }
 
     @Test
-    void transactionTotals() {
-        assertEquals(0, PricingEngine.total(0.5, 0));
-        assertEquals(1, PricingEngine.total(1.0 / 64, 1));    // minimum 1 coin
-        assertEquals(1, PricingEngine.total(1.0 / 64, 64));
-        assertEquals(2, PricingEngine.total(1.0 / 64, 100));  // round(1.5625)
-        assertEquals(47, PricingEngine.total(250.0 / 16, 3)); // round(46.875)
+    void purchasesAreNeverRoundedInThePlayersFavour() {
+        double cane = 0.046875; // 1.5 x 1/32
+        assertEquals(21, PricingEngine.buyLot(cane), "what one coin buys: 21 (22 would cost 2 coins)");
+        assertEquals(1, PricingEngine.charge(cane, 21));
+        assertEquals(1, PricingEngine.buyLot(21.875), "one unit when it costs more than a coin");
+        assertEquals(22, PricingEngine.charge(21.875, 1), "21.875 is charged 22, never 21");
+        assertEquals(60, PricingEngine.buyableQuantity(0.05, 64), "64 x 0.05 = 3.2: 60 for 3 coins");
+        assertEquals(3, PricingEngine.charge(0.05, 60));
+        assertEquals(64, PricingEngine.buyableQuantity(cane, 64), "64 x 0.046875 = 3 exactly");
+        assertEquals(5, PricingEngine.buyableQuantity(cane, 5), "less than one coin: kept as asked");
+        assertEquals(1, PricingEngine.charge(cane, 5), "minimum 1 coin");
+        for (double unit : new double[]{1.0 / 64, 0.0287, 0.05, 0.1, 0.33, 0.7, 1.0, 1.05, 2.4, 21.875}) {
+            for (long n = 1; n <= 640; n++) {
+                long q = PricingEngine.buyableQuantity(unit, n);
+                long coins = PricingEngine.charge(unit, q);
+                assertTrue(q >= 1 && q <= n);
+                assertTrue(coins >= unit * q - 1e-9, "undercharged " + unit + " x " + q);
+                assertTrue(coins >= 1);
+            }
+        }
     }
 
     @Test

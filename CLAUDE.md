@@ -21,7 +21,7 @@ Plugin Paper (Bukkit, `plugin.yml`) pour un serveur Minecraft **26.3** français
 - **Données par monde** : la base est dans `<level-name>/vanillaeconomy/economy.db`, la racine de sauvegarde étant le parent de `dimensions/`. Les configs (`config.yml`, `items.yml`, `cities.yml`, `messages.yml`) sont globales.
 - **`items.yml`** a été fourni et équilibré par l'utilisateur : ne pas le régénérer. On ajoute seulement des entrées quand c'est demandé.
 - **Contraintes de prix** : prix de vente ≥ prix d'achat après chaque recalcul, promos comprises ; plancher de 1/64 par unité ; aucun article à la fois en VENTE et en ACHAT sur tout le serveur.
-- **Vente aux idiots** : jamais d'arrondi en faveur du joueur. `PricingEngine.payout` paie les pièces entières (arrondi inférieur) et `sellableQuantity` ne retire que les objets payés, le reste reste dans l'inventaire.
+- **Commerce avec les idiots** : jamais d'arrondi en faveur du joueur. À la vente, `PricingEngine.payout` paie les pièces entières (arrondi inférieur) et `sellableQuantity` ne retire que les objets payés. À l'achat, `charge` arrondit à la pièce supérieure, `buyLot` correspond à ce que vaut une pièce et `buyableQuantity` s'arrête sur des pièces entières. Interfaces et `MarketManager` utilisent les mêmes fonctions, pour que l'infobulle annonce exactement la transaction.
 - **GUI en lecture seule** : passer par `util.InventoryGuard`, qui bloque l'interface mais laisse l'inventaire du joueur utilisable (sauf shift-clic et double-clic vers l'interface).
 
 ## Ressources hors code

@@ -66,8 +66,10 @@ Tout idiot du village adulte devient un marchand. Ça couvre les idiots génér�
 - **Disposition** :
   - la première ligne affiche les 9 articles de la rotation : 1 minerai, 3 nourriture / nature, 1 butin de monstre, 3 blocs, 1 divers ;
   - la seconde ligne affiche le solde, une horloge indiquant le temps avant la prochaine rotation, et le bouton qui bascule vers l'autre interface.
-- **Clic** : échange d'un lot, c'est-à-dire la plus petite quantité qui vaut au moins une pièce. **Shift-clic** : une stack à l'achat, tout ce qui fait des pièces entières à la vente.
-- **Pièces entières à la vente** : l'idiot ne paie que des pièces entières et ne prend que les objets payés. Avec 48 cannes à sucre à 1 pièce les 32, il en achète 32 pour 1 pièce et le joueur garde les 16 autres.
+- **Clic** : à la vente, la plus petite quantité qui rapporte une pièce ; à l'achat, ce que vaut une pièce (ou un seul objet s'il coûte plus d'une pièce). **Shift-clic** : jusqu'à une stack à l'achat, tout ce qui fait des pièces entières à la vente.
+- **Jamais d'arrondi en faveur du joueur** :
+  - à la vente, l'idiot ne paie que des pièces entières et ne prend que les objets payés. Avec 48 cannes à sucre à 1 pièce les 32, il en achète 32 pour 1 pièce et le joueur garde les 16 autres ;
+  - à l'achat, le joueur paie toujours au moins la valeur exacte, arrondie à la pièce supérieure. Le shift-clic s'arrête à la plus grande quantité qui tombe sur des pièces entières : 60 objets pour 3 pièces plutôt que 64 pour 4.
 - **Inventaire libre** : pendant que l'interface est ouverte, le joueur peut déplacer, diviser ou jeter les objets de son propre inventaire. Seuls le shift-clic et le double-clic vers l'interface sont bloqués.
 - Avec un name tag ou une laisse en main, le clic garde son comportement vanilla.
 

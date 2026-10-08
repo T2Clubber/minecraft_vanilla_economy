@@ -78,12 +78,36 @@ public final class PricingEngine {
         }
     }
 
-    /** Coins for {@code quantity} units: round(unit * N), at least 1 for a non-empty transaction. */
-    public static long total(double unitPrice, long quantity) {
-        if (quantity <= 0) {
+    /**
+     * Coins charged by a villager for {@code quantity} units: never less than their value
+     * (rounded up), so at least 1 coin for a non-empty purchase.
+     */
+    public static long charge(double unitPrice, long quantity) {
+        return quantity <= 0 ? 0 : (long) Math.ceil(unitPrice * quantity - 1e-9);
+    }
+
+    /**
+     * Units bought with one click: what one coin buys (21 canes at 0.047 each, not 22 which
+     * would cost 2 coins), or a single unit when one unit costs more than a coin.
+     */
+    public static int buyLot(double unitPrice) {
+        return unitPrice >= 1 ? 1 : (int) Math.max(1, Math.floor(1.0 / unitPrice + 1e-9));
+    }
+
+    /**
+     * Largest quantity up to {@code requested} that is worth a whole number of coins (64 at
+     * 0.05 = 3.2 coins: 60 are bought for 3 coins instead of paying 4), or {@code requested}
+     * itself when it is worth less than one coin.
+     */
+    public static long buyableQuantity(double unitPrice, long requested) {
+        if (requested <= 0) {
             return 0;
         }
-        return Math.max(1L, Math.round(unitPrice * quantity));
+        long coins = (long) Math.floor(unitPrice * requested + 1e-9);
+        if (coins < 1) {
+            return requested;
+        }
+        return Math.max(1, Math.min(requested, (long) Math.floor(coins / unitPrice + 1e-9)));
     }
 
     /**

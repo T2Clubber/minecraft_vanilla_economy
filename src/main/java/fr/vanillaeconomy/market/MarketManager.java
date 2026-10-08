@@ -561,12 +561,14 @@ public final class MarketManager {
             return TradeResult.of(TradeStatus.NOT_OFFERED);
         }
         ItemState s = states.get(material);
-        int lot = PricingEngine.lotSize(s.sellUnit);
+        int lot = PricingEngine.buyLot(s.sellUnit);
         if (s.stock <= 0) {
             return new TradeResult(TradeStatus.OUT_OF_STOCK, 0, 0, lot);
         }
-        long quantity = Math.min(stack ? material.getMaxStackSize() : lot, s.stock);
-        long cost = PricingEngine.total(s.sellUnit, quantity);
+        // Never rounded in the player's favour: whole coins, at least the value of what is bought.
+        long requested = Math.min(stack ? Math.max(material.getMaxStackSize(), lot) : lot, s.stock);
+        long quantity = PricingEngine.buyableQuantity(s.sellUnit, requested);
+        long cost = PricingEngine.charge(s.sellUnit, quantity);
         if (freeSpaceFor(player, material) < quantity) {
             return new TradeResult(TradeStatus.NO_SPACE, quantity, cost, lot);
         }

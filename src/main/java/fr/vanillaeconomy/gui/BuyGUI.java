@@ -46,16 +46,17 @@ public final class BuyGUI extends MarketGui {
     @Override
     protected ItemStack renderItem(Material material) {
         ItemState s = market.state(material);
-        int lot = PricingEngine.lotSize(s.sellUnit());
+        int lot = PricingEngine.buyLot(s.sellUnit());
         int stack = material.getMaxStackSize();
+        long shown = PricingEngine.buyableQuantity(s.sellUnit(), lot);
         List<Component> lore = new ArrayList<>();
         if (s.sellPromo()) {
             lore.add(Messages.item("<gray>Prix : <dark_gray><st><old></st></dark_gray> <gold><price></gold> les <n>",
-                    Messages.p("old", Messages.coins(PricingEngine.total(s.regularSellUnit(), lot))),
-                    Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), lot))), Messages.p("n", lot)));
+                    Messages.p("old", Messages.coins(PricingEngine.charge(s.regularSellUnit(), shown))),
+                    Messages.p("price", Messages.coins(PricingEngine.charge(s.sellUnit(), shown))), Messages.p("n", shown)));
         } else {
             lore.add(Messages.item("<gray>Prix : <gold><price></gold> les <n>",
-                    Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), lot))), Messages.p("n", lot)));
+                    Messages.p("price", Messages.coins(PricingEngine.charge(s.sellUnit(), shown))), Messages.p("n", shown)));
         }
         lore.add(Messages.item("<dark_gray><unit> pièce / unité", Messages.p("unit", Messages.unitPrice(s.sellUnit()))));
         if (s.stock() <= 0) {
@@ -64,11 +65,14 @@ public final class BuyGUI extends MarketGui {
         }
         lore.add(Messages.item("<gray>Stock : <white><stock>", Messages.p("stock", s.stock())));
         lore.add(Component.empty());
-        lore.add(Messages.item("<yellow>Clic : acheter <n>", Messages.p("n", Math.min(lot, s.stock()))));
-        if (stack > lot) {
-            long bulk = Math.min(stack, s.stock());
+        // Same quantities as MarketManager.buyFromVillager: whole coins, never in the player's favour.
+        long single = PricingEngine.buyableQuantity(s.sellUnit(), Math.min(lot, s.stock()));
+        lore.add(Messages.item("<yellow>Clic : acheter <n> (<price>)", Messages.p("n", single),
+                Messages.p("price", Messages.coins(PricingEngine.charge(s.sellUnit(), single)))));
+        long bulk = PricingEngine.buyableQuantity(s.sellUnit(), Math.min(Math.max(stack, lot), s.stock()));
+        if (bulk > single) {
             lore.add(Messages.item("<yellow>Shift-clic : acheter <n> (<price>)", Messages.p("n", bulk),
-                    Messages.p("price", Messages.coins(PricingEngine.total(s.sellUnit(), bulk)))));
+                    Messages.p("price", Messages.coins(PricingEngine.charge(s.sellUnit(), bulk)))));
         }
         ItemStack item = icon(material, lot, lore, false);
         // Real reduction of the price (the formula may cap it at the villager's buying price).
