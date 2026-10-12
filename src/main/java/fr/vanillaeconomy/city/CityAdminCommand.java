@@ -61,7 +61,9 @@ public final class CityAdminCommand implements TabExecutor {
                 staffLog.admin(sender.getName(), "`/cityadmin rename` **" + oldName + "** → **" + city.name() + "**");
                 msg.send(sender, "admin_renamed", "city", city.name());
             } else if (sub.equals("info") && args.length == 2) {
-                cityCommand.sendInfo(sender, cities.require(args[1]));
+                City city = cities.require(args[1]);
+                cityCommand.sendInfo(sender, city);
+                staffLog.command(sender, command, args, "fiche de **" + StaffLog.md(city.name()) + "** consultée");
             } else {
                 msg.send(sender, "admin_usage");
             }

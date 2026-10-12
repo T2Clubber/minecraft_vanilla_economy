@@ -56,6 +56,7 @@ public final class MarketAdminCommand implements TabExecutor {
                 return true;
             }
             Messages.send(sender, "<gray>Envoi d'un message de test au webhook…");
+            staffLog.command(sender, command, args, "message de test envoyé au webhook des promos");
             discord.send("🔧 Test de l'annonceur Nitwit",
                     "Le webhook fonctionne : les promotions à venir seront annoncées ici. "
                             + "Ce message de test peut être supprimé.", 0x95A5A6)
@@ -65,7 +66,9 @@ public final class MarketAdminCommand implements TabExecutor {
                             Messages.p("status", status))));
         } else if (args.length == 1 && args[0].equalsIgnoreCase("promos")) {
             try {
-                Messages.send(sender, "<gray>Promotions prévues : <white><plan>", Messages.p("plan", market.upcomingPromotions()));
+                String plan = market.upcomingPromotions();
+                Messages.send(sender, "<gray>Promotions prévues : <white><plan>", Messages.p("plan", plan));
+                staffLog.command(sender, command, args, "promotions prévues : " + plan);
             } catch (java.sql.SQLException e) {
                 Messages.send(sender, "<red>Lecture du planning impossible.");
             }
@@ -73,6 +76,9 @@ public final class MarketAdminCommand implements TabExecutor {
             Material material = Material.matchMaterial(args[1]);
             Messages.send(sender, "<gray><info>", Messages.p("info",
                     material == null ? "Item inconnu : " + args[1] : market.describe(material)));
+            if (material != null && market.item(material) != null) {
+                staffLog.command(sender, command, args, "fiche consultée");
+            }
         } else if (args.length == 3 && args[0].equalsIgnoreCase("setstock")) {
             Material material = Material.matchMaterial(args[1]);
             long stock;

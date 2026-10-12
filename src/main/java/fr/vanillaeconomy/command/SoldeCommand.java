@@ -1,6 +1,7 @@
 package fr.vanillaeconomy.command;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.Messages;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,10 +17,12 @@ public final class SoldeCommand implements CommandExecutor {
 
     private final CurrencyManager currency;
     private final Logger logger;
+    private final StaffLog staffLog;
 
-    public SoldeCommand(CurrencyManager currency, Logger logger) {
+    public SoldeCommand(CurrencyManager currency, Logger logger, StaffLog staffLog) {
         this.currency = currency;
         this.logger = logger;
+        this.staffLog = staffLog;
     }
 
     @Override
@@ -31,6 +34,7 @@ public final class SoldeCommand implements CommandExecutor {
         try {
             long balance = currency.getBalance(player.getUniqueId());
             Messages.send(player, "<gray>Votre solde : <gold><amount></gold>", Messages.p("amount", Messages.coins(balance)));
+            staffLog.command(sender, command, args, "solde : " + balance + " pièces");
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Lecture du solde impossible", e);
             Messages.send(player, "<red>Erreur interne, réessayez plus tard.");

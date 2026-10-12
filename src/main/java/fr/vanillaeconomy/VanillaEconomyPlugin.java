@@ -66,8 +66,10 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             getServer().getOnlinePlayers().forEach(p -> currency.ensureAccount(p.getUniqueId(), p.getName()));
 
             // 2. Commands
-            register("solde", new SoldeCommand(currency, getLogger()));
             staffLog = new StaffLog(config.getConfigurationSection("discord"), getLogger());
+            // journal of the successful commands, grouped into one Discord message every 10 s
+            getServer().getScheduler().runTaskTimer(this, () -> staffLog.flushJournal(false), 200L, 200L);
+            register("solde", new SoldeCommand(currency, getLogger(), staffLog));
             register("pay", new PayCommand(currency, getLogger(), config.getDouble("pay.max_distance", 10.0), staffLog));
             register("money", new MoneyCommand(currency, getLogger(),
                     config.getLong("currency.max_drop", 2304), config.getBoolean("currency.confiscate_invalid", true), staffLog));
@@ -113,14 +115,14 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             cities.load();
             CityNotifier notifier = new CityNotifier(this, database, cityMessages);
             notifier.load();
-            CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier);
+            CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier, staffLog);
             register("city", cityCommand);
             register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog));
             cities.setAudit(staffLog::city);
             CityBoardGUI.Handler board = new CityBoardGUI.Handler(
-                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier));
+                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier, staffLog));
             register("cityboard", board);
-            borders = new BorderManager(this, cities, cityMessages);
+            borders = new BorderManager(this, cities, cityMessages, staffLog);
             register("border", borders);
             CityPresenceListener presence = new CityPresenceListener(cities, cityMessages);
             var pm = getServer().getPluginManager();

@@ -50,25 +50,30 @@ public final class MoneyCommand implements TabExecutor {
             Messages.send(sender, "<red>Commande réservée aux joueurs.");
             return true;
         }
+        String result = null;
         if (args.length == 2 && args[0].equalsIgnoreCase("drop")) {
-            drop(player, args[1]);
+            result = drop(player, args[1]);
         } else if (args.length == 1 && args[0].equalsIgnoreCase("deposit")) {
-            deposit(player);
+            result = deposit(player);
         } else {
             Messages.send(player, "<red>Usage : /money drop <montant> | /money deposit");
+        }
+        if (result != null) {
+            staffLog.command(sender, command, args, result);
         }
         return true;
     }
 
-    private void drop(Player player, String rawAmount) {
+    /** Returns the journal line of a successful withdrawal, null otherwise. */
+    private String drop(Player player, String rawAmount) {
         long amount = parseAmount(rawAmount);
         if (amount <= 0) {
             Messages.send(player, "<red>Le montant doit être un entier strictement positif.");
-            return;
+            return null;
         }
         if (amount > maxDrop) {
             Messages.send(player, "<red>Maximum <max> par retrait.", Messages.p("max", Messages.coins(maxDrop)));
-            return;
+            return null;
         }
         // Freshly minted coins never stack with existing ones (new serial): empty slots are needed.
         int needed = CurrencyManager.stacksNeeded(amount);
@@ -80,7 +85,7 @@ public final class MoneyCommand implements TabExecutor {
         }
         if (free < needed) {
             Messages.send(player, "<red>Il vous faut <n> emplacement(s) libre(s) dans l'inventaire.", Messages.p("n", needed));
-            return;
+            return null;
         }
         List<ItemStack> coins;
         try {
@@ -88,23 +93,25 @@ public final class MoneyCommand implements TabExecutor {
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Échec de /money drop pour " + player.getName(), e);
             Messages.send(player, "<red>Erreur interne, votre solde n'a pas été modifié.");
-            return;
+            return null;
         }
         if (coins.isEmpty()) {
             Messages.send(player, "<red>Solde insuffisant.");
-            return;
+            return null;
         }
         var leftovers = player.getInventory().addItem(coins.toArray(ItemStack[]::new));
         // Should not happen (space checked above), but never destroy money.
         leftovers.values().forEach(item -> player.getWorld().dropItem(player.getLocation(), item));
         Messages.send(player, "<gray>Vous avez retiré <gold><amount></gold>.", Messages.p("amount", Messages.coins(amount)));
+        return amount + " pièces retirées en pièces physiques";
     }
 
-    private void deposit(Player player) {
+    /** Returns the journal line of a successful deposit, null otherwise (suspect deposits have their own alert). */
+    private String deposit(Player player) {
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (!currency.isCoin(hand)) {
             Messages.send(player, "<red>Tenez des pièces dans votre main principale.");
-            return;
+            return null;
         }
         DepositResult result;
         try {
@@ -112,7 +119,7 @@ public final class MoneyCommand implements TabExecutor {
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Échec de /money deposit pour " + player.getName(), e);
             Messages.send(player, "<red>Erreur interne, rien n'a été déposé.");
-            return;
+            return null;
         }
         int consumed = (int) result.credited();
         if (result.rejected() > 0) {
@@ -137,6 +144,7 @@ public final class MoneyCommand implements TabExecutor {
             case ALREADY_REDEEMED -> Messages.send(player, "<red>Ces pièces ont déjà été déposées (duplication détectée).");
             case NOT_A_COIN -> Messages.send(player, "<red>Tenez des pièces dans votre main principale.");
         }
+        return result.status() == CurrencyManager.DepositStatus.OK ? result.credited() + " pièces déposées" : null;
     }
 
     private void alertStaff(Player player, DepositResult result, String serial) {

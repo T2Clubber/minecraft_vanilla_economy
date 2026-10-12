@@ -3,6 +3,7 @@ package fr.vanillaeconomy.city;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import fr.vanillaeconomy.city.CityRules.Tier;
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.InventoryGuard;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.Messages;
@@ -82,7 +83,7 @@ public final class CityBoardGUI implements InventoryHolder {
 
     /** What the board needs, shared by all instances. */
     public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg,
-                           CityNotifier notifier) {
+                           CityNotifier notifier, StaffLog staffLog) {
     }
 
     private CityBoardGUI(Services services, Player viewer, City city, Tab tab) {
@@ -387,6 +388,8 @@ public final class CityBoardGUI implements InventoryHolder {
                 services.cities().setCoOwner(city, viewer.getUniqueId(), target, promote);
                 services.msg().send(viewer, promote ? "coowner_set" : "coowner_unset", "player", targetName, "city", city.name());
                 services.notifier().notify(target, promote ? "coowner_notify_set" : "coowner_notify_unset", "city", city.name());
+                services.staffLog().action(viewer, "/cityboard " + city.name(), StaffLog.md(targetName)
+                        + (promote ? " promu" : " n'est plus") + " co-propriétaire de **" + StaffLog.md(city.name()) + "**");
             });
             render();
         } else if (click == ClickType.SHIFT_RIGHT && me.canKick(targetRole) && !target.equals(viewer.getUniqueId())) {
@@ -395,6 +398,8 @@ public final class CityBoardGUI implements InventoryHolder {
                     services.cities().kick(city, viewer.getUniqueId(), target);
                     services.msg().send(viewer, "kicked", "player", targetName, "city", city.name());
                     services.notifier().notify(target, "kicked_notify", "city", city.name());
+                    services.staffLog().action(viewer, "/cityboard " + city.name(),
+                            StaffLog.md(targetName) + " exclu de **" + StaffLog.md(city.name()) + "**");
                 });
                 reopen(Tab.MEMBERS);
             }, () -> reopen(Tab.MEMBERS));
@@ -541,6 +546,7 @@ public final class CityBoardGUI implements InventoryHolder {
                     throw new CityException("not_member", "city", city.name());
                 }
                 open(services, player, city, Tab.MEMBERS);
+                services.staffLog().command(sender, command, args, "tableau de bord de **" + StaffLog.md(city.name()) + "** ouvert");
             } catch (CityException e) {
                 services.msg().send(player, e.key(), e.vars());
             }

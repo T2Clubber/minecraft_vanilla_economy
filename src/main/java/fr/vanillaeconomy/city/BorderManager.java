@@ -1,5 +1,6 @@
 package fr.vanillaeconomy.city;
 
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.MessageConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -38,13 +39,15 @@ public final class BorderManager implements Listener, TabExecutor {
     private final Plugin plugin;
     private final CityManager cities;
     private final MessageConfig msg;
+    private final StaffLog staffLog;
     private final Map<UUID, Integer> viewers = new HashMap<>();
     private BukkitTask task;
 
-    public BorderManager(Plugin plugin, CityManager cities, MessageConfig msg) {
+    public BorderManager(Plugin plugin, CityManager cities, MessageConfig msg, StaffLog staffLog) {
         this.plugin = plugin;
         this.cities = cities;
         this.msg = msg;
+        this.staffLog = staffLog;
         cities.onRemoval(city -> viewers.values().removeIf(id -> id == city.id()));
     }
 
@@ -131,6 +134,7 @@ public final class BorderManager implements Listener, TabExecutor {
         if (args[1].equalsIgnoreCase("off")) {
             viewers.remove(player.getUniqueId());
             msg.send(player, "border_off");
+            staffLog.command(sender, command, args, "frontières masquées");
             return true;
         }
         try {
@@ -141,6 +145,7 @@ public final class BorderManager implements Listener, TabExecutor {
             }
             viewers.put(player.getUniqueId(), city.id());
             msg.send(player, "border_on", "city", city.name());
+            staffLog.command(sender, command, args, "frontières de **" + StaffLog.md(city.name()) + "** affichées");
         } catch (CityException e) {
             msg.send(player, e.key(), e.vars());
         }

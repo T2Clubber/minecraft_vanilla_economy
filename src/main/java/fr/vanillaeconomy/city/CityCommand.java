@@ -1,6 +1,7 @@
 package fr.vanillaeconomy.city;
 
 import fr.vanillaeconomy.city.CityRules.Tier;
+import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.Messages;
 import fr.vanillaeconomy.util.Players;
@@ -33,12 +34,14 @@ public final class CityCommand implements TabExecutor {
     private final CityManager cities;
     private final MessageConfig msg;
     private final CityNotifier notifier;
+    private final StaffLog staffLog;
     private final Map<UUID, Confirmation> confirmations = new HashMap<>();
 
-    public CityCommand(CityManager cities, MessageConfig msg, CityNotifier notifier) {
+    public CityCommand(CityManager cities, MessageConfig msg, CityNotifier notifier, StaffLog staffLog) {
         this.cities = cities;
         this.msg = msg;
         this.notifier = notifier;
+        this.staffLog = staffLog;
     }
 
     @Override
@@ -49,7 +52,9 @@ public final class CityCommand implements TabExecutor {
         }
         String sub = args.length == 0 ? "help" : args[0].toLowerCase(Locale.ROOT);
         try {
-            switch (sub) {
+            // Journal line of a successful sub-command; foundation, expansion and dissolution
+            // have their own staff message (CityManager audit).
+            String result = switch (sub) {
                 case "create" -> create(player, args);
                 case "info" -> info(player, args);
                 case "add" -> add(player, args);
@@ -59,7 +64,13 @@ public final class CityCommand implements TabExecutor {
                 case "contribute" -> contribute(player, args);
                 case "upgrade" -> upgrade(player, args);
                 case "disband" -> disband(player, args);
-                default -> usage(player);
+                default -> {
+                    usage(player);
+                    yield null;
+                }
+            };
+            if (result != null) {
+                staffLog.command(sender, command, args, result);
             }
         } catch (CityException e) {
             msg.send(player, e.key(), e.vars());
@@ -71,17 +82,18 @@ public final class CityCommand implements TabExecutor {
         player.sendMessage(msg.get("usage", "cost", Messages.coins(cities.config().creationCost)));
     }
 
-    private void create(Player player, String[] args) throws CityException {
+    private String create(Player player, String[] args) throws CityException {
         if (args.length != 2) {
             usage(player);
-            return;
+            return null;
         }
         City city = cities.create(player, args[1]);
         msg.send(player, "created", "city", city.name(), "size", city.territory().size(),
                 "cost", Messages.coins(cities.config().creationCost));
+        return null;
     }
 
-    private void info(Player player, String[] args) throws CityException {
+    private String info(Player player, String[] args) throws CityException {
         City city;
         if (args.length >= 2) {
             city = cities.require(args[1]);
@@ -94,6 +106,7 @@ public final class CityCommand implements TabExecutor {
             }
         }
         sendInfo(player, city);
+        return "fiche de **" + StaffLog.md(city.name()) + "** consultée";
     }
 
     void sendInfo(CommandSender to, City city) {
@@ -102,10 +115,10 @@ public final class CityCommand implements TabExecutor {
                 "world", city.world(), "members", city.members().size(), "balance", Messages.coins(city.balance())));
     }
 
-    private void add(Player player, String[] args) throws CityException {
+    private String add(Player player, String[] args) throws CityException {
         if (args.length < 2 || args.length > 3) {
             usage(player);
-            return;
+            return null;
         }
         City city = cities.managedCity(player.getUniqueId(), args.length == 3 ? args[2] : null);
         UUID target = resolvePlayer(args[1]);
@@ -113,35 +126,38 @@ public final class CityCommand implements TabExecutor {
         String name = CityManager.nameOf(target);
         msg.send(player, "added", "player", name, "city", city.name());
         notifier.notify(target, "added_notify", "city", city.name(), "actor", player.getName());
+        return StaffLog.md(name) + " ajouté à **" + StaffLog.md(city.name()) + "**";
     }
 
-    private void kick(Player player, String[] args) throws CityException {
+    private String kick(Player player, String[] args) throws CityException {
         if (args.length < 2 || args.length > 3) {
             usage(player);
-            return;
+            return null;
         }
         City city = cities.managedCity(player.getUniqueId(), args.length == 3 ? args[2] : null);
         UUID target = resolvePlayer(args[1]);
         cities.kick(city, player.getUniqueId(), target);
         msg.send(player, "kicked", "player", CityManager.nameOf(target), "city", city.name());
         notifier.notify(target, "kicked_notify", "city", city.name());
+        return StaffLog.md(CityManager.nameOf(target)) + " exclu de **" + StaffLog.md(city.name()) + "**";
     }
 
-    private void leave(Player player, String[] args) throws CityException {
+    private String leave(Player player, String[] args) throws CityException {
         if (args.length != 2) {
             usage(player);
-            return;
+            return null;
         }
         City city = cities.require(args[1]);
         cities.leave(city, player.getUniqueId());
         msg.send(player, "left", "city", city.name());
         notifier.notify(city.owner(), "left_notify", "player", player.getName(), "city", city.name());
+        return "a quitté **" + StaffLog.md(city.name()) + "**";
     }
 
-    private void coOwner(Player player, String[] args) throws CityException {
+    private String coOwner(Player player, String[] args) throws CityException {
         if (args.length != 3 || !(args[1].equalsIgnoreCase("set") || args[1].equalsIgnoreCase("unset"))) {
             usage(player);
-            return;
+            return null;
         }
         City city = cities.ownedBy(player.getUniqueId()).orElseThrow(() -> new CityException("no_managed_city"));
         UUID target = resolvePlayer(args[2]);
@@ -149,12 +165,14 @@ public final class CityCommand implements TabExecutor {
         cities.setCoOwner(city, player.getUniqueId(), target, set);
         msg.send(player, set ? "coowner_set" : "coowner_unset", "player", CityManager.nameOf(target), "city", city.name());
         notifier.notify(target, set ? "coowner_notify_set" : "coowner_notify_unset", "city", city.name());
+        return StaffLog.md(CityManager.nameOf(target)) + (set ? " promu" : " n'est plus") + " co-propriétaire de **"
+                + StaffLog.md(city.name()) + "**";
     }
 
-    private void contribute(Player player, String[] args) throws CityException {
+    private String contribute(Player player, String[] args) throws CityException {
         if (args.length != 3) {
             usage(player);
-            return;
+            return null;
         }
         City city = cities.require(args[1]);
         long amount;
@@ -170,24 +188,26 @@ public final class CityCommand implements TabExecutor {
             notifier.notify(city.owner(), "contribution_notify", "player", player.getName(),
                     "amount", Messages.coins(amount), "city", city.name(), "balance", Messages.coins(city.balance()));
         }
+        return amount + " pièces versées à **" + StaffLog.md(city.name()) + "** (trésorerie : " + city.balance() + ")";
     }
 
-    private void upgrade(Player player, String[] args) throws CityException {
+    private String upgrade(Player player, String[] args) throws CityException {
         City city = cities.ownedBy(player.getUniqueId()).orElseThrow(() -> new CityException("no_managed_city"));
         if (args.length == 2 && args[1].equalsIgnoreCase("confirm")) {
             consumeConfirmation(player, Pending.UPGRADE, city);
             Tier tier = cities.upgrade(city, player.getUniqueId());
             msg.send(player, "upgraded", "city", city.name(), "tier", tier.level(), "size", tier.size());
-            return;
+            return null;
         }
         Tier next = cities.checkUpgrade(city, player.getUniqueId());
         confirmations.put(player.getUniqueId(), new Confirmation(Pending.UPGRADE, city.id(),
                 System.currentTimeMillis() + cities.config().confirmMillis));
         msg.send(player, "upgrade_confirm", "tier", next.level(), "size", next.size(),
                 "price", Messages.coins(next.price()), "seconds", cities.config().confirmMillis / 1000);
+        return "confirmation demandée pour le palier " + next.level() + " de **" + StaffLog.md(city.name()) + "**";
     }
 
-    private void disband(Player player, String[] args) throws CityException {
+    private String disband(Player player, String[] args) throws CityException {
         City city = cities.ownedBy(player.getUniqueId()).orElseThrow(() -> new CityException("no_managed_city"));
         if (args.length == 2 && args[1].equalsIgnoreCase("confirm")) {
             consumeConfirmation(player, Pending.DISBAND, city);
@@ -195,7 +215,7 @@ public final class CityCommand implements TabExecutor {
             Map<UUID, Long> refunds = cities.disband(city, player.getUniqueId());
             msg.send(player, "disbanded", "city", city.name());
             notifier.dissolution(city, members, player.getUniqueId(), refunds, "disbanded_notify");
-            return;
+            return null;
         }
         if (!city.roleOf(player.getUniqueId()).canDisband()) {
             throw new CityException("no_permission_role", "city", city.name());
@@ -204,6 +224,7 @@ public final class CityCommand implements TabExecutor {
                 System.currentTimeMillis() + cities.config().confirmMillis));
         msg.send(player, "disband_confirm", "city", city.name(), "balance", Messages.coins(city.balance()),
                 "seconds", cities.config().confirmMillis / 1000);
+        return "confirmation de dissolution demandée pour **" + StaffLog.md(city.name()) + "**";
     }
 
     private void consumeConfirmation(Player player, Pending action, City city) throws CityException {

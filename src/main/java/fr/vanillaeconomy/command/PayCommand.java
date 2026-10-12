@@ -77,7 +77,7 @@ public final class PayCommand implements TabExecutor {
                 Messages.p("amount", Messages.coins(amount)), Messages.p("target", target.getName()));
         Messages.send(target, "<white><payer></white> <gray>vous a envoyé <gold><amount></gold>.",
                 Messages.p("amount", Messages.coins(amount)), Messages.p("payer", payer.getName()));
-        staffLog.pay(payer.getName(), target.getName(), amount);
+        staffLog.pay(payer, command, args, target.getName(), amount);
         return true;
     }
 

@@ -92,10 +92,17 @@ discord:
   # Journal staff dans #logs-serveur (webhook de ce salon, vide = désactivé) :
   # pièces falsifiées / dupliquées, commandes /eco, /marketadmin, /cityadmin,
   # création / agrandissement / dissolution des cités, gros /pay, démarrage et
-  # arrêt du serveur.
+  # arrêt du serveur, et journal des commandes (logs_commands).
   logs_webhook_url: ""
-  # Montant à partir duquel un /pay est journalisé.
+  # Montant à partir duquel un /pay a son propre message (« Gros transfert ») ;
+  # les plus petits apparaissent dans le journal des commandes.
   logs_pay_threshold: 1000
+  # Journal des commandes : toute commande du plugin qui a abouti (/solde,
+  # /money, /pay, /city, /cityboard, /border, consultations admin...) est
+  # tracée, regroupée en un message toutes les 10 secondes. Les actions qui
+  # ont déjà leur message (admin, cités fondées / agrandies / dissoutes,
+  # gros transferts, pièces suspectes) n'y sont pas répétées.
+  logs_commands: true
 
 villagers:
   # Intervalle (en secondes) de vérification des bébés idiots suivis pour
