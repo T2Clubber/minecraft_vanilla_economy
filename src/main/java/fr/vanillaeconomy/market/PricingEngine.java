@@ -6,9 +6,10 @@ package fr.vanillaeconomy.market;
  * <pre>
  * buy  = ce que l'idiot PAIE au joueur (interface VENTE)
  *      = max(floor, baseUnit * exp(-k * circulation / (baseNumber * scaleLots)))
- * sell = ce que l'idiot FACTURE au joueur (interface ACHAT)
- *      = max(buy * markup, buy + floor)          => toujours sell >= buy + floor > buy
- * total(N) = max(1, round(unit * N)) pour N > 0
+ * sell = ce que l'idiot FACTURE au joueur (interface ACHAT), FIXE : il ne dépend que de la
+ *        config, pas de la circulation (seules les promotions le modifient)
+ *      = max(ref * markup, ref + floor), ref = max(floor, baseUnit)
+ *        => toujours sell >= ref + floor > buy
  * </pre>
  */
 public final class PricingEngine {
@@ -38,10 +39,19 @@ public final class PricingEngine {
     public Prices compute(MarketItem item, double circulation) {
         double scale = item.baseNumber() * scaleLots;
         double buy = Math.max(floorPerUnit, item.baseUnitPrice() * Math.exp(-k * Math.max(0, circulation) / scale));
-        double sell = Math.max(buy * markup, buy + floorPerUnit);
+        double sell = regularSell(item);
         Prices prices = new Prices(buy, sell);
         check(item, prices);
         return prices;
+    }
+
+    /**
+     * Fixed selling price of an item: derived from its configured base price only, so that
+     * players selling a lot of an item lower what the villagers pay, never what they charge.
+     */
+    public double regularSell(MarketItem item) {
+        double reference = Math.max(floorPerUnit, item.baseUnitPrice());
+        return Math.max(reference * markup, reference + floorPerUnit);
     }
 
     /**

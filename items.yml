@@ -14,9 +14,12 @@
 #    Même si un item apparaît dans les deux rotations à des cycles
 #    différents, la contrainte doit être vérifiée après CHAQUE recalcul
 #    de prix (toutes les 2h), pas seulement à l'initialisation.
-#    Implémentation suggérée : price_sell = max(price_buy * markup,
-#    price_buy + price_floor_per_unit) pour garantir l'inégalité même
-#    sur les items à prix très faible.
+#    price_sell est FIXE : il ne dépend que de base_price / base_number
+#    (prix_unitaire, voir point 4) et pas des ventes des joueurs :
+#    price_sell = max(prix_unitaire * markup, prix_unitaire +
+#    price_floor_per_unit). Seules les promotions le font baisser, sans
+#    jamais passer sous price_buy. price_buy, lui, baisse quand les
+#    joueurs vendent beaucoup, donc l'inégalité tient toujours.
 #
 # 3. PRICE FLOOR : prix plancher global = 1 pièce pour 64 unités d'un
 #    item (price_floor_per_unit = 1/64 ≈ 0.015625). Ce plancher est

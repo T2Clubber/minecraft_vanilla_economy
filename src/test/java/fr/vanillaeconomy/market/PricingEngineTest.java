@@ -53,6 +53,23 @@ class PricingEngineTest {
     }
 
     @Test
+    void sellPriceIsFixedByConfigWhateverTheCirculation() {
+        MarketItem diamond = new MarketItem(Material.DIAMOND, "minerals", "epic", 30, 1);
+        for (double circulation : new double[]{0, 64, 1e3, 1e6, 1e12}) {
+            PricingEngine.Prices p = pricing.compute(diamond, circulation);
+            assertEquals(42, p.sellUnit(), 1e-9, "30 x 1.4, even after massive sales");
+            assertEquals(42, PricingEngine.charge(p.sellUnit(), PricingEngine.buyLot(p.sellUnit())));
+        }
+        MarketItem dirt = SAMPLE.get(0);
+        assertEquals(2.0 / 64, pricing.compute(dirt, 1e9).sellUnit(), 1e-12, "base + floor on cheap items");
+        // promotions still lower it, never below what the villager pays
+        PricingEngine.Prices regular = pricing.compute(diamond, 0);
+        assertEquals(30, pricing.promoSell(regular, 50).sellUnit(), 1e-9);
+        PricingEngine.Prices crashed = pricing.compute(diamond, 1e6);
+        assertEquals(21, pricing.promoSell(crashed, 50).sellUnit(), 1e-9);
+    }
+
+    @Test
     void purchasesAreNeverRoundedInThePlayersFavour() {
         double cane = 0.046875; // 1.5 x 1/32
         assertEquals(21, PricingEngine.buyLot(cane), "what one coin buys: 21 (22 would cost 2 coins)");

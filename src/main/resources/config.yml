@@ -37,8 +37,9 @@ pay:
   max_distance: 10.0
 
 market:
-  # Multiplicateur appliqué au prix d'achat pour obtenir le prix de vente
-  # (price_sell = max(price_buy * markup, price_buy + price_floor_per_unit)).
+  # Multiplicateur appliqué au prix de base (base_price / base_number) pour
+  # obtenir le prix de vente des idiots, fixe quelles que soient les ventes
+  # des joueurs : price_sell = max(prix_base * markup, prix_base + 1/64).
   markup: 1.4
   # Paramètres de la décroissance du prix d'achat :
   # prix_unitaire = max(plancher, base * exp(-k * circulation / échelle))
