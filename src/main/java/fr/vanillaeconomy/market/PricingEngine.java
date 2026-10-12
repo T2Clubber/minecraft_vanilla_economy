@@ -1,11 +1,14 @@
 package fr.vanillaeconomy.market;
 
+import java.util.Map;
+
 /**
  * Pure pricing formulas (no Bukkit dependency, unit-tested).
  *
  * <pre>
  * buy  = ce que l'idiot PAIE au joueur (interface VENTE)
- *      = max(floor, baseUnit * exp(-k * circulation / (baseNumber * scaleLots)))
+ *      = max(floor(item), baseUnit * exp(-k * circulation / (baseNumber * scaleLots)))
+ *        floor(item) = max(1/64, relativeFloor(catégorie) * baseUnit)
  * sell = ce que l'idiot FACTURE au joueur (interface ACHAT), FIXE : il ne dépend que de la
  *        config, pas de la circulation (seules les promotions le modifient)
  *      = max(ref * markup, ref + floor), ref = max(floor, baseUnit)
@@ -21,24 +24,42 @@ public final class PricingEngine {
     private final double k;
     private final double scaleLots;
     private final double markup;
+    /** Category -> fraction of the base unit price below which the buying price never falls. */
+    private final Map<String, Double> relativeFloors;
 
     public PricingEngine(double floorPerUnit, double k, double scaleLots, double markup) {
-        if (floorPerUnit <= 0 || k < 0 || scaleLots <= 0 || markup < 1) {
+        this(floorPerUnit, k, scaleLots, markup, Map.of());
+    }
+
+    public PricingEngine(double floorPerUnit, double k, double scaleLots, double markup,
+                         Map<String, Double> relativeFloors) {
+        if (floorPerUnit <= 0 || k < 0 || scaleLots <= 0 || markup < 1
+                || relativeFloors.values().stream().anyMatch(f -> !(f >= 0 && f <= 1))) {
             throw new IllegalArgumentException("invalid pricing parameters");
         }
         this.floorPerUnit = floorPerUnit;
         this.k = k;
         this.scaleLots = scaleLots;
         this.markup = markup;
+        this.relativeFloors = Map.copyOf(relativeFloors);
     }
 
     public double floorPerUnit() {
         return floorPerUnit;
     }
 
+    /**
+     * Lowest buying price of an item: the global 1/64 floor, raised to a share of the base
+     * price for the categories listed in {@code market.relative_floor} (a diamond never
+     * falls below 20 % of its value however many are sold).
+     */
+    public double floorFor(MarketItem item) {
+        return Math.max(floorPerUnit, relativeFloors.getOrDefault(item.category(), 0.0) * item.baseUnitPrice());
+    }
+
     public Prices compute(MarketItem item, double circulation) {
         double scale = item.baseNumber() * scaleLots;
-        double buy = Math.max(floorPerUnit, item.baseUnitPrice() * Math.exp(-k * Math.max(0, circulation) / scale));
+        double buy = Math.max(floorFor(item), item.baseUnitPrice() * Math.exp(-k * Math.max(0, circulation) / scale));
         double sell = regularSell(item);
         Prices prices = new Prices(buy, sell);
         check(item, prices);
@@ -75,14 +96,14 @@ public final class PricingEngine {
             return regular;
         }
         double scale = item.baseNumber() * scaleLots;
-        double buy = Math.max(floorPerUnit,
+        double buy = Math.max(floorFor(item),
                 item.basePrice() / effective * Math.exp(-k * Math.max(0, circulation) / scale));
         return new Prices(buy, Math.max(regular.sellUnit(), buy));
     }
 
     /** Hard constraints, verified after every recalculation. */
     public void check(MarketItem item, Prices prices) {
-        if (!(prices.buyUnit() >= floorPerUnit) || !(prices.sellUnit() >= prices.buyUnit())
+        if (!(prices.buyUnit() >= floorFor(item) - 1e-12) || !(prices.sellUnit() >= prices.buyUnit())
                 || Double.isNaN(prices.sellUnit()) || Double.isInfinite(prices.sellUnit())) {
             throw new IllegalStateException("Contrainte de prix violée pour " + item.material() + " : " + prices);
         }

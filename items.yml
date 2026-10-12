@@ -25,6 +25,11 @@
 #    item (price_floor_per_unit = 1/64 ≈ 0.015625). Ce plancher est
 #    TOUJOURS exprimé par unité, indépendamment du base_number de
 #    l'item (voir point 4) : price_unitaire_min = 1/64.
+#    Pour les catégories de market.relative_floor (config.yml, par défaut
+#    minerals et other), le plancher est relevé à 20 % du prix unitaire
+#    de base : un diamant à 30 ne se rachète jamais moins de 6 pièces.
+#    La baisse du prix de rachat se résorbe avec les achats des joueurs
+#    et de 6 % par rotation (market.circulation_decay).
 #
 # 4. BASE_NUMBER : chaque item a son propre "lot de référence". base_price
 #    est le prix de base_number unités de cet item (pas forcément 64).
@@ -76,13 +81,16 @@ categories:
   minerals:
     - { id: COAL,             tier: common,    base_price: 2,    base_number: 64 }
     - { id: COPPER_INGOT,     tier: common,    base_price: 3,    base_number: 64 }
+    - { id: RESIN_CLUMP,      tier: uncommon,  base_price: 3,    base_number: 16 }
+    - { id: AMETHYST_SHARD,   tier: uncommon,  base_price: 5,    base_number: 16 }
+    - { id: QUARTZ,           tier: uncommon,  base_price: 3,    base_number: 16 }
     - { id: IRON_INGOT,       tier: uncommon,  base_price: 8,    base_number: 64 }
     - { id: LAPIS_LAZULI,     tier: uncommon,  base_price: 6,    base_number: 64 }
     - { id: REDSTONE,         tier: uncommon,  base_price: 5,    base_number: 64 }
     - { id: GOLD_INGOT,       tier: rare,      base_price: 20,   base_number: 32 }
     - { id: EMERALD,          tier: rare,      base_price: 40,   base_number: 32 }
-    - { id: DIAMOND,          tier: epic,      base_price: 30,  base_number: 1 }
-    - { id: ANCIENT_DEBRIS,   tier: legendary, base_price: 60,  base_number: 1 }
+    - { id: DIAMOND,          tier: epic,      base_price: 30,   base_number: 1 }
+    - { id: ANCIENT_DEBRIS,   tier: legendary, base_price: 60,   base_number: 1 }
 
   food_nature:
     - { id: COOKED_CHICKEN,   tier: common,   base_price: 2,   base_number: 16 }
@@ -115,11 +123,18 @@ categories:
     - { id: MELON_SLICE,      tier: common,   base_price: 1,   base_number: 16 }
     - { id: PUMPKIN,          tier: common,   base_price: 2,   base_number: 16 }
     - { id: LEATHER,          tier: common,   base_price: 4,   base_number: 16 }
+    - { id: TURTLE_SCUTE,     tier: rare,     base_price: 20,  base_number: 16 }
+    - { id: NETHER_WART,          tier: common,    base_price: 2,  base_number: 16 }
+    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 2,  base_number: 16 }
     # Ajouts 26.3 (Wilderness Bound) - forêt mouchetée. Ignorés avec un
     # avertissement sur un serveur 26.2. Prix calés sur RED/BROWN_MUSHROOM
     # et les fleurs.
     - { id: SHELF_MUSHROOM,   tier: common,   base_price: 2,   base_number: 16 }
     - { id: RED_SHRUB,        tier: common,   base_price: 2,   base_number: 16 }
+        # Sulfur Spike - item ajouté en MAJ 26.2/26.3 ("Chaos Cubed"), trouvé
+    # dans les Sulfur Caves. Prix calé sur le ratio de vente du marchand
+    # ambulant vanilla (2 Sulfur Spikes pour 1 émeraude, ~20$/unité ici).
+    - { id: SULFUR_SPIKE,     tier: rare,     base_price: 18,  base_number: 64 }
 
   hostile_mob:
     - { id: SPIDER_EYE,       tier: common,   base_price: 2,   base_number: 16 }
@@ -127,6 +142,8 @@ categories:
     - { id: BONE,             tier: common,   base_price: 1,   base_number: 16 }
     - { id: ARROW,            tier: common,   base_price: 1,   base_number: 16 }
     - { id: ROTTEN_FLESH,     tier: common,   base_price: 1,   base_number: 16 }
+    - { id: PRISMARINE_SHARD,     tier: common,    base_price: 3,  base_number: 16 }
+    - { id: PRISMARINE_CRYSTALS,  tier: uncommon,  base_price: 4,  base_number: 16 }
     - { id: SLIME_BALL,       tier: uncommon, base_price: 3,   base_number: 16 }
     - { id: BLAZE_ROD,        tier: rare,     base_price: 15,  base_number: 16 }
     - { id: BREEZE_ROD,       tier: rare,     base_price: 20,  base_number: 16 }
@@ -185,10 +202,6 @@ categories:
     - { id: YELLOW_POPLAR_LEAVES, tier: common, base_price: 1, base_number: 64 }
 
   other:
-    - { id: PRISMARINE_SHARD,     tier: common,    base_price: 3,  base_number: 16 }
-    - { id: PRISMARINE_CRYSTALS,  tier: uncommon,  base_price: 4,  base_number: 16 }
-    - { id: NETHER_WART,          tier: common,    base_price: 2,  base_number: 16 }
-    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 2,  base_number: 16 }
     # Disques musicaux : stack vanilla max = 1, donc base_number = 1
     - { id: MUSIC_DISC_13,                 tier: legendary, base_price: 150, base_number: 1 }
     - { id: MUSIC_DISC_CAT,                tier: legendary, base_price: 150, base_number: 1 }
@@ -210,13 +223,3 @@ categories:
     - { id: MUSIC_DISC_CREATOR,            tier: legendary, base_price: 250, base_number: 1 }
     - { id: MUSIC_DISC_CREATOR_MUSIC_BOX,  tier: legendary, base_price: 250, base_number: 1 }
     - { id: MUSIC_DISC_TEARS,              tier: legendary, base_price: 250, base_number: 1 }
-    - { id: TURTLE_SCUTE,     tier: rare,     base_price: 20,  base_number: 16 }
-    - { id: RESIN_CLUMP,      tier: uncommon, base_price: 3,   base_number: 16 }
-    - { id: AMETHYST_SHARD,   tier: uncommon, base_price: 5,   base_number: 16 }
-    - { id: QUARTZ,           tier: uncommon, base_price: 3,   base_number: 16 }
-    # Nametag : stack vanilla max = 1, donc base_number = 1
-    - { id: NAME_TAG,         tier: rare,     base_price: 15,  base_number: 1 }
-    # Sulfur Spike - item ajouté en MAJ 26.2/26.3 ("Chaos Cubed"), trouvé
-    # dans les Sulfur Caves. Prix calé sur le ratio de vente du marchand
-    # ambulant vanilla (2 Sulfur Spikes pour 1 émeraude, ~20$/unité ici).
-    - { id: SULFUR_SPIKE,     tier: rare,     base_price: 18,  base_number: 64 }

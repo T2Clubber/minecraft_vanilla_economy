@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,6 +68,27 @@ class PricingEngineTest {
         assertEquals(30, pricing.promoSell(regular, 50).sellUnit(), 1e-9);
         PricingEngine.Prices crashed = pricing.compute(diamond, 1e6);
         assertEquals(21, pricing.promoSell(crashed, 50).sellUnit(), 1e-9);
+    }
+
+    @Test
+    void relativeFloorOnlyForListedCategories() {
+        PricingEngine floored = new PricingEngine(FLOOR, 1.0, 64, 1.4, Map.of("minerals", 0.2, "other", 0.2));
+        MarketItem diamond = new MarketItem(Material.DIAMOND, "minerals", "epic", 30, 1);
+        MarketItem disc = new MarketItem(Material.MUSIC_DISC_CAT, "other", "legendary", 150, 1);
+        MarketItem pearl = SAMPLE.get(4);
+        for (double circulation : new double[]{0, 64, 1e3, 1e9}) {
+            PricingEngine.Prices d = floored.compute(diamond, circulation);
+            assertTrue(d.buyUnit() >= 6 - 1e-9, "diamond never below 20 % of 30");
+            assertTrue(d.sellUnit() >= d.buyUnit());
+            assertTrue(floored.compute(disc, circulation).buyUnit() >= 30 - 1e-9);
+            assertEquals(pricing.compute(pearl, circulation).buyUnit(), floored.compute(pearl, circulation).buyUnit(),
+                    1e-12, "other categories keep the 1/64 floor");
+        }
+        assertEquals(6, floored.compute(diamond, 1e9).buyUnit(), 1e-9);
+        assertEquals(30, floored.compute(diamond, 0).buyUnit(), 1e-9);
+        assertEquals(FLOOR, floored.compute(pearl, 1e9).buyUnit(), 1e-12);
+        PricingEngine.Prices promo = floored.promoBuy(diamond, 1e9, floored.compute(diamond, 1e9), 50);
+        assertTrue(promo.buyUnit() >= 6 - 1e-9);
     }
 
     @Test

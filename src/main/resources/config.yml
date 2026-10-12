@@ -46,8 +46,17 @@ market:
   # échelle = base_number * scale_lots (circulation exprimée en "lots").
   k: 1.0
   scale_lots: 64
-  # Decay du compteur de circulation à chaque cycle (0.02 = -2%/cycle).
-  circulation_decay: 0.02
+  # Le compteur de circulation (ventes récentes au marché) augmente avec
+  # les ventes des joueurs et diminue avec leurs achats ; les prix suivent
+  # à la rotation suivante. Il baisse aussi de ce pourcentage à chaque
+  # rotation (0.06 = -6 %/rotation : un prix effondré remonte en ~3 jours).
+  circulation_decay: 0.06
+  # Plancher relatif : pour ces catégories d'items.yml, le prix de rachat
+  # ne descend jamais sous percent % du prix de base (diamant à 30 :
+  # jamais moins de 6 pièces). Le plancher absolu de 1/64 reste valable.
+  relative_floor:
+    percent: 20
+    categories: [minerals, other]
   # Pondération du tirage de la liste ACHAT : poids d'un item en stock
   # (un item en rupture a un poids de 1).
   in_stock_weight: 4.0

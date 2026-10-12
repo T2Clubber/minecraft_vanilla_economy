@@ -120,8 +120,9 @@ public final class MarketManager {
         double markup = m == null ? 1.4 : m.getDouble("markup", 1.4);
         double k = m == null ? 1.0 : m.getDouble("k", 1.0);
         double scaleLots = m == null ? 64 : m.getDouble("scale_lots", 64);
-        this.pricing = new PricingEngine(config.global().priceFloorPerUnit(), k, scaleLots, markup);
-        this.circulationDecay = m == null ? 0.02 : m.getDouble("circulation_decay", 0.02);
+        this.pricing = new PricingEngine(config.global().priceFloorPerUnit(), k, scaleLots, markup,
+                relativeFloors(m == null ? null : m.getConfigurationSection("relative_floor"), config, plugin));
+        this.circulationDecay = m == null ? 0.06 : m.getDouble("circulation_decay", 0.06);
         this.broadcastRotation = m == null || m.getBoolean("broadcast_rotation", true);
         this.intervalMillis = (long) (config.global().rotationIntervalHours() * 3_600_000L);
         double inStockWeight = m == null ? 4.0 : m.getDouble("in_stock_weight", 4.0);
@@ -573,13 +574,15 @@ public final class MarketManager {
             return new TradeResult(TradeStatus.NO_SPACE, quantity, cost, lot);
         }
         long newStock = s.stock - quantity;
+        // Demand: what players buy back lifts the buying price at the next rotation.
+        double newCirculation = Math.max(0, s.circulation - quantity);
         boolean paid;
         try {
             paid = db.transaction(c -> {
                 if (!CurrencyManager.debit(c, player.getUniqueId(), cost)) {
                     return false;
                 }
-                updateState(c, material, newStock, s.circulation);
+                updateState(c, material, newStock, newCirculation);
                 return true;
             });
         } catch (SQLException e) {
@@ -590,9 +593,33 @@ public final class MarketManager {
             return new TradeResult(TradeStatus.NOT_ENOUGH_MONEY, quantity, cost, lot);
         }
         s.stock = newStock;
+        s.circulation = newCirculation;
         givePlain(player, material, (int) quantity);
         changeListeners.forEach(Runnable::run);
         return new TradeResult(TradeStatus.OK, quantity, cost, lot);
+    }
+
+    /** market.relative_floor: {percent, categories}, unknown categories are reported. */
+    private static Map<String, Double> relativeFloors(ConfigurationSection section, ItemConfig config, Plugin plugin) {
+        if (section == null) {
+            return Map.of();
+        }
+        double fraction = section.getDouble("percent", 0) / 100.0;
+        if (!(fraction >= 0 && fraction <= 1)) {
+            plugin.getLogger().warning("market.relative_floor.percent doit être entre 0 et 100 : plancher relatif ignoré.");
+            return Map.of();
+        }
+        Set<String> known = new HashSet<>();
+        config.items().values().forEach(i -> known.add(i.category()));
+        Map<String, Double> floors = new HashMap<>();
+        for (String category : section.getStringList("categories")) {
+            if (known.contains(category)) {
+                floors.put(category, fraction);
+            } else {
+                plugin.getLogger().warning("market.relative_floor : catégorie inconnue dans items.yml : " + category);
+            }
+        }
+        return floors;
     }
 
     /** Admin: sets the global stock of an item. Returns false if the item is not in items.yml. */
