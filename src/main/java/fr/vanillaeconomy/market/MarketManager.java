@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The single, server-wide market state: prices, stock, circulation counters and the
@@ -121,7 +122,7 @@ public final class MarketManager {
         double k = m == null ? 1.0 : m.getDouble("k", 1.0);
         double scaleLots = m == null ? 64 : m.getDouble("scale_lots", 64);
         this.pricing = new PricingEngine(config.global().priceFloorPerUnit(), k, scaleLots, markup,
-                relativeFloors(m == null ? null : m.getConfigurationSection("relative_floor"), config, plugin));
+                relativeFloors(plugin.getConfig(), categoriesOf(config), plugin.getLogger()));
         this.circulationDecay = m == null ? 0.06 : m.getDouble("circulation_decay", 0.06);
         this.broadcastRotation = m == null || m.getBoolean("broadcast_rotation", true);
         this.intervalMillis = (long) (config.global().rotationIntervalHours() * 3_600_000L);
@@ -599,27 +600,36 @@ public final class MarketManager {
         return new TradeResult(TradeStatus.OK, quantity, cost, lot);
     }
 
-    /** market.relative_floor: {percent, categories}, unknown categories are reported. */
-    private static Map<String, Double> relativeFloors(ConfigurationSection section, ItemConfig config, Plugin plugin) {
-        if (section == null) {
+    /**
+     * market.relative_floor: {percent, categories}, unknown categories are reported. Read with
+     * full paths and one-argument getters so that the defaults of the bundled config.yml apply
+     * when the server's file predates the setting ({@code getDouble(key, 0)} would ignore them
+     * and silently disable the floor).
+     */
+    static Map<String, Double> relativeFloors(ConfigurationSection root, Set<String> knownCategories, Logger logger) {
+        double percent = root.getDouble("market.relative_floor.percent");
+        List<String> categories = root.getStringList("market.relative_floor.categories");
+        if (!(percent >= 0 && percent <= 100)) {
+            logger.warning("market.relative_floor.percent doit être entre 0 et 100 : plancher relatif ignoré.");
             return Map.of();
         }
-        double fraction = section.getDouble("percent", 0) / 100.0;
-        if (!(fraction >= 0 && fraction <= 1)) {
-            plugin.getLogger().warning("market.relative_floor.percent doit être entre 0 et 100 : plancher relatif ignoré.");
-            return Map.of();
-        }
-        Set<String> known = new HashSet<>();
-        config.items().values().forEach(i -> known.add(i.category()));
         Map<String, Double> floors = new HashMap<>();
-        for (String category : section.getStringList("categories")) {
-            if (known.contains(category)) {
-                floors.put(category, fraction);
+        for (String category : categories) {
+            if (knownCategories.contains(category)) {
+                floors.put(category, percent / 100.0);
             } else {
-                plugin.getLogger().warning("market.relative_floor : catégorie inconnue dans items.yml : " + category);
+                logger.warning("market.relative_floor : catégorie inconnue dans items.yml : " + category);
             }
         }
+        logger.info(floors.isEmpty() || percent == 0 ? "Plancher relatif désactivé (plancher 1/64 seul)."
+                : "Plancher relatif : " + percent + " % du prix de base pour " + String.join(", ", new java.util.TreeSet<>(floors.keySet())) + ".");
         return floors;
+    }
+
+    private static Set<String> categoriesOf(ItemConfig config) {
+        Set<String> known = new HashSet<>();
+        config.items().values().forEach(i -> known.add(i.category()));
+        return known;
     }
 
     /** Admin: sets the global stock of an item. Returns false if the item is not in items.yml. */
