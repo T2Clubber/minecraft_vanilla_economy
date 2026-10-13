@@ -167,6 +167,15 @@ public final class PricingEngine {
         return (int) Math.max(1, Math.ceil(1.0 / unitPrice - 1e-9));
     }
 
+    /**
+     * The circulation counter (recent sales still weighing on the price) never exceeds the
+     * stock: what players have bought back no longer lowers the price, and an item out of
+     * stock is bought at its full base price again.
+     */
+    public static double boundedCirculation(double circulation, long stock) {
+        return Math.max(0, Math.min(circulation, Math.max(0, stock)));
+    }
+
     /** Circulation decay applied once per rotation cycle. */
     public static double decay(double circulation, double decayRate) {
         return Math.max(0, circulation * (1 - decayRate));

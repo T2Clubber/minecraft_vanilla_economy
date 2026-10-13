@@ -151,6 +151,16 @@ class PricingEngineTest {
     }
 
     @Test
+    void circulationIsBoundedByTheStock() {
+        assertEquals(0, PricingEngine.boundedCirculation(180, 0), "out of stock: full price again");
+        assertEquals(40, PricingEngine.boundedCirculation(180, 40));
+        assertEquals(12.5, PricingEngine.boundedCirculation(12.5, 300), "below the stock: unchanged");
+        assertEquals(0, PricingEngine.boundedCirculation(-3, 10));
+        MarketItem diamond = new MarketItem(Material.DIAMOND, "minerals", "epic", 30, 1);
+        assertEquals(30, pricing.compute(diamond, PricingEngine.boundedCirculation(180, 0)).buyUnit(), 1e-9);
+    }
+
+    @Test
     void decay() {
         assertEquals(98, PricingEngine.decay(100, 0.02), 1e-9);
         assertEquals(0, PricingEngine.decay(0, 0.02));

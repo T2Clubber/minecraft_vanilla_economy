@@ -154,8 +154,9 @@ public final class MarketManager {
                 Material mat = Material.matchMaterial(rs.getString(1));
                 if (mat != null && config.items().containsKey(mat)) {
                     ItemState s = new ItemState();
-                    s.circulation = rs.getDouble(2);
                     s.stock = rs.getLong(3);
+                    // also repairs counters saved before they were bounded by the stock
+                    s.circulation = PricingEngine.boundedCirculation(rs.getDouble(2), s.stock);
                     states.put(mat, s);
                 }
             }
@@ -246,7 +247,8 @@ public final class MarketManager {
         long start = PromotionManager.slotStart(now, zone, intervalMillis);
         long next = start + intervalMillis;
         if (applyDecay) {
-            states.values().forEach(s -> s.circulation = PricingEngine.decay(s.circulation, circulationDecay));
+            states.values().forEach(s -> s.circulation = PricingEngine.boundedCirculation(
+                    PricingEngine.decay(s.circulation, circulationDecay), s.stock));
         }
         recomputePrices();
         Map<String, Rotation<Material>> drawn = rotationEngine.draw(buildPools(allGroups()), random);
@@ -576,7 +578,7 @@ public final class MarketManager {
         }
         long newStock = s.stock - quantity;
         // Demand: what players buy back lifts the buying price at the next rotation.
-        double newCirculation = Math.max(0, s.circulation - quantity);
+        double newCirculation = PricingEngine.boundedCirculation(s.circulation - quantity, newStock);
         boolean paid;
         try {
             paid = db.transaction(c -> {
@@ -640,7 +642,7 @@ public final class MarketManager {
         }
         try {
             db.transaction(c -> {
-                updateState(c, material, stock, s.circulation);
+                updateState(c, material, stock, PricingEngine.boundedCirculation(s.circulation, stock));
                 return null;
             });
         } catch (SQLException e) {
@@ -648,6 +650,7 @@ public final class MarketManager {
             return false;
         }
         s.stock = stock;
+        s.circulation = PricingEngine.boundedCirculation(s.circulation, stock);
         changeListeners.forEach(Runnable::run);
         return true;
     }
