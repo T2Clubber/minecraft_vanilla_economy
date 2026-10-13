@@ -28,8 +28,9 @@
 #    Pour les catégories de market.relative_floor (config.yml, par défaut
 #    minerals et other), le plancher est relevé à 20 % du prix unitaire
 #    de base : un diamant à 30 ne se rachète jamais moins de 6 pièces.
-#    La baisse du prix de rachat se résorbe avec les achats des joueurs
-#    et de 6 % par rotation (market.circulation_decay).
+#    La baisse du prix de rachat se résorbe avec les achats des joueurs,
+#    et le prix remonte de 6 % par rotation jusqu'au prix de base
+#    (market.circulation_decay) : un diamant passe de 6 à 30 en ~2,3 jours.
 #
 # 4. BASE_NUMBER : chaque item a son propre "lot de référence". base_price
 #    est le prix de base_number unités de cet item (pas forcément 64).

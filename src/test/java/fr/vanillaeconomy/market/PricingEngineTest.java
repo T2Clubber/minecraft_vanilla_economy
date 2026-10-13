@@ -151,18 +151,35 @@ class PricingEngineTest {
     }
 
     @Test
-    void circulationIsBoundedByTheStock() {
-        assertEquals(0, PricingEngine.boundedCirculation(180, 0), "out of stock: full price again");
-        assertEquals(40, PricingEngine.boundedCirculation(180, 40));
-        assertEquals(12.5, PricingEngine.boundedCirculation(12.5, 300), "below the stock: unchanged");
-        assertEquals(0, PricingEngine.boundedCirculation(-3, 10));
+    void circulationIsBoundedByTheStockAndTheFloor() {
+        PricingEngine floored = new PricingEngine(FLOOR, 1.0, 64, 1.4, Map.of("minerals", 0.2));
         MarketItem diamond = new MarketItem(Material.DIAMOND, "minerals", "epic", 30, 1);
-        assertEquals(30, pricing.compute(diamond, PricingEngine.boundedCirculation(180, 0)).buyUnit(), 1e-9);
+        double max = floored.maxCirculation(diamond);
+        assertEquals(64 * Math.log(5), max, 1e-9, "where 30 * e^(-c/64) reaches the 6-coin floor");
+        assertEquals(0, floored.bound(diamond, 180, 0), "out of stock: full price again");
+        assertEquals(40, floored.bound(diamond, 180, 40));
+        assertEquals(max, floored.bound(diamond, 500, 1000), 1e-9, "sales at the floor do not dig deeper");
+        assertEquals(12.5, floored.bound(diamond, 12.5, 300), "otherwise unchanged");
+        assertEquals(0, floored.bound(diamond, -3, 10));
+        assertEquals(30, floored.compute(diamond, floored.bound(diamond, 180, 0)).buyUnit(), 1e-9);
     }
 
     @Test
-    void decay() {
-        assertEquals(98, PricingEngine.decay(100, 0.02), 1e-9);
-        assertEquals(0, PricingEngine.decay(0, 0.02));
+    void priceRecoversBySixPercentPerRotation() {
+        PricingEngine floored = new PricingEngine(FLOOR, 1.0, 64, 1.4, Map.of("minerals", 0.2));
+        MarketItem diamond = new MarketItem(Material.DIAMOND, "minerals", "epic", 30, 1);
+        double c = floored.bound(diamond, 1e6, 1_000_000);
+        double price = floored.compute(diamond, c).buyUnit();
+        assertEquals(6, price, 1e-9);
+        int rotations = 0;
+        while (price < 30 - 1e-9) {
+            c = floored.recover(diamond, c, 0.06);
+            double next = floored.compute(diamond, c).buyUnit();
+            assertTrue(Math.abs(next - Math.min(30, price * 1.06)) < 1e-9, "+6 % per rotation, capped at the base price");
+            price = next;
+            rotations++;
+        }
+        assertEquals(28, rotations, "6 -> 30 in 28 rotations (~2.3 days)");
+        assertEquals(0, c);
     }
 }

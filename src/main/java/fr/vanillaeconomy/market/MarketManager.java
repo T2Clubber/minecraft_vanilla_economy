@@ -93,7 +93,7 @@ public final class MarketManager {
     private final ItemConfig config;
     private final PricingEngine pricing;
     private final RotationEngine<Material> rotationEngine;
-    private final double circulationDecay;
+    private final double priceRecovery;
     private final long intervalMillis;
     private final boolean broadcastRotation;
     private final ConfigurationSection biomePools;
@@ -123,7 +123,7 @@ public final class MarketManager {
         double scaleLots = m == null ? 64 : m.getDouble("scale_lots", 64);
         this.pricing = new PricingEngine(config.global().priceFloorPerUnit(), k, scaleLots, markup,
                 relativeFloors(plugin.getConfig(), categoriesOf(config), plugin.getLogger()));
-        this.circulationDecay = m == null ? 0.06 : m.getDouble("circulation_decay", 0.06);
+        this.priceRecovery = m == null ? 0.06 : m.getDouble("circulation_decay", 0.06);
         this.broadcastRotation = m == null || m.getBoolean("broadcast_rotation", true);
         this.intervalMillis = (long) (config.global().rotationIntervalHours() * 3_600_000L);
         double inStockWeight = m == null ? 4.0 : m.getDouble("in_stock_weight", 4.0);
@@ -156,7 +156,7 @@ public final class MarketManager {
                     ItemState s = new ItemState();
                     s.stock = rs.getLong(3);
                     // also repairs counters saved before they were bounded by the stock
-                    s.circulation = PricingEngine.boundedCirculation(rs.getDouble(2), s.stock);
+                    s.circulation = pricing.bound(config.items().get(mat), rs.getDouble(2), s.stock);
                     states.put(mat, s);
                 }
             }
@@ -247,8 +247,10 @@ public final class MarketManager {
         long start = PromotionManager.slotStart(now, zone, intervalMillis);
         long next = start + intervalMillis;
         if (applyDecay) {
-            states.values().forEach(s -> s.circulation = PricingEngine.boundedCirculation(
-                    PricingEngine.decay(s.circulation, circulationDecay), s.stock));
+            for (MarketItem item : config.items().values()) {
+                ItemState s = states.get(item.material());
+                s.circulation = pricing.bound(item, pricing.recover(item, s.circulation, priceRecovery), s.stock);
+            }
         }
         recomputePrices();
         Map<String, Rotation<Material>> drawn = rotationEngine.draw(buildPools(allGroups()), random);
@@ -541,7 +543,7 @@ public final class MarketManager {
             return new TradeResult(TradeStatus.NOT_ENOUGH_ITEMS, 0, 0, lot);
         }
         long newStock = s.stock + quantity;
-        double newCirculation = s.circulation + quantity;
+        double newCirculation = pricing.bound(config.items().get(material), s.circulation + quantity, newStock);
         try {
             db.transaction(c -> {
                 CurrencyManager.credit(c, player.getUniqueId(), payout);
@@ -578,7 +580,7 @@ public final class MarketManager {
         }
         long newStock = s.stock - quantity;
         // Demand: what players buy back lifts the buying price at the next rotation.
-        double newCirculation = PricingEngine.boundedCirculation(s.circulation - quantity, newStock);
+        double newCirculation = pricing.bound(config.items().get(material), s.circulation - quantity, newStock);
         boolean paid;
         try {
             paid = db.transaction(c -> {
@@ -642,7 +644,7 @@ public final class MarketManager {
         }
         try {
             db.transaction(c -> {
-                updateState(c, material, stock, PricingEngine.boundedCirculation(s.circulation, stock));
+                updateState(c, material, stock, pricing.bound(config.items().get(material), s.circulation, stock));
                 return null;
             });
         } catch (SQLException e) {
@@ -650,7 +652,7 @@ public final class MarketManager {
             return false;
         }
         s.stock = stock;
-        s.circulation = PricingEngine.boundedCirculation(s.circulation, stock);
+        s.circulation = pricing.bound(config.items().get(material), s.circulation, stock);
         changeListeners.forEach(Runnable::run);
         return true;
     }

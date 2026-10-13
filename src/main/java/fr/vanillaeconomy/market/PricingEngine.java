@@ -168,16 +168,33 @@ public final class PricingEngine {
     }
 
     /**
-     * The circulation counter (recent sales still weighing on the price) never exceeds the
-     * stock: what players have bought back no longer lowers the price, and an item out of
-     * stock is bought at its full base price again.
+     * Circulation beyond which the buying price is at its floor: further sales cannot push it
+     * lower, so they are not counted (otherwise the price would stay stuck at the floor for
+     * many rotations before starting to recover).
      */
-    public static double boundedCirculation(double circulation, long stock) {
-        return Math.max(0, Math.min(circulation, Math.max(0, stock)));
+    public double maxCirculation(MarketItem item) {
+        double base = item.baseUnitPrice();
+        double floor = floorFor(item);
+        return k == 0 || base <= floor ? 0 : item.baseNumber() * scaleLots * Math.log(base / floor) / k;
     }
 
-    /** Circulation decay applied once per rotation cycle. */
-    public static double decay(double circulation, double decayRate) {
-        return Math.max(0, circulation * (1 - decayRate));
+    /**
+     * The circulation counter (recent sales still weighing on the price) stays within
+     * [0, stock] and below {@link #maxCirculation}: what players have bought back no longer
+     * lowers the price, and an item out of stock is bought at its full base price again.
+     */
+    public double bound(MarketItem item, double circulation, long stock) {
+        return Math.max(0, Math.min(circulation, Math.min(Math.max(0, stock), maxCirculation(item))));
+    }
+
+    /**
+     * Applied once per rotation: lowers the counter by exactly what raises the buying price
+     * by {@code rate} (0.06 = +6 % per rotation) until it is back to the base price.
+     */
+    public double recover(MarketItem item, double circulation, double rate) {
+        if (k == 0) {
+            return 0;
+        }
+        return Math.max(0, circulation - item.baseNumber() * scaleLots * Math.log1p(Math.max(0, rate)) / k);
     }
 }

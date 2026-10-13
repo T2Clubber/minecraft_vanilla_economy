@@ -49,8 +49,11 @@ market:
   # Le compteur de circulation (ventes récentes au marché) augmente avec
   # les ventes des joueurs et diminue avec leurs achats ; il ne dépasse
   # jamais le stock (un article en rupture revient à son prix de base). Les
-  # prix suivent à la rotation suivante. Il baisse aussi de ce pourcentage à chaque
-  # rotation (0.06 = -6 %/rotation : un prix effondré remonte en ~3 jours).
+  # prix suivent à la rotation suivante. Les ventes faites quand le prix
+  # est déjà au plancher ne l'enfoncent pas davantage.
+  # Remontée du prix de rachat à chaque rotation, jusqu'au prix de base
+  # (0.06 = +6 % par rotation : un diamant passe de 6 à 30 pièces en 28
+  # rotations, ~2,3 jours).
   circulation_decay: 0.06
   # Plancher relatif : pour ces catégories d'items.yml, le prix de rachat
   # ne descend jamais sous percent % du prix de base (diamant à 30 :
