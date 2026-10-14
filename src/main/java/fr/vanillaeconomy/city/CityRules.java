@@ -136,6 +136,24 @@ public final class CityRules {
     }
 
     // ------------------------------------------------------------------
+    // Teleport
+    // ------------------------------------------------------------------
+
+    /**
+     * Teleport height: the lowest y at or above {@code start} where the feet and head blocks
+     * are both free, so a player is never placed inside blocks built on the centre since the
+     * foundation. {@code maxY} is exclusive (world height). Integer.MIN_VALUE if none.
+     */
+    public static int safeY(int start, int minY, int maxY, java.util.function.IntPredicate free) {
+        for (int y = Math.max(start, minY); y + 1 < maxY; y++) {
+            if (free.test(y) && free.test(y + 1)) {
+                return y;
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    // ------------------------------------------------------------------
     // Names
     // ------------------------------------------------------------------
 

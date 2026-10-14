@@ -28,6 +28,17 @@ tiers:
   4: { size: 256,  price: 50000 }
   5: { size: 512, price: 100000 }
 
+# Extensions achetées une fois avec le SOLDE DE LA CITÉ, par le
+# propriétaire (/cityboard, onglet Extensions).
+extensions:
+  teleport:
+    # Débloque /city tp <cité> pour les membres : téléportation au centre
+    # de la cité (hauteur de fondation, ou premier espace libre au-dessus).
+    price: 10000
+    # Payé par le joueur à chaque téléportation (solde personnel). Ces
+    # pièces sont détruites : elles sortent de l'économie.
+    use_cost: 100
+
 protection:
   # Empêcher les non-membres de blesser animaux et villageois dans une cité.
   protect_animals: true

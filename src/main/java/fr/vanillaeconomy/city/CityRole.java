@@ -39,6 +39,11 @@ public enum CityRole {
         return this == OWNER;
     }
 
+    /** Extensions are paid with the treasury, like tiers: owner only. */
+    public boolean canBuyExtension() {
+        return canBuyTier();
+    }
+
     public boolean canDisband() {
         return this == OWNER;
     }

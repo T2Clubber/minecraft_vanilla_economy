@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-/** /city create|info|add|kick|leave|coowner|contribute|upgrade|disband. */
+/** /city create|info|add|kick|leave|coowner|contribute|upgrade|disband|tp. */
 public final class CityCommand implements TabExecutor {
 
     private enum Pending { DISBAND, UPGRADE }
@@ -29,19 +29,22 @@ public final class CityCommand implements TabExecutor {
     }
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "create", "info", "add", "kick", "leave", "coowner", "contribute", "upgrade", "disband", "help");
+            "create", "info", "add", "kick", "leave", "coowner", "contribute", "upgrade", "disband", "tp", "help");
 
     private final CityManager cities;
     private final MessageConfig msg;
     private final CityNotifier notifier;
     private final StaffLog staffLog;
+    private final CityTeleport teleport;
     private final Map<UUID, Confirmation> confirmations = new HashMap<>();
 
-    public CityCommand(CityManager cities, MessageConfig msg, CityNotifier notifier, StaffLog staffLog) {
+    public CityCommand(CityManager cities, MessageConfig msg, CityNotifier notifier, StaffLog staffLog,
+                       CityTeleport teleport) {
         this.cities = cities;
         this.msg = msg;
         this.notifier = notifier;
         this.staffLog = staffLog;
+        this.teleport = teleport;
     }
 
     @Override
@@ -64,6 +67,15 @@ public final class CityCommand implements TabExecutor {
                 case "contribute" -> contribute(player, args);
                 case "upgrade" -> upgrade(player, args);
                 case "disband" -> disband(player, args);
+                case "tp" -> {
+                    // asynchronous: logged by CityTeleport once the player has arrived
+                    if (args.length != 2) {
+                        msg.send(player, "tp_usage");
+                    } else {
+                        teleport.start(player, cities.require(args[1]), command, args);
+                    }
+                    yield null;
+                }
                 default -> {
                     usage(player);
                     yield null;
@@ -288,6 +300,12 @@ public final class CityCommand implements TabExecutor {
                     } else if (args.length == 3) {
                         cities.ownedBy(me).ifPresent(c -> c.members().keySet().stream()
                                 .filter(u -> !u.equals(me)).map(CityManager::nameOf).forEach(options::add));
+                    }
+                }
+                case "tp" -> {
+                    if (args.length == 2) {
+                        cities.citiesOf(me).stream().filter(c -> c.hasExtension(CityExtension.TELEPORT))
+                                .forEach(c -> options.add(c.name()));
                     }
                 }
                 case "upgrade", "disband" -> {

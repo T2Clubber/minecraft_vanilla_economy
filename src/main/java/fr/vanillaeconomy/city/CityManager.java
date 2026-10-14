@@ -78,11 +78,13 @@ public final class CityManager {
         Connection c = db.connection();
         try (Statement st = c.createStatement();
              ResultSet rs = st.executeQuery(
-                     "SELECT id, name, owner_uuid, world, center_x, center_z, tier, balance, created_at FROM city")) {
+                     "SELECT id, name, owner_uuid, world, center_x, center_z, tier, balance, created_at, center_y FROM city")) {
             while (rs.next()) {
                 int tier = Math.min(rs.getInt(7), config.maxTier());
+                int y = rs.getInt(10);
+                Integer centerY = rs.wasNull() ? null : y;
                 City city = new City(rs.getInt(1), rs.getString(2), UUID.fromString(rs.getString(3)), rs.getString(4),
-                        rs.getInt(5), rs.getInt(6), tier, rs.getLong(8), rs.getLong(9), config.tier(tier).size());
+                        rs.getInt(5), centerY, rs.getInt(6), tier, rs.getLong(8), rs.getLong(9), config.tier(tier).size());
                 byId.put(city.id(), city);
             }
         }
@@ -103,6 +105,17 @@ public final class CityManager {
                 if (city != null) {
                     city.addContribution(new City.Contribution(UUID.fromString(rs.getString(2)), rs.getLong(3), rs.getLong(4)));
                 }
+            }
+        }
+        try (Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT city_id, extension FROM city_extension")) {
+            while (rs.next()) {
+                City city = byId.get(rs.getInt(1));
+                CityExtension.byKey(rs.getString(2)).ifPresent(e -> {
+                    if (city != null) {
+                        city.addExtension(e);
+                    }
+                });
             }
         }
         for (City city : byId.values()) {
@@ -210,14 +223,15 @@ public final class CityManager {
                 }
                 int newId;
                 try (PreparedStatement ps = c.prepareStatement("""
-                        INSERT INTO city(name, owner_uuid, world, center_x, center_z, tier, balance, created_at)
-                        VALUES(?, ?, ?, ?, ?, 1, 0, ?)""", Statement.RETURN_GENERATED_KEYS)) {
+                        INSERT INTO city(name, owner_uuid, world, center_x, center_z, center_y, tier, balance, created_at)
+                        VALUES(?, ?, ?, ?, ?, ?, 1, 0, ?)""", Statement.RETURN_GENERATED_KEYS)) {
                     ps.setString(1, name);
                     ps.setString(2, owner.toString());
                     ps.setString(3, world);
                     ps.setInt(4, territory.centerX());
                     ps.setInt(5, territory.centerZ());
-                    ps.setLong(6, now);
+                    ps.setInt(6, loc.getBlockY());
+                    ps.setLong(7, now);
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         keys.next();
@@ -233,7 +247,8 @@ public final class CityManager {
         if (id < 0) {
             throw new CityException("insufficient_funds", "amount", Messages.coins(config.creationCost));
         }
-        City city = new City(id, name, owner, world, territory.centerX(), territory.centerZ(), 1, 0, now, first.size());
+        City city = new City(id, name, owner, world, territory.centerX(), loc.getBlockY(), territory.centerZ(), 1, 0, now,
+                first.size());
         city.putMember(owner, CityRole.OWNER);
         byId.put(id, city);
         indexAdd(city);
@@ -427,6 +442,99 @@ public final class CityManager {
                 + next.size() + ") acheté par " + nameOf(actor) + " pour " + next.price()
                 + " pièces\n**Solde restant :** " + city.balance() + " pièces");
         return next;
+    }
+
+    // ------------------------------------------------------------------
+    // Extensions
+    // ------------------------------------------------------------------
+
+    /** Checks that the actor can buy this extension now (role, not owned yet, treasury). */
+    public void checkExtension(City city, UUID actor, CityExtension extension) throws CityException {
+        if (!roleOrThrow(city, actor).canBuyExtension()) {
+            throw new CityException("no_permission_role", "city", city.name());
+        }
+        if (city.hasExtension(extension)) {
+            throw new CityException("extension_owned", "city", city.name(), "extension", extension.label());
+        }
+        long price = config.price(extension);
+        if (city.balance() < price) {
+            throw new CityException("upgrade_funds", "price", Messages.coins(price),
+                    "balance", Messages.coins(city.balance()));
+        }
+    }
+
+    /** Pays the extension with the city's treasury. */
+    public void buyExtension(City city, UUID actor, CityExtension extension) throws CityException {
+        checkExtension(city, actor, extension);
+        long price = config.price(extension);
+        boolean ok;
+        try {
+            ok = db.transaction(c -> {
+                try (PreparedStatement ps = c.prepareStatement(
+                        "UPDATE city SET balance = balance - ? WHERE id = ? AND balance >= ?")) {
+                    ps.setLong(1, price);
+                    ps.setInt(2, city.id());
+                    ps.setLong(3, price);
+                    if (ps.executeUpdate() != 1) {
+                        return false;
+                    }
+                }
+                try (PreparedStatement ps = c.prepareStatement(
+                        "INSERT INTO city_extension(city_id, extension, bought_at) VALUES(?, ?, ?)")) {
+                    ps.setInt(1, city.id());
+                    ps.setString(2, extension.key());
+                    ps.setLong(3, System.currentTimeMillis());
+                    ps.executeUpdate();
+                }
+                return true;
+            });
+        } catch (SQLException e) {
+            throw internal("achat de l'extension " + extension.key() + " pour " + city.name(), e);
+        }
+        if (!ok) {
+            throw new CityException("upgrade_funds", "price", Messages.coins(price),
+                    "balance", Messages.coins(city.balance()));
+        }
+        city.setBalance(city.balance() - price);
+        city.addExtension(extension);
+        audit.accept("Extension : " + city.name(), "**" + extension.label() + "** achetée par " + nameOf(actor)
+                + " pour " + price + " pièces\n**Solde restant :** " + city.balance() + " pièces");
+    }
+
+    /**
+     * Charges a member for one teleport to his city: the fee leaves the economy (it is
+     * destroyed, not paid to anyone). Returns the fee.
+     */
+    public long chargeTeleport(City city, UUID player) throws CityException {
+        roleOrThrow(city, player);
+        if (!city.hasExtension(CityExtension.TELEPORT)) {
+            throw new CityException("tp_locked", "city", city.name(),
+                    "price", Messages.coins(config.price(CityExtension.TELEPORT)));
+        }
+        long cost = config.teleportUseCost;
+        boolean ok;
+        try {
+            ok = db.transaction(c -> CurrencyManager.debit(c, player, cost));
+        } catch (SQLException e) {
+            throw internal("paiement d'une téléportation vers " + city.name(), e);
+        }
+        if (!ok) {
+            throw new CityException("insufficient_funds", "amount", Messages.coins(cost));
+        }
+        return cost;
+    }
+
+    /** Gives the fee back when the teleport itself failed after the payment. */
+    public void refundTeleport(UUID player, long cost) {
+        try {
+            db.transaction(c -> {
+                CurrencyManager.credit(c, player, cost);
+                return null;
+            });
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Remboursement d'une téléportation impossible pour " + player
+                    + " (" + cost + " pièces)", e);
+        }
     }
 
     // ------------------------------------------------------------------

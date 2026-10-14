@@ -194,4 +194,23 @@ class CityRulesTest {
         assertFalse(CityRules.validName("Cité", 3, 16), "accents refused (names are typed in commands)");
         assertFalse(CityRules.validName("abcdefghijklmnopq", 3, 16));
     }
+
+    @Test
+    void teleportGoesToTheFirstFreeSpaceAtOrAboveTheFoundingHeight() {
+        Set<Integer> built = Set.of(70, 71, 72, 75);   // blocks placed on the centre column
+        assertEquals(64, CityRules.safeY(64, -64, 320, y -> !built.contains(y)), "free: founding height kept");
+        assertEquals(73, CityRules.safeY(70, -64, 320, y -> !built.contains(y)), "never inside the blocks built since");
+        assertEquals(76, CityRules.safeY(74, -64, 320, y -> !built.contains(y)), "two free blocks are needed (feet + head)");
+        assertEquals(Integer.MIN_VALUE, CityRules.safeY(300, -64, 320, y -> y < 300), "full column: no teleport");
+        assertEquals(318, CityRules.safeY(318, -64, 320, y -> true), "head at the last block of the world");
+        assertEquals(Integer.MIN_VALUE, CityRules.safeY(319, -64, 320, y -> true));
+        assertEquals(-64, CityRules.safeY(-100, -64, 320, y -> true), "clamped to the bottom of the world");
+    }
+
+    @Test
+    void onlyTheOwnerBuysExtensions() {
+        assertTrue(OWNER.canBuyExtension());
+        assertFalse(CO_OWNER.canBuyExtension());
+        assertFalse(MEMBER.canBuyExtension());
+    }
 }

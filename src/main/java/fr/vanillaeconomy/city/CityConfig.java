@@ -34,6 +34,8 @@ public final class CityConfig {
     public final int borderHeight;
     public final long borderRefreshTicks;
     public final long confirmMillis;
+    public final long teleportPrice;
+    public final long teleportUseCost;
 
     public CityConfig(YamlConfiguration yaml, Logger logger) {
         creationCost = Math.max(0, yaml.getLong("creation_cost", 2500));
@@ -76,6 +78,15 @@ public final class CityConfig {
         borderHeight = Math.max(1, yaml.getInt("border.height", 8));
         borderRefreshTicks = Math.max(2, yaml.getLong("border.refresh_ticks", 10));
         confirmMillis = Math.max(5, yaml.getLong("confirm_seconds", 30)) * 1000L;
+        teleportPrice = Math.max(0, yaml.getLong("extensions.teleport.price", 10000));
+        teleportUseCost = Math.max(0, yaml.getLong("extensions.teleport.use_cost", 100));
+    }
+
+    /** Paid once with the city's treasury. */
+    public long price(CityExtension extension) {
+        return switch (extension) {
+            case TELEPORT -> teleportPrice;
+        };
     }
 
     public Tier tier(int level) {

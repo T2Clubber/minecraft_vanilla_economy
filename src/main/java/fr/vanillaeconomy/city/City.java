@@ -2,9 +2,11 @@ package fr.vanillaeconomy.city;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -22,20 +24,24 @@ public final class City {
     private final String world;
     private final int centerX;
     private final int centerZ;
+    /** Height where the founder stood, null for cities founded before it was recorded. */
+    private final Integer centerY;
     private int tier;
     private long balance;
     private final long createdAt;
     private Territory territory;
     private final Map<UUID, CityRole> members = new LinkedHashMap<>();
     private final List<Contribution> contributions = new ArrayList<>();
+    private final Set<CityExtension> extensions = EnumSet.noneOf(CityExtension.class);
 
-    City(int id, String name, UUID owner, String world, int centerX, int centerZ, int tier, long balance,
-         long createdAt, int size) {
+    City(int id, String name, UUID owner, String world, int centerX, Integer centerY, int centerZ, int tier,
+         long balance, long createdAt, int size) {
         this.id = id;
         this.name = name;
         this.owner = owner;
         this.world = world;
         this.centerX = centerX;
+        this.centerY = centerY;
         this.centerZ = centerZ;
         this.tier = tier;
         this.balance = balance;
@@ -49,6 +55,7 @@ public final class City {
     public String world() { return world; }
     public int centerX() { return centerX; }
     public int centerZ() { return centerZ; }
+    public Integer centerY() { return centerY; }
     public int tier() { return tier; }
     public long balance() { return balance; }
     public long createdAt() { return createdAt; }
@@ -82,6 +89,14 @@ public final class City {
         return members.containsKey(player);
     }
 
+    public boolean hasExtension(CityExtension extension) {
+        return extensions.contains(extension);
+    }
+
+    public Set<CityExtension> extensions() {
+        return Collections.unmodifiableSet(extensions);
+    }
+
     // --- mutations, only through CityManager after a successful commit ---
 
     void rename(String newName) { this.name = newName; }
@@ -102,4 +117,6 @@ public final class City {
     void removeMember(UUID player) { members.remove(player); }
 
     void addContribution(Contribution c) { contributions.add(c); }
+
+    void addExtension(CityExtension extension) { extensions.add(extension); }
 }

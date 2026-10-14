@@ -36,6 +36,7 @@ cities:
     <yellow>/city upgrade</yellow> <gray>- acheter le palier suivant</gray>
     <yellow>/city leave <nom></yellow> <gray>- quitter une cité</gray>
     <yellow>/city disband</yellow> <gray>- dissoudre votre cité</gray>
+    <yellow>/city tp <nom></yellow> <gray>- se téléporter au centre de sa cité (extension)</gray>
     <yellow>/cityboard <nom></yellow> <gray>- tableau de bord (membres)</gray>
     <yellow>/border <nom> on|off</yellow> <gray>- afficher les bordures</gray>
 
@@ -72,6 +73,20 @@ cities:
   upgrade_conflict: "<red>Agrandissement impossible : le territoire toucherait la cité <aqua>{other}</aqua>."
   upgrade_confirm: "<yellow>Acheter le palier {tier} ({size}x{size}) pour <gold>{price}</gold> du solde de la cité ? Tapez <white>/city upgrade confirm</white> dans les {seconds} s."
   upgraded: "<green>La cité <aqua>{city}</aqua> passe au palier {tier} : territoire {size}x{size} !"
+
+  # --- extensions -----------------------------------------------------
+  extension_owned: "<red>La cité <aqua>{city}</aqua> possède déjà l'extension {extension}."
+  extension_bought: "<green>Extension <white>{extension}</white> achetée pour la cité <aqua>{city}</aqua> (<gold>{price}</gold> du solde de la cité). <gray>Les membres peuvent utiliser <white>/city tp {city}</white> (<gold>{cost}</gold> par téléportation)."
+  extension_notify: "<green>La cité <aqua>{city}</aqua> a débloqué l'extension <white>{extension}</white> : <white>/city tp {city}</white> vous y téléporte pour <gold>{cost}</gold>."
+
+  # --- téléportation (extension) --------------------------------------
+  tp_usage: "<red>Usage : /city tp <cité>"
+  tp_locked: "<red>La cité <aqua>{city}</aqua> n'a pas l'extension Téléportation (<gold>{price}</gold>, à acheter par le propriétaire dans <white>/cityboard {city}</white>, onglet Extensions)."
+  tp_in_progress: "<yellow>Téléportation déjà en cours…"
+  tp_unavailable: "<red>Le centre de la cité <aqua>{city}</aqua> n'est pas accessible pour le moment : rien n'a été débité."
+  tp_no_space: "<red>Aucun espace libre au-dessus du centre de la cité <aqua>{city}</aqua> : rien n'a été débité."
+  tp_done: "<green>Bienvenue à <aqua>{city}</aqua> ! <gray>(<gold>{cost}</gold> débitées)"
+  tp_failed: "<red>La téléportation a échoué : <gold>{cost}</gold> vous ont été rendues."
 
   # --- dissolution ---------------------------------------------------
   disband_confirm: "<yellow>Dissoudre la cité <aqua>{city}</aqua> ? Son solde (<gold>{balance}</gold>) sera remboursé au prorata des contributions. Tapez <white>/city disband confirm</white> dans les {seconds} s."

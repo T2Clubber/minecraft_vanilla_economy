@@ -90,6 +90,7 @@ public final class Database implements AutoCloseable {
                         world      TEXT NOT NULL,
                         center_x   INTEGER NOT NULL,
                         center_z   INTEGER NOT NULL,
+                        center_y   INTEGER,
                         tier       INTEGER NOT NULL DEFAULT 1,
                         balance    INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0),
                         created_at INTEGER NOT NULL
@@ -111,6 +112,17 @@ public final class Database implements AutoCloseable {
                     )""");
             st.execute("CREATE INDEX IF NOT EXISTS idx_city_contribution ON city_contribution(city_id, timestamp)");
             st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_extension (
+                        city_id   INTEGER NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+                        extension TEXT NOT NULL,
+                        bought_at INTEGER NOT NULL,
+                        PRIMARY KEY (city_id, extension)
+                    )""");
+            // Cities founded before the height of their centre was recorded.
+            if (!hasColumn("city", "center_y")) {
+                st.execute("ALTER TABLE city ADD COLUMN center_y INTEGER");
+            }
+            st.execute("""
                     CREATE TABLE IF NOT EXISTS city_notification (
                         id          INTEGER PRIMARY KEY AUTOINCREMENT,
                         player_uuid TEXT NOT NULL,
@@ -124,6 +136,18 @@ public final class Database implements AutoCloseable {
                         value TEXT NOT NULL
                     )""");
         }
+    }
+
+    private boolean hasColumn(String table, String column) throws SQLException {
+        try (Statement st = connection.createStatement();
+             ResultSet rs = st.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (rs.next()) {
+                if (rs.getString("name").equalsIgnoreCase(column)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public Connection connection() {

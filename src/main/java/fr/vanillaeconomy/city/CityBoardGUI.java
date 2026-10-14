@@ -43,18 +43,20 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * /cityboard &lt;cité&gt;: 54-slot board for members, with three tabs (MEMBRES, PALIERS,
- * TRÉSORERIE). Every click is cancelled and its rights are checked again on the server
+ * /cityboard &lt;cité&gt;: 54-slot board for members, with four tabs (MEMBRES, PALIERS,
+ * TRÉSORERIE, EXTENSIONS). Every click is cancelled and its rights are checked again on the server
  * (role read from the live city), skins are loaded off the main thread.
  */
 public final class CityBoardGUI implements InventoryHolder {
 
-    public enum Tab { MEMBERS, TIERS, TREASURY }
+    public enum Tab { MEMBERS, TIERS, TREASURY, EXTENSIONS }
 
     private static final int SIZE = 54;
     private static final int TAB_MEMBERS = 3;
     private static final int TAB_TIERS = 4;
     private static final int TAB_TREASURY = 5;
+    private static final int TAB_EXTENSIONS = 6;
+    private static final int EXTENSIONS_FIRST = 22;
     private static final int PREV = 45;
     private static final int INFO = 49;
     private static final int NEXT = 53;
@@ -80,6 +82,8 @@ public final class CityBoardGUI implements InventoryHolder {
     private final Map<Integer, UUID> memberSlots = new HashMap<>();
     /** Slot -> tier level shown there (tiers tab). */
     private final Map<Integer, Integer> tierSlots = new HashMap<>();
+    /** Slot -> extension shown there (extensions tab). */
+    private final Map<Integer, CityExtension> extensionSlots = new HashMap<>();
 
     /** What the board needs, shared by all instances. */
     public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg,
@@ -131,16 +135,19 @@ public final class CityBoardGUI implements InventoryHolder {
         }
         memberSlots.clear();
         tierSlots.clear();
+        extensionSlots.clear();
         ItemStack[] contents = new ItemStack[SIZE];
         java.util.Arrays.fill(contents, filler());
         contents[TAB_MEMBERS] = tabItem(Material.PLAYER_HEAD, "<yellow>Membres", Tab.MEMBERS);
         contents[TAB_TIERS] = tabItem(Material.FILLED_MAP, "<yellow>Paliers", Tab.TIERS);
         contents[TAB_TREASURY] = tabItem(Material.GOLD_INGOT, "<yellow>Trésorerie", Tab.TREASURY);
+        contents[TAB_EXTENSIONS] = tabItem(Material.ENDER_PEARL, "<yellow>Extensions", Tab.EXTENSIONS);
         contents[INFO] = infoItem(city);
         int pages = switch (tab) {
             case MEMBERS -> renderMembers(city, contents);
             case TIERS -> renderTiers(city, contents);
             case TREASURY -> renderTreasury(city, contents);
+            case EXTENSIONS -> renderExtensions(city, contents);
         };
         if (page > 0) {
             contents[PREV] = named(Material.ARROW, "<white>Page précédente", List.of());
@@ -251,6 +258,49 @@ public final class CityBoardGUI implements InventoryHolder {
         return pages;
     }
 
+    private int renderExtensions(City city, ItemStack[] contents) {
+        CityRole me = city.roleOf(viewer.getUniqueId());
+        CityConfig config = services.cities().config();
+        CityExtension[] all = CityExtension.values();
+        for (int i = 0; i < all.length; i++) {
+            CityExtension ext = all[i];
+            long price = config.price(ext);
+            boolean owned = city.hasExtension(ext);
+            List<Component> lore = new ArrayList<>();
+            if (ext == CityExtension.TELEPORT) {
+                lore.add(Messages.item("<gray>Les membres se téléportent au centre de la cité"));
+                lore.add(Messages.item("<gray>avec <white>/city tp <name></white>, depuis n'importe quel monde.",
+                        Messages.p("name", city.name())));
+                lore.add(Messages.item("<gray>Chaque téléportation coûte <gold><cost></gold> <dark_gray>(solde personnel)",
+                        Messages.p("cost", Messages.coins(config.teleportUseCost))));
+            }
+            lore.add(Component.empty());
+            if (owned) {
+                lore.add(Messages.item("<green>✔ Acquise"));
+            } else {
+                lore.add(Messages.item("<gray>Prix : <gold><price></gold> <dark_gray>(solde de la cité)",
+                        Messages.p("price", Messages.coins(price))));
+                lore.add(Messages.item("<gray>Solde de la cité : <gold><balance>", Messages.p("balance", Messages.coins(city.balance()))));
+                if (me.canBuyExtension()) {
+                    lore.add(Messages.item(city.balance() >= price
+                            ? "<yellow>Clic : acheter (confirmation)" : "<red>Solde de la cité insuffisant"));
+                } else {
+                    lore.add(Messages.item("<dark_gray>Achat réservé au propriétaire"));
+                }
+            }
+            ItemStack item = named(owned ? Material.ENDER_EYE : Material.ENDER_PEARL,
+                    (owned ? "<green>" : "<white>") + ext.label(), lore);
+            if (owned) {
+                ItemMeta meta = item.getItemMeta();
+                meta.setEnchantmentGlintOverride(true);
+                item.setItemMeta(meta);
+            }
+            contents[EXTENSIONS_FIRST + i] = item;
+            extensionSlots.put(EXTENSIONS_FIRST + i, ext);
+        }
+        return 1;
+    }
+
     private ItemStack infoItem(City city) {
         CityRole me = city.roleOf(viewer.getUniqueId());
         List<Component> lore = new ArrayList<>();
@@ -258,6 +308,10 @@ public final class CityBoardGUI implements InventoryHolder {
         lore.add(Messages.item("<gray>Palier <white><tier></white> · <white><size>x<size>",
                 Messages.p("tier", city.tier()), Messages.p("size", city.territory().size())));
         lore.add(Messages.item("<gray>Membres : <white><n>", Messages.p("n", city.members().size())));
+        if (!city.extensions().isEmpty()) {
+            lore.add(Messages.item("<gray>Extensions : <white><list>", Messages.p("list",
+                    String.join(", ", city.extensions().stream().map(CityExtension::label).toList()))));
+        }
         lore.add(Messages.item("<gray>Votre rôle : <white><role>", Messages.p("role", me.label())));
         if (me.canAddMembers()) {
             lore.add(Component.empty());
@@ -350,6 +404,7 @@ public final class CityBoardGUI implements InventoryHolder {
             case TAB_MEMBERS -> switchTab(Tab.MEMBERS);
             case TAB_TIERS -> switchTab(Tab.TIERS);
             case TAB_TREASURY -> switchTab(Tab.TREASURY);
+            case TAB_EXTENSIONS -> switchTab(Tab.EXTENSIONS);
             case PREV -> {
                 page = Math.max(0, page - 1);
                 render();
@@ -363,6 +418,8 @@ public final class CityBoardGUI implements InventoryHolder {
                     memberClick(city, memberSlots.get(slot), click);
                 } else if (tab == Tab.TIERS && tierSlots.containsKey(slot)) {
                     tierClick(city, tierSlots.get(slot));
+                } else if (tab == Tab.EXTENSIONS && extensionSlots.containsKey(slot)) {
+                    extensionClick(city, extensionSlots.get(slot));
                 }
             }
         }
@@ -424,6 +481,34 @@ public final class CityBoardGUI implements InventoryHolder {
             });
             reopen(Tab.TIERS);
         }, () -> reopen(Tab.TIERS));
+    }
+
+    private void extensionClick(City city, CityExtension extension) {
+        if (city.hasExtension(extension) || !city.roleOf(viewer.getUniqueId()).canBuyExtension()) {
+            return;
+        }
+        long price = services.cities().config().price(extension);
+        try {
+            services.cities().checkExtension(city, viewer.getUniqueId(), extension);
+        } catch (CityException e) {
+            services.msg().send(viewer, e.key(), e.vars());
+            return;
+        }
+        ConfirmGUI.open(viewer, extension.label() + " pour " + Messages.coins(price) + " ?", () -> {
+            run(() -> {
+                services.cities().buyExtension(city, viewer.getUniqueId(), extension);
+                long cost = services.cities().config().teleportUseCost;
+                services.msg().send(viewer, "extension_bought", "extension", extension.label(), "city", city.name(),
+                        "price", Messages.coins(price), "cost", Messages.coins(cost));
+                for (UUID member : city.members().keySet()) {
+                    if (!member.equals(viewer.getUniqueId())) {
+                        services.notifier().notify(member, "extension_notify", "extension", extension.label(),
+                                "city", city.name(), "cost", Messages.coins(cost));
+                    }
+                }
+            });
+            reopen(Tab.EXTENSIONS);
+        }, () -> reopen(Tab.EXTENSIONS));
     }
 
     private void reopen(Tab target) {

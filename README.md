@@ -91,6 +91,10 @@ Tout idiot du village adulte devient un marchand. Ça couvre les idiots génér�
 
 Les réglages sont dans `plugins/VanillaEconomy/config.yml` : markup, courbe de prix, decay, promos (`per_day`, `min_percent`, `max_percent`), filtres d'articles par biome, et chance qu'un bébé né d'une reproduction devienne idiot.
 
+## Liste des joueurs (TAB)
+
+Le nombre de morts de chaque joueur s'affiche à côté de son nom dans la liste des joueurs (« ☠ 3 »). C'est un objectif de scoreboard vanilla, donc aucun mod n'est nécessaire côté client. La valeur vient des statistiques du monde : les morts antérieures à l'installation sont comptées. Il se désactive avec `tab.deaths: false` dans `config.yml`.
+
 ## Les cités
 
 Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `/city create <nom>` et centré sur le fondateur. La fondation coûte 2 500 pièces, prélevées sur le solde du fondateur. La cité démarre en 32×32 et s'agrandit par paliers, payés avec le solde de la cité : 64×64 (5 000), 128×128 (20 000), 256×256 (50 000), 512×512 (100 000). Les valeurs sont réglables dans `cities.yml`.
@@ -106,6 +110,8 @@ Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `
 - **Protections automatiques :** explosions sans destruction de blocs, pas de propagation du feu, pistons et liquides bloqués à la frontière, pas de grief des mobs.
 - **Messages :** l'entrée et la sortie d'une cité s'affichent dans le chat, et un visiteur reçoit un rappel en actionbar quand une action lui est refusée.
 - **Trésorerie :** chaque versement fait avec `/city contribute` est enregistré. À la dissolution, le solde est remboursé au prorata des contributions.
+- **Extensions :** options achetées une fois avec le solde de la cité, par le propriétaire, dans l'onglet Extensions de `/cityboard`.
+  - **Téléportation** (10 000 pièces) : les membres utilisent `/city tp <cité>` depuis n'importe quel monde. Chaque téléportation coûte 100 pièces, prises sur le solde personnel et détruites (elles sortent de l'économie). Le joueur arrive au centre de la cité, à la hauteur où elle a été fondée ; si des blocs y ont été posés depuis, il arrive dans le premier espace libre au-dessus (deux blocs d'air, sans liquide). Rien n'est débité si le solde est insuffisant ou si aucun espace n'est libre, et la somme est rendue si la téléportation échoue. Pour les cités fondées avant cette version, la hauteur de fondation n'est pas connue : c'est la surface au centre qui sert de départ. Prix et frais dans `cities.yml` (`extensions.teleport`).
 - **Notifications :** les joueurs concernés sont prévenus quand ils sont ajoutés ou exclus, nommés ou retirés co-propriétaire, quand leur cité est dissoute ou supprimée, et du montant de leur remboursement. Le propriétaire est aussi prévenu des versements et des départs de ses membres. Un joueur hors ligne reçoit ces messages à sa prochaine connexion : ils sont conservés en base (table `city_notification`) et survivent aux redémarrages.
 - **Performance :** les protections et les messages s'appuient sur un index spatial en mémoire, sans aucune requête en base dans les events.
 
@@ -122,7 +128,8 @@ Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `
 | `/city upgrade [confirm]` | Achète le palier suivant |
 | `/city leave <nom>` | Quitte une cité (impossible pour le propriétaire) |
 | `/city disband [confirm]` | Dissout la cité et rembourse son solde |
-| `/cityboard <nom>` | Tableau de bord des membres : onglets Membres, Paliers, Trésorerie |
+| `/city tp <nom>` | Téléporte au centre de la cité (extension Téléportation, 100 pièces par utilisation) |
+| `/cityboard <nom>` | Tableau de bord des membres : onglets Membres, Paliers, Trésorerie, Extensions |
 | `/border <nom> on\|off` | Affiche les bordures de la cité en particules, visibles par ce seul joueur |
 | `/cityadmin info\|delete\|settier\|rename` | Administration |
 

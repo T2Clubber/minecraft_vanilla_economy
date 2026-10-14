@@ -108,6 +108,11 @@ discord:
   # gros transferts, pièces suspectes) n'y sont pas répétées.
   logs_commands: true
 
+# Liste des joueurs (touche TAB) : nombre de morts affiché à côté du nom
+# (« ☠ 3 »), d'après les statistiques du monde, donc morts passées comprises.
+tab:
+  deaths: true
+
 villagers:
   # Intervalle (en secondes) de vérification des bébés idiots suivis pour
   # détecter leur passage à l'âge adulte (Paper n'expose pas d'event de

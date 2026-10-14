@@ -9,6 +9,7 @@ import fr.vanillaeconomy.city.CityManager;
 import fr.vanillaeconomy.city.CityNotifier;
 import fr.vanillaeconomy.city.CityPresenceListener;
 import fr.vanillaeconomy.city.CityProtectionListener;
+import fr.vanillaeconomy.city.CityTeleport;
 import fr.vanillaeconomy.command.EcoCommand;
 import fr.vanillaeconomy.command.MarketAdminCommand;
 import fr.vanillaeconomy.command.MoneyCommand;
@@ -24,6 +25,7 @@ import fr.vanillaeconomy.gui.SellGUI;
 import fr.vanillaeconomy.market.ItemConfigLoader;
 import fr.vanillaeconomy.market.MarketManager;
 import fr.vanillaeconomy.storage.Database;
+import fr.vanillaeconomy.tab.DeathCounter;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.ServerTime;
 import fr.vanillaeconomy.villager.NitwitVillagerManager;
@@ -115,7 +117,8 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             cities.load();
             CityNotifier notifier = new CityNotifier(this, database, cityMessages);
             notifier.load();
-            CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier, staffLog);
+            CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier, staffLog,
+                    new CityTeleport(this, cities, currency, cityMessages, staffLog));
             register("city", cityCommand);
             register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog));
             cities.setAudit(staffLog::city);
@@ -133,6 +136,15 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             pm.registerEvents(notifier, this);
             presence.start();
             borders.start();
+
+            // 6. Death count in the player list (TAB)
+            if (config.getBoolean("tab.deaths")) {
+                DeathCounter deaths = new DeathCounter(this);
+                pm.registerEvents(deaths, this);
+                deaths.start();
+            } else {
+                DeathCounter.remove();
+            }
             if (staffLog.enabled()) {
                 getLogger().info("Journal staff Discord activé (webhook #logs-serveur).");
                 staffLog.serverStarted("**Paper :** " + getServer().getVersion() + "\n**VanillaEconomy :** "
