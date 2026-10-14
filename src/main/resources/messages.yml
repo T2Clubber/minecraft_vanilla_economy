@@ -76,6 +76,8 @@ cities:
 
   # --- extensions -----------------------------------------------------
   extension_owned: "<red>La cité <aqua>{city}</aqua> possède déjà l'extension {extension}."
+  extension_tier: "<red>L'extension {extension} se débloque au palier {tier} : la cité <aqua>{city}</aqua> est au palier {current}."
+  extension_disabled: "<red>L'extension {extension} est désactivée sur ce serveur."
   extension_bought: "<green>Extension <white>{extension}</white> achetée pour la cité <aqua>{city}</aqua> (<gold>{price}</gold> du solde de la cité). <gray>Les membres peuvent utiliser <white>/city tp {city}</white> (<gold>{cost}</gold> par téléportation)."
   extension_notify: "<green>La cité <aqua>{city}</aqua> a débloqué l'extension <white>{extension}</white> : <white>/city tp {city}</white> vous y téléporte pour <gold>{cost}</gold>."
 

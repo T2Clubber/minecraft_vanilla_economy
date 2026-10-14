@@ -34,6 +34,12 @@ extensions:
   teleport:
     # Débloque /city tp <cité> pour les membres : téléportation au centre
     # de la cité (hauteur de fondation, ou premier espace libre au-dessus).
+    # false = extension désactivée : ni achetable ni utilisable, y compris
+    # par les cités qui l'ont déjà achetée (elles la retrouvent si elle est
+    # réactivée).
+    enabled: true
+    # Palier que la cité doit avoir atteint pour pouvoir l'acheter.
+    min_tier: 2
     price: 10000
     # Payé par le joueur à chaque téléportation (solde personnel). Ces
     # pièces sont détruites : elles sortent de l'économie.

@@ -448,13 +448,20 @@ public final class CityManager {
     // Extensions
     // ------------------------------------------------------------------
 
-    /** Checks that the actor can buy this extension now (role, not owned yet, treasury). */
+    /** Checks that the actor can buy this extension now (enabled, role, tier, not owned yet, treasury). */
     public void checkExtension(City city, UUID actor, CityExtension extension) throws CityException {
+        if (!config.enabled(extension)) {
+            throw new CityException("extension_disabled", "extension", extension.label());
+        }
         if (!roleOrThrow(city, actor).canBuyExtension()) {
             throw new CityException("no_permission_role", "city", city.name());
         }
         if (city.hasExtension(extension)) {
             throw new CityException("extension_owned", "city", city.name(), "extension", extension.label());
+        }
+        if (city.tier() < config.minTier(extension)) {
+            throw new CityException("extension_tier", "extension", extension.label(), "city", city.name(),
+                    "tier", config.minTier(extension), "current", city.tier());
         }
         long price = config.price(extension);
         if (city.balance() < price) {
@@ -507,6 +514,9 @@ public final class CityManager {
      */
     public long chargeTeleport(City city, UUID player) throws CityException {
         roleOrThrow(city, player);
+        if (!config.enabled(CityExtension.TELEPORT)) {
+            throw new CityException("extension_disabled", "extension", CityExtension.TELEPORT.label());
+        }
         if (!city.hasExtension(CityExtension.TELEPORT)) {
             throw new CityException("tp_locked", "city", city.name(),
                     "price", Messages.coins(config.price(CityExtension.TELEPORT)));

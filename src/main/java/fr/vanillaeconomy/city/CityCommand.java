@@ -304,7 +304,8 @@ public final class CityCommand implements TabExecutor {
                 }
                 case "tp" -> {
                     if (args.length == 2) {
-                        cities.citiesOf(me).stream().filter(c -> c.hasExtension(CityExtension.TELEPORT))
+                        cities.citiesOf(me).stream()
+                                .filter(c -> cities.config().enabled(CityExtension.TELEPORT) && c.hasExtension(CityExtension.TELEPORT))
                                 .forEach(c -> options.add(c.name()));
                     }
                 }

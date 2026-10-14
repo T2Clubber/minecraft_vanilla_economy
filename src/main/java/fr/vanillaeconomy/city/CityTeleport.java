@@ -46,6 +46,9 @@ public final class CityTeleport {
     /** First checks, then loads the destination chunk asynchronously. */
     public void start(Player player, City city, Command command, String[] args) throws CityException {
         UUID id = player.getUniqueId();
+        if (!cities.config().enabled(CityExtension.TELEPORT)) {
+            throw new CityException("extension_disabled", "extension", CityExtension.TELEPORT.label());
+        }
         if (!city.isMember(id)) {
             throw new CityException("not_member", "city", city.name());
         }

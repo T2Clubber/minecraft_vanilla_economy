@@ -266,6 +266,8 @@ public final class CityBoardGUI implements InventoryHolder {
             CityExtension ext = all[i];
             long price = config.price(ext);
             boolean owned = city.hasExtension(ext);
+            boolean enabled = config.enabled(ext);
+            int minTier = config.minTier(ext);
             List<Component> lore = new ArrayList<>();
             if (ext == CityExtension.TELEPORT) {
                 lore.add(Messages.item("<gray>Les membres se téléportent au centre de la cité"));
@@ -275,22 +277,28 @@ public final class CityBoardGUI implements InventoryHolder {
                         Messages.p("cost", Messages.coins(config.teleportUseCost))));
             }
             lore.add(Component.empty());
-            if (owned) {
+            if (!enabled) {
+                lore.add(Messages.item("<red>Désactivée par l'administration"));
+            } else if (owned) {
                 lore.add(Messages.item("<green>✔ Acquise"));
             } else {
                 lore.add(Messages.item("<gray>Prix : <gold><price></gold> <dark_gray>(solde de la cité)",
                         Messages.p("price", Messages.coins(price))));
                 lore.add(Messages.item("<gray>Solde de la cité : <gold><balance>", Messages.p("balance", Messages.coins(city.balance()))));
-                if (me.canBuyExtension()) {
+                if (city.tier() < minTier) {
+                    lore.add(Messages.item("<red>Débloquée au palier <tier> <dark_gray>(palier actuel : <current>)",
+                            Messages.p("tier", minTier), Messages.p("current", city.tier())));
+                } else if (me.canBuyExtension()) {
                     lore.add(Messages.item(city.balance() >= price
                             ? "<yellow>Clic : acheter (confirmation)" : "<red>Solde de la cité insuffisant"));
                 } else {
                     lore.add(Messages.item("<dark_gray>Achat réservé au propriétaire"));
                 }
             }
-            ItemStack item = named(owned ? Material.ENDER_EYE : Material.ENDER_PEARL,
-                    (owned ? "<green>" : "<white>") + ext.label(), lore);
-            if (owned) {
+            boolean active = enabled && owned;
+            ItemStack item = named(!enabled ? Material.GRAY_DYE : owned ? Material.ENDER_EYE : Material.ENDER_PEARL,
+                    (!enabled ? "<gray>" : owned ? "<green>" : "<white>") + ext.label(), lore);
+            if (active) {
                 ItemMeta meta = item.getItemMeta();
                 meta.setEnchantmentGlintOverride(true);
                 item.setItemMeta(meta);
@@ -484,7 +492,9 @@ public final class CityBoardGUI implements InventoryHolder {
     }
 
     private void extensionClick(City city, CityExtension extension) {
-        if (city.hasExtension(extension) || !city.roleOf(viewer.getUniqueId()).canBuyExtension()) {
+        CityConfig config = services.cities().config();
+        if (!config.enabled(extension) || city.hasExtension(extension) || city.tier() < config.minTier(extension)
+                || !city.roleOf(viewer.getUniqueId()).canBuyExtension()) {
             return;
         }
         long price = services.cities().config().price(extension);

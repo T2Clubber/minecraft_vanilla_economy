@@ -34,6 +34,8 @@ public final class CityConfig {
     public final int borderHeight;
     public final long borderRefreshTicks;
     public final long confirmMillis;
+    public final boolean teleportEnabled;
+    public final int teleportMinTier;
     public final long teleportPrice;
     public final long teleportUseCost;
 
@@ -78,8 +80,24 @@ public final class CityConfig {
         borderHeight = Math.max(1, yaml.getInt("border.height", 8));
         borderRefreshTicks = Math.max(2, yaml.getLong("border.refresh_ticks", 10));
         confirmMillis = Math.max(5, yaml.getLong("confirm_seconds", 30)) * 1000L;
+        teleportEnabled = yaml.getBoolean("extensions.teleport.enabled", true);
+        teleportMinTier = Math.max(1, yaml.getInt("extensions.teleport.min_tier", 2));
         teleportPrice = Math.max(0, yaml.getLong("extensions.teleport.price", 10000));
         teleportUseCost = Math.max(0, yaml.getLong("extensions.teleport.use_cost", 100));
+    }
+
+    /** Disabled by the administration: not for sale and not usable, even if already bought. */
+    public boolean enabled(CityExtension extension) {
+        return switch (extension) {
+            case TELEPORT -> teleportEnabled;
+        };
+    }
+
+    /** Tier the city must have reached before buying the extension. */
+    public int minTier(CityExtension extension) {
+        return switch (extension) {
+            case TELEPORT -> teleportMinTier;
+        };
     }
 
     /** Paid once with the city's treasury. */
