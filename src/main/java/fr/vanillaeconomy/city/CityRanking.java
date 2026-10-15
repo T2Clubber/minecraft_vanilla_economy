@@ -80,7 +80,7 @@ public final class CityRanking implements Listener, TabExecutor {
     }
 
     /**
-     * Layout, top to bottom: blank line, "rank1".."rankN", blank line, legend. The left text
+     * Layout, top to bottom: blank line, then "rank1".."rankN". The left text
      * of a line is the score's custom name, the right text its number format; scores only
      * fix the order. Never start an entry with '#': the client hides those in the sidebar.
      */
@@ -101,8 +101,6 @@ public final class CityRanking implements Listener, TabExecutor {
                 board.resetScores(entry);
             }
         }
-        line("bottom", 1, net.kyori.adventure.text.Component.empty(), NumberFormat.blank());
-        line("legend", 0, msg.get("ranking_legend"), NumberFormat.blank());
     }
 
     private void line(String entry, int order, net.kyori.adventure.text.Component text, NumberFormat right) {
