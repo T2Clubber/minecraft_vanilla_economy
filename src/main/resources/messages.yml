@@ -130,11 +130,15 @@ cities:
   ranking_usage: "<red>Usage : /classement on|off"
   ranking_on: "<green>Classement des cités affiché. <gray>(/classement off pour le masquer)"
   ranking_off: "<yellow>Classement des cités masqué."
-  ranking_title: "<gold><bold>Classement des cités"
-  ranking_line_podium: "<gold>{rank}. <yellow>{city}"
-  ranking_line: "<gray>{rank}. <white>{city}"
-  ranking_stats: "<aqua>P{tier} <light_purple>✦{extensions} <gold>{balance}"
-  ranking_empty: "<gray>Aucune cité"
+  ranking_title: "<gradient:#FFE259:#FFA751><bold>✦ Classement des cités ✦</bold></gradient>"
+  # 1er or, 2e argent, 3e bronze
+  ranking_line_1: "<#FFD700>★ 1. <bold>{city}</bold>"
+  ranking_line_2: "<#C0C0C0>★ 2. <bold>{city}</bold>"
+  ranking_line_3: "<#CD7F32>★ 3. <bold>{city}</bold>"
+  ranking_line: "<dark_gray>{rank}. <gray>{city}"
+  ranking_stats: "<aqua>Palier {tier} <dark_gray>· <light_purple>✦ {extensions}"
+  ranking_legend: "<dark_gray>✦ extensions débloquées"
+  ranking_empty: "<gray><italic>Aucune cité pour l'instant"
 
   # --- administration ------------------------------------------------
   admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité>"

@@ -153,19 +153,6 @@ public final class CityRules {
                 .toList();
     }
 
-    /** Short amount for the sidebar: 850, 12,5k, 1,2M. */
-    public static String compact(long amount) {
-        if (Math.abs(amount) < 1000) {
-            return Long.toString(amount);
-        }
-        double value = amount >= 1_000_000 || amount <= -1_000_000 ? amount / 1_000_000.0 : amount / 1000.0;
-        String unit = Math.abs(amount) >= 1_000_000 ? "M" : "k";
-        double truncated = Math.floor(Math.abs(value) * 10) / 10 * Math.signum(value);
-        String text = truncated == Math.rint(truncated)
-                ? Long.toString((long) truncated) : String.format(java.util.Locale.FRANCE, "%.1f", truncated);
-        return text + unit;
-    }
-
     // ------------------------------------------------------------------
     // Teleport
     // ------------------------------------------------------------------

@@ -80,31 +80,36 @@ public final class CityRanking implements Listener, TabExecutor {
     }
 
     /**
-     * Lines "rank1".."rankN": the left text is the score's custom name, the right text its
-     * number format. Never start an entry with '#': the client hides those in the sidebar.
+     * Layout, top to bottom: blank line, "rank1".."rankN", blank line, legend. The left text
+     * of a line is the score's custom name, the right text its number format; scores only
+     * fix the order. Never start an entry with '#': the client hides those in the sidebar.
      */
     private void render() {
-        List<City> all = List.copyOf(cities.all());
-        List<Standing> ranked = CityRules.rank(all.stream()
+        List<Standing> ranked = CityRules.rank(List.copyOf(cities.all()).stream()
                 .map(c -> new Standing(c.name(), c.tier(), c.extensions().size(), c.balance())).toList());
+        line("top", 100, net.kyori.adventure.text.Component.empty(), NumberFormat.blank());
         for (int i = 0; i < size; i++) {
             String entry = "rank" + (i + 1);
-            if (i >= ranked.size() && !(i == 0 && ranked.isEmpty())) {
+            if (i < ranked.size()) {
+                Standing s = ranked.get(i);
+                String style = i < 3 ? "ranking_line_" + (i + 1) : "ranking_line";
+                line(entry, 99 - i, msg.get(style, "rank", i + 1, "city", s.name()),
+                        NumberFormat.fixed(msg.get("ranking_stats", "tier", s.tier(), "extensions", s.extensions())));
+            } else if (i == 0) {
+                line(entry, 99, msg.get("ranking_empty"), NumberFormat.blank());
+            } else {
                 board.resetScores(entry);
-                continue;
             }
-            Score score = sidebar.getScore(entry);
-            score.setScore(size - i);
-            if (ranked.isEmpty()) {
-                score.customName(msg.get("ranking_empty"));
-                score.numberFormat(NumberFormat.blank());
-                continue;
-            }
-            Standing s = ranked.get(i);
-            score.customName(msg.get(i < 3 ? "ranking_line_podium" : "ranking_line", "rank", i + 1, "city", s.name()));
-            score.numberFormat(NumberFormat.fixed(msg.get("ranking_stats", "tier", s.tier(),
-                    "extensions", s.extensions(), "balance", CityRules.compact(s.balance()))));
         }
+        line("bottom", 1, net.kyori.adventure.text.Component.empty(), NumberFormat.blank());
+        line("legend", 0, msg.get("ranking_legend"), NumberFormat.blank());
+    }
+
+    private void line(String entry, int order, net.kyori.adventure.text.Component text, NumberFormat right) {
+        Score score = sidebar.getScore(entry);
+        score.setScore(order);
+        score.customName(text);
+        score.numberFormat(right);
     }
 
     private boolean wanted(Player player) {

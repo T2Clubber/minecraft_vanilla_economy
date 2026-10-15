@@ -233,14 +233,4 @@ class CityRulesTest {
                 ranked.stream().map(CityRules.Standing::name).toList(),
                 "tier first, then extensions, then treasury, then name");
     }
-
-    @Test
-    void compactAmounts() {
-        assertEquals("850", CityRules.compact(850));
-        assertEquals("1k", CityRules.compact(1000));
-        assertEquals("12,5k", CityRules.compact(12_550));
-        assertEquals("999,9k", CityRules.compact(999_999), "never rounded up");
-        assertEquals("1,2M", CityRules.compact(1_250_000));
-        assertEquals("0", CityRules.compact(0));
-    }
 }
