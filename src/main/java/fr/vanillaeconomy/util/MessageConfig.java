@@ -28,21 +28,36 @@ public final class MessageConfig {
     private final String section;
 
     public MessageConfig(Plugin plugin, String section) {
+        this(load(plugin), section);
+    }
+
+    /** {@code yaml} already carries the jar's messages.yml as its defaults. */
+    MessageConfig(YamlConfiguration yaml, String section) {
+        this.yaml = yaml;
+        this.section = section;
+    }
+
+    private static YamlConfiguration load(Plugin plugin) {
         File file = new File(plugin.getDataFolder(), "messages.yml");
         if (!file.exists()) {
             plugin.saveResource("messages.yml", false);
         }
-        this.yaml = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
         var defaults = plugin.getResource("messages.yml");
         if (defaults != null) {
             yaml.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defaults, StandardCharsets.UTF_8)));
         }
-        this.section = section;
+        return yaml;
     }
 
     /** Key/value pairs: "city", "Paris", "owner", "Bob"... */
     public Component get(String key, Object... vars) {
-        String raw = yaml.getString(section + "." + key, "<red>[message manquant : " + section + "." + key + "]");
+        // One-argument getter: it falls back to the jar's messages.yml for keys added after the
+        // server's file was written (getString(key, def) would ignore those defaults).
+        String raw = yaml.getString(section + "." + key);
+        if (raw == null) {
+            raw = "<red>[message manquant : " + section + "." + key + "]";
+        }
         List<TagResolver> resolvers = new ArrayList<>();
         for (int i = 0; i + 1 < vars.length; i += 2) {
             String name = String.valueOf(vars[i]);
