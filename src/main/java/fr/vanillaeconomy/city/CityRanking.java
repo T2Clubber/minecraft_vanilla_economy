@@ -79,13 +79,16 @@ public final class CityRanking implements Listener, TabExecutor {
         Bukkit.getOnlinePlayers().stream().filter(p -> p.getScoreboard() == board).forEach(p -> p.setScoreboard(main));
     }
 
-    /** Lines "#1".."#n": the left text is the score's custom name, the right text its number format. */
+    /**
+     * Lines "rank1".."rankN": the left text is the score's custom name, the right text its
+     * number format. Never start an entry with '#': the client hides those in the sidebar.
+     */
     private void render() {
         List<City> all = List.copyOf(cities.all());
         List<Standing> ranked = CityRules.rank(all.stream()
                 .map(c -> new Standing(c.name(), c.tier(), c.extensions().size(), c.balance())).toList());
         for (int i = 0; i < size; i++) {
-            String entry = "#" + (i + 1);
+            String entry = "rank" + (i + 1);
             if (i >= ranked.size() && !(i == 0 && ranked.isEmpty())) {
                 board.resetScores(entry);
                 continue;
