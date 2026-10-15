@@ -136,7 +136,7 @@ cities:
   ranking_line_2: "<#C0C0C0>★ 2. <bold>{city}</bold>"
   ranking_line_3: "<#CD7F32>★ 3. <bold>{city}</bold>"
   ranking_line: "<gray>{rank}. <white>{city}"
-  ranking_stats: "<aqua>P{tier} <dark_gray>· <light_purple>✦ {extensions}"
+  ranking_stats: "<green>P{tier} <dark_gray>· <light_purple>✦ {extensions}"
   ranking_empty: "<gray><italic>Aucune cité pour l'instant"
 
   # --- administration ------------------------------------------------
