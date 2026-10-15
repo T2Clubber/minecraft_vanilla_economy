@@ -41,6 +41,11 @@ commands:
     description: Afficher les bordures d'une cité.
     usage: "/border <cité> on|off"
     permission: cities.use
+  classement:
+    description: Afficher ou masquer le classement des cités (à droite de l'écran).
+    usage: "/classement on|off"
+    aliases: [ranking]
+    permission: cities.use
   cityadmin:
     description: Administration des cités.
     usage: "/cityadmin delete|settier|rename|info"

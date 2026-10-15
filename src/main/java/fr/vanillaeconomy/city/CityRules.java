@@ -136,6 +136,37 @@ public final class CityRules {
     }
 
     // ------------------------------------------------------------------
+    // Ranking
+    // ------------------------------------------------------------------
+
+    /** What the ranking compares: tier, then unlocked extensions, then treasury. */
+    public record Standing(String name, int tier, int extensions, long balance) {
+    }
+
+    /** Best first; equal cities are ordered by name so that the order never flickers. */
+    public static List<Standing> rank(java.util.Collection<Standing> cities) {
+        return cities.stream()
+                .sorted(java.util.Comparator.comparingInt(Standing::tier).reversed()
+                        .thenComparing(java.util.Comparator.comparingInt(Standing::extensions).reversed())
+                        .thenComparing(java.util.Comparator.comparingLong(Standing::balance).reversed())
+                        .thenComparing(Standing::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    /** Short amount for the sidebar: 850, 12,5k, 1,2M. */
+    public static String compact(long amount) {
+        if (Math.abs(amount) < 1000) {
+            return Long.toString(amount);
+        }
+        double value = amount >= 1_000_000 || amount <= -1_000_000 ? amount / 1_000_000.0 : amount / 1000.0;
+        String unit = Math.abs(amount) >= 1_000_000 ? "M" : "k";
+        double truncated = Math.floor(Math.abs(value) * 10) / 10 * Math.signum(value);
+        String text = truncated == Math.rint(truncated)
+                ? Long.toString((long) truncated) : String.format(java.util.Locale.FRANCE, "%.1f", truncated);
+        return text + unit;
+    }
+
+    // ------------------------------------------------------------------
     // Teleport
     // ------------------------------------------------------------------
 

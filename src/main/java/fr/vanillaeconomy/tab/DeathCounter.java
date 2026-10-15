@@ -19,30 +19,40 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Death count shown next to each name in the player list (TAB), e.g. "☠ 3". It is a vanilla
  * scoreboard objective displayed in the "list" slot, so clients need nothing. The value is
  * the vanilla DEATHS statistic of the world, which also counts deaths from before the
- * plugin was installed.
+ * plugin was installed. Players shown another scoreboard (city ranking) get the same
+ * objective on it ({@link #attach}), so the TAB count never disappears.
  */
 public final class DeathCounter implements Listener {
 
     private static final String OBJECTIVE = "vanillaeco_deaths";
 
     private final Plugin plugin;
-    private Objective objective;
+    /** One per scoreboard showing the count (main scoreboard first). */
+    private final List<Objective> objectives = new ArrayList<>();
 
     public DeathCounter(Plugin plugin) {
         this.plugin = plugin;
     }
 
     public void start() {
-        Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
-        objective = board.getObjective(OBJECTIVE);
+        attach(Bukkit.getScoreboardManager().getMainScoreboard());
+    }
+
+    /** Shows the count in the TAB list of {@code board} too. */
+    public void attach(Scoreboard board) {
+        Objective objective = board.getObjective(OBJECTIVE);
         if (objective == null) {
             objective = board.registerNewObjective(OBJECTIVE, Criteria.DUMMY, Component.text("Morts"));
         }
         objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);
+        objectives.add(objective);
         Bukkit.getOnlinePlayers().forEach(this::update);
     }
 
@@ -72,12 +82,14 @@ public final class DeathCounter implements Listener {
     }
 
     private void update(Player player) {
-        if (objective == null || !player.isOnline()) {
+        if (!player.isOnline()) {
             return;
         }
         int deaths = player.getStatistic(Statistic.DEATHS);
-        Score score = objective.getScore(player.getName());
-        score.setScore(deaths);
-        score.numberFormat(NumberFormat.fixed(Component.text("☠ " + deaths, NamedTextColor.RED)));
+        for (Objective objective : objectives) {
+            Score score = objective.getScore(player.getName());
+            score.setScore(deaths);
+            score.numberFormat(NumberFormat.fixed(Component.text("☠ " + deaths, NamedTextColor.RED)));
+        }
     }
 }

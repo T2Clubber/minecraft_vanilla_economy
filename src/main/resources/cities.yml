@@ -45,6 +45,12 @@ extensions:
     # pièces sont détruites : elles sortent de l'économie.
     use_cost: 100
 
+# Classement des cités (/classement on|off, à droite de l'écran) : palier,
+# puis nombre d'extensions, puis solde de la cité.
+ranking:
+  # Nombre de cités affichées (15 au maximum).
+  size: 10
+
 protection:
   # Empêcher les non-membres de blesser animaux et villageois dans une cité.
   protect_animals: true

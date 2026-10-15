@@ -40,6 +40,7 @@ cities:
     <yellow>/city tp <nom></yellow> <gray>- se téléporter au centre de sa cité (extension)</gray>
     <yellow>/cityboard <nom></yellow> <gray>- tableau de bord (membres)</gray>
     <yellow>/border <nom> on|off</yellow> <gray>- afficher les bordures</gray>
+    <yellow>/classement on|off</yellow> <gray>- classement des cités à l'écran</gray>
 
   # --- création ------------------------------------------------------
   create_world_denied: "<red>Les cités ne peuvent pas être fondées dans ce monde."
@@ -124,6 +125,16 @@ cities:
   border_area: "<gray>Territoire {size}x{size} : X de <white>{minx}</white> à <white>{maxx}</white>, Z de <white>{minz}</white> à <white>{maxz}</white>."
   border_off: "<yellow>Bordures masquées."
   border_other_world: "<red>La cité <aqua>{city}</aqua> est dans un autre monde."
+
+  # --- classement (à droite de l'écran) --------------------------------
+  ranking_usage: "<red>Usage : /classement on|off"
+  ranking_on: "<green>Classement des cités affiché. <gray>(/classement off pour le masquer)"
+  ranking_off: "<yellow>Classement des cités masqué."
+  ranking_title: "<gold><bold>Classement des cités"
+  ranking_line_podium: "<gold>{rank}. <yellow>{city}"
+  ranking_line: "<gray>{rank}. <white>{city}"
+  ranking_stats: "<aqua>P{tier} <light_purple>✦{extensions} <gold>{balance}"
+  ranking_empty: "<gray>Aucune cité"
 
   # --- administration ------------------------------------------------
   admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité>"

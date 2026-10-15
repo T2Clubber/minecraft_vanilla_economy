@@ -220,4 +220,27 @@ class CityRulesTest {
         assertFalse(CO_OWNER.canRename());
         assertFalse(MEMBER.canRename());
     }
+
+    @Test
+    void ranking_tierThenExtensionsThenTreasury() {
+        List<CityRules.Standing> ranked = CityRules.rank(List.of(
+                new CityRules.Standing("Riche", 2, 0, 90_000),
+                new CityRules.Standing("Grande", 3, 0, 10),
+                new CityRules.Standing("Equipee", 2, 1, 0),
+                new CityRules.Standing("beta", 1, 0, 500),
+                new CityRules.Standing("Alpha", 1, 0, 500)));
+        assertEquals(List.of("Grande", "Equipee", "Riche", "Alpha", "beta"),
+                ranked.stream().map(CityRules.Standing::name).toList(),
+                "tier first, then extensions, then treasury, then name");
+    }
+
+    @Test
+    void compactAmounts() {
+        assertEquals("850", CityRules.compact(850));
+        assertEquals("1k", CityRules.compact(1000));
+        assertEquals("12,5k", CityRules.compact(12_550));
+        assertEquals("999,9k", CityRules.compact(999_999), "never rounded up");
+        assertEquals("1,2M", CityRules.compact(1_250_000));
+        assertEquals("0", CityRules.compact(0));
+    }
 }

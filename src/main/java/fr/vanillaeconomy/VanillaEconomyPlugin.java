@@ -9,6 +9,7 @@ import fr.vanillaeconomy.city.CityManager;
 import fr.vanillaeconomy.city.CityNotifier;
 import fr.vanillaeconomy.city.CityPresenceListener;
 import fr.vanillaeconomy.city.CityProtectionListener;
+import fr.vanillaeconomy.city.CityRanking;
 import fr.vanillaeconomy.city.CityTeleport;
 import fr.vanillaeconomy.command.EcoCommand;
 import fr.vanillaeconomy.command.MarketAdminCommand;
@@ -49,6 +50,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     private NitwitVillagerManager villagers;
     private BorderManager borders;
     private StaffLog staffLog;
+    private CityRanking ranking;
 
     @Override
     public void onEnable() {
@@ -138,13 +140,20 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             borders.start();
 
             // 6. Death count in the player list (TAB)
+            DeathCounter deaths = null;
             if (config.getBoolean("tab.deaths")) {
-                DeathCounter deaths = new DeathCounter(this);
+                deaths = new DeathCounter(this);
                 pm.registerEvents(deaths, this);
                 deaths.start();
             } else {
                 DeathCounter.remove();
             }
+
+            // 7. City ranking in the sidebar (/classement on|off)
+            ranking = new CityRanking(this, cities, cityMessages, staffLog, deaths, cityConfig.rankingSize);
+            register("classement", ranking);
+            pm.registerEvents(ranking, this);
+            ranking.start();
             if (staffLog.enabled()) {
                 getLogger().info("Journal staff Discord activé (webhook #logs-serveur).");
                 staffLog.serverStarted("**Paper :** " + getServer().getVersion() + "\n**VanillaEconomy :** "
@@ -159,6 +168,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         MarketGuiListener.closeAll();
+        if (ranking != null) {
+            ranking.stop();
+        }
         if (staffLog != null) {
             staffLog.serverStopped();
         }

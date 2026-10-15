@@ -38,6 +38,7 @@ public final class CityConfig {
     public final int teleportMinTier;
     public final long teleportPrice;
     public final long teleportUseCost;
+    public final int rankingSize;
 
     public CityConfig(YamlConfiguration yaml, Logger logger) {
         creationCost = Math.max(0, yaml.getLong("creation_cost", 2500));
@@ -89,6 +90,7 @@ public final class CityConfig {
         teleportMinTier = Math.max(1, yaml.getInt("extensions.teleport.min_tier", 2));
         teleportPrice = Math.max(0, yaml.getLong("extensions.teleport.price", 10000));
         teleportUseCost = Math.max(0, yaml.getLong("extensions.teleport.use_cost", 100));
+        rankingSize = Math.max(1, Math.min(15, yaml.getInt("ranking.size", 10)));
     }
 
     /** Disabled by the administration: not for sale and not usable, even if already bought. */
