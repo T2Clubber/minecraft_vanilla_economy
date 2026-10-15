@@ -121,6 +121,7 @@ cities:
   border_usage: "<red>Usage : /border <cité> on|off"
   cityboard_usage: "<red>Usage : /cityboard <cité>"
   border_on: "<green>Bordures de <aqua>{city}</aqua> affichées."
+  border_area: "<gray>Territoire {size}x{size} : X de <white>{minx}</white> à <white>{maxx}</white>, Z de <white>{minz}</white> à <white>{maxz}</white>."
   border_off: "<yellow>Bordures masquées."
   border_other_world: "<red>La cité <aqua>{city}</aqua> est dans un autre monde."
 

@@ -181,6 +181,9 @@ public final class BorderManager implements Listener, TabExecutor {
             }
             viewers.put(player.getUniqueId(), city.id());
             msg.send(player, "border_on", "city", city.name());
+            Territory t = city.territory();
+            msg.send(player, "border_area", "size", t.size(), "minx", t.minX(), "maxx", t.maxX(),
+                    "minz", t.minZ(), "maxz", t.maxZ());
             staffLog.command(sender, command, args, "frontières de **" + StaffLog.md(city.name()) + "** affichées");
         } catch (CityException e) {
             msg.send(player, e.key(), e.vars());
