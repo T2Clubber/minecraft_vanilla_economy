@@ -66,6 +66,8 @@ presence:
 
 border:
   # Rayon horizontal (blocs) autour du joueur où la bordure est dessinée.
+  # Il s'agrandit automatiquement jusqu'au bord le plus proche (160 blocs
+  # max), pour que les murs d'une grande cité restent visibles de son centre.
   radius: 24
   # Hauteur dessinée au-dessus et au-dessous du joueur.
   height: 8

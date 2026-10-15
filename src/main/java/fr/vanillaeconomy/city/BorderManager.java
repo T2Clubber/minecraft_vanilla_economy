@@ -28,13 +28,22 @@ import java.util.UUID;
 
 /**
  * /border &lt;city&gt; on|off: particles drawn on the city edges, sent to that player only.
- * A single repeating task draws the segments within {@code radius} blocks horizontally
- * and {@code height} blocks vertically around each viewer; it reads the live territory,
- * so an expansion shows up immediately.
+ * A single repeating task draws the segments around each viewer, {@code height} blocks
+ * above and below him; it reads the live territory, so an expansion shows up immediately.
+ * The horizontal range grows with the distance to the nearest edge (up to
+ * {@link #MAX_RANGE}), so the walls of a large city are visible from its centre; far
+ * particles are sparser and sent with the "force" flag, otherwise the client hides
+ * particles beyond 32 blocks.
  */
 public final class BorderManager implements Listener, TabExecutor {
 
     private static final Particle.DustOptions DUST = new Particle.DustOptions(Color.fromRGB(0x33, 0xCC, 0xFF), 1.2f);
+    /** Larger particles far away, so that the wall stays readable. */
+    private static final Particle.DustOptions FAR_DUST = new Particle.DustOptions(Color.fromRGB(0x33, 0xCC, 0xFF), 3.0f);
+    /** Beyond this distance the walls are not drawn (a 512x512 city seen from its centre). */
+    private static final int MAX_RANGE = 160;
+    /** Closer than this, every block is drawn with small particles. */
+    private static final int NEAR = 24;
 
     private final Plugin plugin;
     private final CityManager cities;
@@ -88,22 +97,49 @@ public final class BorderManager implements Listener, TabExecutor {
             int east = t.maxX() + 1;
             int north = t.minZ();
             int south = t.maxZ() + 1;
-            for (int y = py - height; y <= py + height; y += 2) {
-                for (int edgeX : new int[]{west, east}) {
-                    if (Math.abs(edgeX - px) <= radius) {
-                        for (int z = Math.max(north, pz - radius); z <= Math.min(south, pz + radius); z++) {
-                            player.spawnParticle(Particle.DUST, edgeX, y + 0.5, z, 1, 0, 0, 0, 0, DUST);
-                        }
-                    }
-                }
-                for (int edgeZ : new int[]{north, south}) {
-                    if (Math.abs(edgeZ - pz) <= radius) {
-                        for (int x = Math.max(west, px - radius); x <= Math.min(east, px + radius); x++) {
-                            player.spawnParticle(Particle.DUST, x, y + 0.5, edgeZ, 1, 0, 0, 0, 0, DUST);
-                        }
+            int range = Math.min(MAX_RANGE, Math.max(radius, distanceToEdge(px, pz, west, east, north, south) + radius));
+            for (int edgeX : new int[]{west, east}) {
+                if (Math.abs(edgeX - px) <= range) {
+                    for (int z = Math.max(north, pz - range); z <= Math.min(south, pz + range); z++) {
+                        point(player, edgeX, z, px, py, pz, height, range);
                     }
                 }
             }
+            for (int edgeZ : new int[]{north, south}) {
+                if (Math.abs(edgeZ - pz) <= range) {
+                    for (int x = Math.max(west, px - range); x <= Math.min(east, px + range); x++) {
+                        point(player, x, edgeZ, px, py, pz, height, range);
+                    }
+                }
+            }
+        }
+    }
+
+    /** Horizontal distance from the player to the nearest edge, inside or outside the city. */
+    static int distanceToEdge(int px, int pz, int west, int east, int north, int south) {
+        boolean inside = px >= west && px <= east && pz >= north && pz <= south;
+        if (inside) {
+            return Math.min(Math.min(px - west, east - px), Math.min(pz - north, south - pz));
+        }
+        int dx = Math.max(0, Math.max(west - px, px - east));
+        int dz = Math.max(0, Math.max(north - pz, pz - south));
+        return (int) Math.ceil(Math.hypot(dx, dz));
+    }
+
+    /** One column of the wall: dense near the player, sparse and forced far away. */
+    private static void point(Player player, int x, int z, int px, int py, int pz, int height, int range) {
+        double d = Math.hypot(x - px, z - pz);
+        if (d > range) {
+            return;
+        }
+        boolean near = d <= NEAR;
+        int step = near ? 1 : d <= 64 ? 2 : 4;
+        if (Math.floorMod(x + z, step) != 0) {
+            return;
+        }
+        int rowStep = near ? 2 : 4;
+        for (int y = py - height; y <= py + height; y += rowStep) {
+            player.spawnParticle(Particle.DUST, x, y + 0.5, z, 1, 0, 0, 0, 0, near ? DUST : FAR_DUST, !near);
         }
     }
 
