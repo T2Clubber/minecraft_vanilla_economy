@@ -66,6 +66,11 @@ public final class CityConfig {
                     new Tier(4, 256, 50000), new Tier(5, 512, 100000));
         }
         tiers = List.copyOf(parsed);
+        // cities.yml is never overwritten by an update: show what is really in use.
+        logger.info("Paliers des cités : " + String.join(", ", tiers.stream()
+                .map(tier -> tier.level() + " = " + tier.size() + "x" + tier.size()
+                        + (tier.level() > 1 ? " (" + tier.price() + ")" : ""))
+                .toList()));
 
         protectAnimals = yaml.getBoolean("protection.protect_animals", true);
         actionbarMessage = yaml.getBoolean("protection.actionbar_message", true);
