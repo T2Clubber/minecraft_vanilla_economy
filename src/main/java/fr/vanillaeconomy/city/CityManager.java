@@ -599,6 +599,14 @@ public final class CityManager {
         territoryListeners.forEach(l -> l.accept(city));
     }
 
+    /** /city rename: the owner renames his city (same rules as a new name). */
+    public void rename(City city, UUID actor, String newName) throws CityException {
+        if (!roleOrThrow(city, actor).canRename()) {
+            throw new CityException("no_permission_role", "city", city.name());
+        }
+        adminRename(city, newName);
+    }
+
     public void adminRename(City city, String newName) throws CityException {
         if (!CityRules.validName(newName, config.nameMin, config.nameMax)) {
             throw new CityException("create_invalid_name", "min", config.nameMin, "max", config.nameMax);

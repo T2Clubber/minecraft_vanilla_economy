@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-/** /city create|info|add|kick|leave|coowner|contribute|upgrade|disband|tp. */
+/** /city create|info|add|kick|leave|coowner|contribute|upgrade|disband|rename|tp. */
 public final class CityCommand implements TabExecutor {
 
     private enum Pending { DISBAND, UPGRADE }
@@ -29,7 +29,8 @@ public final class CityCommand implements TabExecutor {
     }
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "create", "info", "add", "kick", "leave", "coowner", "contribute", "upgrade", "disband", "tp", "help");
+            "create", "info", "add", "kick", "leave", "coowner", "contribute", "upgrade", "disband", "rename", "tp",
+            "help");
 
     private final CityManager cities;
     private final MessageConfig msg;
@@ -67,6 +68,7 @@ public final class CityCommand implements TabExecutor {
                 case "contribute" -> contribute(player, args);
                 case "upgrade" -> upgrade(player, args);
                 case "disband" -> disband(player, args);
+                case "rename" -> rename(player, args);
                 case "tp" -> {
                     // asynchronous: logged by CityTeleport once the player has arrived
                     if (args.length != 2) {
@@ -239,6 +241,23 @@ public final class CityCommand implements TabExecutor {
         return "confirmation de dissolution demandée pour **" + StaffLog.md(city.name()) + "**";
     }
 
+    private String rename(Player player, String[] args) throws CityException {
+        if (args.length != 3) {
+            msg.send(player, "rename_usage");
+            return null;
+        }
+        City city = cities.require(args[1]);
+        String oldName = city.name();
+        cities.rename(city, player.getUniqueId(), args[2]);
+        msg.send(player, "renamed", "old", oldName, "city", city.name());
+        for (UUID member : city.members().keySet()) {
+            if (!member.equals(player.getUniqueId())) {
+                notifier.notify(member, "renamed_notify", "old", oldName, "city", city.name());
+            }
+        }
+        return "**" + StaffLog.md(oldName) + "** renommée en **" + StaffLog.md(city.name()) + "**";
+    }
+
     private void consumeConfirmation(Player player, Pending action, City city) throws CityException {
         Confirmation c = confirmations.remove(player.getUniqueId());
         if (c == null || c.action() != action || c.cityId() != city.id() || c.expiresAt() < System.currentTimeMillis()) {
@@ -307,6 +326,11 @@ public final class CityCommand implements TabExecutor {
                         cities.citiesOf(me).stream()
                                 .filter(c -> cities.config().enabled(CityExtension.TELEPORT) && c.hasExtension(CityExtension.TELEPORT))
                                 .forEach(c -> options.add(c.name()));
+                    }
+                }
+                case "rename" -> {
+                    if (args.length == 2) {
+                        cities.ownedBy(me).ifPresent(c -> options.add(c.name()));
                     }
                 }
                 case "upgrade", "disband" -> {

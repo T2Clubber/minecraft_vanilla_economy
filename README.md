@@ -100,7 +100,7 @@ Le nombre de morts de chaque joueur s'affiche à côté de son nom dans la liste
 Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `/city create <nom>` et centré sur le fondateur. La fondation coûte 2 500 pièces, prélevées sur le solde du fondateur. La cité démarre en 32×32 et s'agrandit par paliers, payés avec le solde de la cité : 64×64 (5 000), 128×128 (20 000), 256×256 (50 000), 512×512 (100 000). Les valeurs sont réglables dans `cities.yml`.
 
 - **Rôles :**
-  - **Propriétaire** : gère tout, achète les paliers, dissout la cité. Un joueur ne peut posséder qu'une cité.
+  - **Propriétaire** : gère tout, achète les paliers et les extensions, renomme et dissout la cité. Un joueur ne peut posséder qu'une cité.
   - **Co-propriétaire** : ajoute et exclut des membres simples.
   - **Membre** : construit, contribue, peut quitter la cité. Un joueur peut être membre de plusieurs cités.
 - **Accès :** une cité n'est jamais fermée. Les visiteurs entrent et circulent librement, mais en lecture seule :
@@ -128,6 +128,7 @@ Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `
 | `/city upgrade [confirm]` | Achète le palier suivant |
 | `/city leave <nom>` | Quitte une cité (impossible pour le propriétaire) |
 | `/city disband [confirm]` | Dissout la cité et rembourse son solde |
+| `/city rename <nom> <nouveau nom>` | Renomme la cité (propriétaire uniquement, mêmes règles qu'à la création) ; les membres sont prévenus |
 | `/city tp <nom>` | Téléporte au centre de la cité (extension Téléportation, 100 pièces par utilisation) |
 | `/cityboard <nom>` | Tableau de bord des membres : onglets Membres, Paliers, Trésorerie, Extensions |
 | `/border <nom> on\|off` | Affiche les bordures de la cité en particules, visibles par ce seul joueur |

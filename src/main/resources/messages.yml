@@ -36,6 +36,7 @@ cities:
     <yellow>/city upgrade</yellow> <gray>- acheter le palier suivant</gray>
     <yellow>/city leave <nom></yellow> <gray>- quitter une cité</gray>
     <yellow>/city disband</yellow> <gray>- dissoudre votre cité</gray>
+    <yellow>/city rename <nom> <nouveau nom></yellow> <gray>- renommer votre cité</gray>
     <yellow>/city tp <nom></yellow> <gray>- se téléporter au centre de sa cité (extension)</gray>
     <yellow>/cityboard <nom></yellow> <gray>- tableau de bord (membres)</gray>
     <yellow>/border <nom> on|off</yellow> <gray>- afficher les bordures</gray>
@@ -73,6 +74,11 @@ cities:
   upgrade_conflict: "<red>Agrandissement impossible : le territoire toucherait la cité <aqua>{other}</aqua>."
   upgrade_confirm: "<yellow>Acheter le palier {tier} ({size}x{size}) pour <gold>{price}</gold> du solde de la cité ? Tapez <white>/city upgrade confirm</white> dans les {seconds} s."
   upgraded: "<green>La cité <aqua>{city}</aqua> passe au palier {tier} : territoire {size}x{size} !"
+
+  # --- renommage ------------------------------------------------------
+  rename_usage: "<red>Usage : /city rename <cité> <nouveau nom>"
+  renamed: "<green>La cité <aqua>{old}</aqua> s'appelle désormais <aqua>{city}</aqua>."
+  renamed_notify: "<yellow>La cité <aqua>{old}</aqua> a été renommée <aqua>{city}</aqua> par son propriétaire."
 
   # --- extensions -----------------------------------------------------
   extension_owned: "<red>La cité <aqua>{city}</aqua> possède déjà l'extension {extension}."

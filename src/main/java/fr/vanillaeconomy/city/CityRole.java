@@ -44,6 +44,11 @@ public enum CityRole {
         return canBuyTier();
     }
 
+    /** Rename the city: owner only. */
+    public boolean canRename() {
+        return this == OWNER;
+    }
+
     public boolean canDisband() {
         return this == OWNER;
     }

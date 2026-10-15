@@ -213,4 +213,11 @@ class CityRulesTest {
         assertFalse(CO_OWNER.canBuyExtension());
         assertFalse(MEMBER.canBuyExtension());
     }
+
+    @Test
+    void onlyTheOwnerRenamesHisCity() {
+        assertTrue(OWNER.canRename());
+        assertFalse(CO_OWNER.canRename());
+        assertFalse(MEMBER.canRename());
+    }
 }
