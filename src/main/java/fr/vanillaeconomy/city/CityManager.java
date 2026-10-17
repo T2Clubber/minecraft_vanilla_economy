@@ -70,6 +70,11 @@ public final class CityManager {
         this.audit = audit;
     }
 
+    /** Staff journal entry (#logs-serveur) for a city event. */
+    void audit(String title, String details) {
+        audit.accept(title, details);
+    }
+
     // ------------------------------------------------------------------
     // Loading
     // ------------------------------------------------------------------
@@ -105,17 +110,6 @@ public final class CityManager {
                 if (city != null) {
                     city.addContribution(new City.Contribution(UUID.fromString(rs.getString(2)), rs.getLong(3), rs.getLong(4)));
                 }
-            }
-        }
-        try (Statement st = c.createStatement();
-             ResultSet rs = st.executeQuery("SELECT city_id, extension FROM city_extension")) {
-            while (rs.next()) {
-                City city = byId.get(rs.getInt(1));
-                CityExtension.byKey(rs.getString(2)).ifPresent(e -> {
-                    if (city != null) {
-                        city.addExtension(e);
-                    }
-                });
             }
         }
         for (City city : byId.values()) {
@@ -179,7 +173,7 @@ public final class CityManager {
         return byName(name).orElseThrow(() -> new CityException("unknown_city", "city", name));
     }
 
-    private static CityRole roleOrThrow(City city, UUID player) throws CityException {
+    static CityRole roleOrThrow(City city, UUID player) throws CityException {
         CityRole role = city.roleOf(player);
         if (role == null) {
             throw new CityException("not_member", "city", city.name());
@@ -447,66 +441,6 @@ public final class CityManager {
     // ------------------------------------------------------------------
     // Extensions
     // ------------------------------------------------------------------
-
-    /** Checks that the actor can buy this extension now (enabled, role, tier, not owned yet, treasury). */
-    public void checkExtension(City city, UUID actor, CityExtension extension) throws CityException {
-        if (!config.enabled(extension)) {
-            throw new CityException("extension_disabled", "extension", extension.label());
-        }
-        if (!roleOrThrow(city, actor).canBuyExtension()) {
-            throw new CityException("no_permission_role", "city", city.name());
-        }
-        if (city.hasExtension(extension)) {
-            throw new CityException("extension_owned", "city", city.name(), "extension", extension.label());
-        }
-        if (city.tier() < config.minTier(extension)) {
-            throw new CityException("extension_tier", "extension", extension.label(), "city", city.name(),
-                    "tier", config.minTier(extension), "current", city.tier());
-        }
-        long price = config.price(extension);
-        if (city.balance() < price) {
-            throw new CityException("upgrade_funds", "price", Messages.coins(price),
-                    "balance", Messages.coins(city.balance()));
-        }
-    }
-
-    /** Pays the extension with the city's treasury. */
-    public void buyExtension(City city, UUID actor, CityExtension extension) throws CityException {
-        checkExtension(city, actor, extension);
-        long price = config.price(extension);
-        boolean ok;
-        try {
-            ok = db.transaction(c -> {
-                try (PreparedStatement ps = c.prepareStatement(
-                        "UPDATE city SET balance = balance - ? WHERE id = ? AND balance >= ?")) {
-                    ps.setLong(1, price);
-                    ps.setInt(2, city.id());
-                    ps.setLong(3, price);
-                    if (ps.executeUpdate() != 1) {
-                        return false;
-                    }
-                }
-                try (PreparedStatement ps = c.prepareStatement(
-                        "INSERT INTO city_extension(city_id, extension, bought_at) VALUES(?, ?, ?)")) {
-                    ps.setInt(1, city.id());
-                    ps.setString(2, extension.key());
-                    ps.setLong(3, System.currentTimeMillis());
-                    ps.executeUpdate();
-                }
-                return true;
-            });
-        } catch (SQLException e) {
-            throw internal("achat de l'extension " + extension.key() + " pour " + city.name(), e);
-        }
-        if (!ok) {
-            throw new CityException("upgrade_funds", "price", Messages.coins(price),
-                    "balance", Messages.coins(city.balance()));
-        }
-        city.setBalance(city.balance() - price);
-        city.addExtension(extension);
-        audit.accept("Extension : " + city.name(), "**" + extension.label() + "** achetée par " + nameOf(actor)
-                + " pour " + price + " pièces\n**Solde restant :** " + city.balance() + " pièces");
-    }
 
     /**
      * Charges a member for one teleport to his city: the fee leaves the economy (it is

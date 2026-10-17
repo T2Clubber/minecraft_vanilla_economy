@@ -44,6 +44,27 @@ extensions:
     # Payé par le joueur à chaque téléportation (solde personnel). Ces
     # pièces sont détruites : elles sortent de l'économie.
     use_cost: 100
+  promo_frenzy:
+    # « Promotion en folie » : les idiots marchands qui se trouvent dans la
+    # cité font promos_per_day promotions de plus par jour, tirées parmi les
+    # rotations sans promo globale (6 promos sur 12 rotations avec 2 + 4).
+    enabled: true
+    min_tier: 3
+    price: 10000
+    # Conditions d'achat : au moins un idiot marchand (adulte, vivant) de
+    # chacun de ces types dans les limites de la cité. Clés du registre
+    # Minecraft des types de villageois (skins).
+    required_villager_types: [desert, jungle, plains, savanna, snow, swamp, taiga]
+    promos_per_day: 4
+    min_percent: 5
+    max_percent: 50
+    # Messages dans le chat aux membres en ligne de la cité (aucune annonce
+    # Discord : seules les promos globales y sont annoncées).
+    announcements:
+      warning: true
+      warning_minutes_before: 120
+      start: true
+      join_reminder: true
 
 # Classement des cités (/classement on|off, à droite de l'écran) : palier,
 # puis nombre d'extensions, puis solde de la cité.

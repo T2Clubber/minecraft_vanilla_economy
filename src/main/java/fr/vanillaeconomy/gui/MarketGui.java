@@ -1,7 +1,10 @@
 package fr.vanillaeconomy.gui;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.market.LocalPromotions;
 import fr.vanillaeconomy.market.MarketManager;
+import fr.vanillaeconomy.market.PromotionManager;
+import fr.vanillaeconomy.market.PromotionManager.Applicable;
 import fr.vanillaeconomy.market.RotationEngine.Side;
 import fr.vanillaeconomy.util.Messages;
 import net.kyori.adventure.text.Component;
@@ -29,7 +32,9 @@ import java.util.UUID;
  * balance, the time left before the next rotation and the button switching to the
  * other interface.
  * Items shown come from the rotation of the clicked villager's biome group; prices and
- * stock come from the global {@link MarketManager}.
+ * stock come from the global {@link MarketManager}. The promotion shown is the global one,
+ * or the one of the city the villager stood in when it was right-clicked (Promotion en
+ * folie, {@link LocalPromotions}).
  */
 public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI, SellGUI {
 
@@ -44,18 +49,24 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     protected final Player viewer;
     protected final UUID villagerId;
     protected final String group;
+    protected final LocalPromotions local;
+    /** City context resolved at the right click (memory only), null outside such a city. */
+    protected final Integer context;
     private final Inventory inventory;
     private final int balanceSlot;
     private final int clockSlot;
     private final int toggleSlot;
     private List<Material> slots = List.of();
 
-    protected MarketGui(MarketManager market, CurrencyManager currency, Player viewer, Villager villager, Component title) {
+    protected MarketGui(MarketManager market, CurrencyManager currency, Player viewer, Villager villager,
+                        LocalPromotions local, Integer context, Component title) {
         this.market = market;
         this.currency = currency;
         this.viewer = viewer;
         this.villagerId = villager.getUniqueId();
         this.group = MarketManager.groupOf(villager);
+        this.local = local;
+        this.context = context;
         int entries = market.rotationFor(group).buy().size();
         int size = Math.min(54, ((entries + 8) / 9 + 1) * 9);
         this.balanceSlot = size - 9;
@@ -65,6 +76,12 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     }
 
     public abstract Side side();
+
+    /** Promotion of this villager right now: global, or of its city. */
+    protected Applicable promotion() {
+        return PromotionManager.applicable(market.promoPercent(), context != null,
+                context != null ? local.percent(context, market.cycleStartedAt()) : 0);
+    }
 
     protected abstract ItemStack renderItem(Material material);
 
@@ -155,16 +172,31 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     }
 
     private ItemStack clockItem() {
+        long now = System.currentTimeMillis();
         ItemStack clock = ItemStack.of(Material.CLOCK);
         ItemMeta meta = clock.getItemMeta();
         meta.displayName(Messages.item("<aqua>Prochaine rotation : <white><time>",
-                Messages.p("time", timeLeft(market.nextRotationAt() - System.currentTimeMillis()))));
+                Messages.p("time", timeLeft(market.nextRotationAt() - now))));
         List<Component> lore = new ArrayList<>();
         lore.add(Messages.item("<gray>Les étals et les prix changent à chaque rotation."));
-        if (market.promoPercent() > 0) {
+        Applicable promo = promotion();
+        if (promo.percent() > 0) {
             lore.add(Messages.item("<gold>✦ PROMO -<pct>% jusqu'à la prochaine rotation ✦",
-                    Messages.p("pct", market.promoPercent())));
+                    Messages.p("pct", promo.percent())));
+            if (promo.city()) {
+                lore.add(Messages.item("<light_purple><bold>Promotion en folie</bold> <gray>(promo de la cité)"));
+            }
             meta.setEnchantmentGlintOverride(true);
+        } else {
+            // Next promotion of this villager: global, or of its city if it comes first.
+            long global = market.nextGlobalPromoStart(now);
+            long city = context != null ? local.nextStart(context, now) : Long.MAX_VALUE;
+            long next = Math.min(global, city);
+            if (next != Long.MAX_VALUE) {
+                lore.add(Messages.item("<gray>Prochaine promo dans <yellow><time></yellow><kind>",
+                        Messages.p("time", timeLeft(next - now)),
+                        Messages.p("kind", city < global ? " (Promotion en folie)" : "")));
+            }
         }
         meta.lore(lore);
         clock.setItemMeta(meta);
@@ -172,11 +204,7 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
     }
 
     static String timeLeft(long millis) {
-        long minutes = Math.max(0, millis) / 60_000L;
-        if (minutes < 1) {
-            return "moins d'une minute";
-        }
-        return minutes >= 60 ? (minutes / 60) + " h " + String.format("%02d", minutes % 60) + " min" : minutes + " min";
+        return Messages.duration(millis);
     }
 
     protected long balance() {
@@ -199,12 +227,15 @@ public abstract sealed class MarketGui implements InventoryHolder permits BuyGUI
      * Glint + "PROMO -X%" as the first line of the tooltip: the badge becomes the title and
      * the item name moves to the line below.
      */
-    protected static ItemStack promoStyle(ItemStack stack, long percent) {
+    protected static ItemStack promoStyle(ItemStack stack, long percent, boolean cityPromo) {
         ItemMeta meta = stack.getItemMeta();
         meta.setEnchantmentGlintOverride(true);
         meta.displayName(Messages.item("<gold><bold>✦ PROMO -<pct>% ✦", Messages.p("pct", percent)));
         List<Component> lore = new ArrayList<>();
         lore.add(Component.translatable(stack.translationKey(), NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false));
+        if (cityPromo) {
+            lore.add(Messages.item("<light_purple><bold>Promotion en folie"));
+        }
         if (meta.lore() != null) {
             lore.addAll(meta.lore());
         }

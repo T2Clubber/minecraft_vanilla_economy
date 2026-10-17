@@ -67,6 +67,12 @@ public final class MessageConfig {
         return MM.deserialize(raw, TagResolver.resolver(resolvers));
     }
 
+    /** Raw text of a key (jar default included), or {@code fallback} when it does not exist. */
+    public String text(String key, String fallback) {
+        String raw = yaml.getString(section + "." + key);
+        return raw == null ? fallback : raw;
+    }
+
     /** Chat message with the section prefix. */
     public void send(CommandSender to, String key, Object... vars) {
         to.sendMessage(get("prefix").append(get(key, vars)));

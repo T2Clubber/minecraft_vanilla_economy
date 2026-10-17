@@ -85,8 +85,31 @@ cities:
   extension_owned: "<red>La cité <aqua>{city}</aqua> possède déjà l'extension {extension}."
   extension_tier: "<red>L'extension {extension} se débloque au palier {tier} : la cité <aqua>{city}</aqua> est au palier {current}."
   extension_disabled: "<red>L'extension {extension} est désactivée sur ce serveur."
-  extension_bought: "<green>Extension <white>{extension}</white> achetée pour la cité <aqua>{city}</aqua> (<gold>{price}</gold> du solde de la cité). <gray>Les membres peuvent utiliser <white>/city tp {city}</white> (<gold>{cost}</gold> par téléportation)."
-  extension_notify: "<green>La cité <aqua>{city}</aqua> a débloqué l'extension <white>{extension}</white> : <white>/city tp {city}</white> vous y téléporte pour <gold>{cost}</gold>."
+  extension_bought_teleport: "<green>Extension <white>{extension}</white> achetée pour la cité <aqua>{city}</aqua> (<gold>{price}</gold> du solde de la cité). <gray>Les membres peuvent utiliser <white>/city tp {city}</white> (<gold>{cost}</gold> par téléportation)."
+  extension_notify_teleport: "<green>La cité <aqua>{city}</aqua> a débloqué l'extension <white>{extension}</white> : <white>/city tp {city}</white> vous y téléporte pour <gold>{cost}</gold>."
+  extension_bought_promo_frenzy: "<green>Extension <white>{extension}</white> achetée pour la cité <aqua>{city}</aqua> (<gold>{price}</gold> du solde de la cité). <gray>Ses idiots marchands feront {n} promos de plus par jour."
+  extension_notify_promo_frenzy: "<green>La cité <aqua>{city}</aqua> a débloqué la <light_purple>Promotion en folie</light_purple> : ses idiots marchands font {n} promos de plus par jour !"
+  extension_scanning: "<gray>Vérification des idiots marchands présents dans la cité…"
+  extension_scan_running: "<yellow>Une vérification est déjà en cours pour cette cité."
+  extension_scan_failed: "<red>Impossible de vérifier les idiots de la cité <aqua>{city}</aqua> pour le moment, réessayez."
+  extension_skins_ok: "<green>Les {n} skins d'idiots marchands sont présents dans la cité <aqua>{city}</aqua> !"
+  extension_skins_check: "<yellow>{present}/{n} skins présents dans la cité <aqua>{city}</aqua>. Skins manquants : <white>{missing}</white>."
+  extension_skins_missing: "<red>Achat impossible : il manque des idiots marchands dans la cité <aqua>{city}</aqua>. Skins manquants : <white>{missing}</white>."
+
+  # Noms des skins (types de villageois) dans les messages ci-dessus.
+  villager_type_desert: "désert"
+  villager_type_jungle: "jungle"
+  villager_type_plains: "plaine"
+  villager_type_savanna: "savane"
+  villager_type_snow: "neige"
+  villager_type_swamp: "marais"
+  villager_type_taiga: "taïga"
+
+  # --- Promotion en folie : annonces aux membres en ligne ----------------
+  # {city}, {percent}, {delay}. Envoyées sans le préfixe [Cité].
+  frenzy_warning: "<light_purple>✦ <bold>Promotion en folie</bold> ✦</light_purple> <white>Dans <yellow>{delay}</yellow>, les idiots marchands de <aqua>{city}</aqua> passent en promo <gold><bold>-{percent}%</bold></gold> !"
+  frenzy_start: "<light_purple>✦ <bold>Promotion en folie</bold> ✦</light_purple> <white>C'est parti : <gold><bold>-{percent}%</bold></gold> chez les idiots marchands de <aqua>{city}</aqua> pendant <yellow>{delay}</yellow> !"
+  frenzy_reminder: "<light_purple>✦ <bold>Promotion en folie</bold> ✦</light_purple> <white>Promo <gold><bold>-{percent}%</bold></gold> en cours chez les idiots marchands de <aqua>{city}</aqua>, encore <yellow>{delay}</yellow>."
 
   # --- téléportation (extension) --------------------------------------
   tp_usage: "<red>Usage : /city tp <cité>"
@@ -140,7 +163,10 @@ cities:
   ranking_empty: "<gray><italic>Aucune cité pour l'instant"
 
   # --- administration ------------------------------------------------
-  admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité>"
+  admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité> | promos <cité> | promo <cité> <pourcentage>"
+  admin_promos: "<gray>Promotion en folie, <aqua>{city}</aqua> : <white>{plans}"
+  admin_promo_forced: "<green>Promo de cité -{percent} % forcée pour <aqua>{city}</aqua> sur la rotation en cours."
+  admin_no_frenzy: "<red>La cité <aqua>{city}</aqua> n'a pas l'extension Promotion en folie."
   admin_deleted: "<yellow>Cité <aqua>{city}</aqua> supprimée (solde remboursé)."
   admin_tier: "<green>Cité <aqua>{city}</aqua> passée au palier {tier}."
   admin_renamed: "<green>Cité renommée en <aqua>{city}</aqua>."

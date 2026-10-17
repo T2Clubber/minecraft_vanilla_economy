@@ -1,8 +1,10 @@
 package fr.vanillaeconomy.gui;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.market.LocalPromotions;
 import fr.vanillaeconomy.market.MarketManager;
-import fr.vanillaeconomy.market.MarketManager.ItemState;
+import fr.vanillaeconomy.market.MarketManager.ItemView;
+import fr.vanillaeconomy.market.PromotionManager.Applicable;
 import fr.vanillaeconomy.market.MarketManager.TradeResult;
 import fr.vanillaeconomy.market.PricingEngine;
 import fr.vanillaeconomy.market.RotationEngine.Side;
@@ -19,8 +21,14 @@ import java.util.List;
 /** ACHAT interface: the villager sells to the player, from the global stock. */
 public final class BuyGUI extends MarketGui {
 
-    public BuyGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager) {
-        super(market, currency, viewer, villager, Messages.parse("<dark_green>Achat"));
+    /** Right click: the city context is resolved from the villager's position. */
+    public BuyGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager, LocalPromotions local) {
+        this(market, currency, viewer, villager, local, local.contextAt(villager.getLocation()));
+    }
+
+    BuyGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager, LocalPromotions local,
+           Integer context) {
+        super(market, currency, viewer, villager, local, context, Messages.parse("<dark_green>Achat"));
     }
 
     @Override
@@ -40,12 +48,13 @@ public final class BuyGUI extends MarketGui {
 
     @Override
     protected MarketGui opposite(Villager villager) {
-        return new SellGUI(market, currency, viewer, villager);
+        return new SellGUI(market, currency, viewer, villager, local, context);
     }
 
     @Override
     protected ItemStack renderItem(Material material) {
-        ItemState s = market.state(material);
+        Applicable promo = promotion();
+        ItemView s = market.view(material, promo.percent());
         int lot = PricingEngine.buyLot(s.sellUnit());
         int stack = material.getMaxStackSize();
         long shown = PricingEngine.buyableQuantity(s.sellUnit(), lot);
@@ -77,7 +86,7 @@ public final class BuyGUI extends MarketGui {
         ItemStack item = icon(material, lot, lore, false);
         // Real reduction of the price (the formula may cap it at the villager's buying price).
         long percent = Math.round((1 - s.sellUnit() / s.regularSellUnit()) * 100);
-        return percent > 0 ? promoStyle(item, percent) : item;
+        return percent > 0 ? promoStyle(item, percent, promo.city()) : item;
     }
 
     @Override
@@ -85,7 +94,7 @@ public final class BuyGUI extends MarketGui {
         if (market.stockOf(material) <= 0) {
             return; // greyed out, not clickable
         }
-        TradeResult r = market.buyFromVillager(viewer, group, material, bulk);
+        TradeResult r = market.buyFromVillager(viewer, group, material, bulk, promotion().percent());
         switch (r.status()) {
             case OK -> Messages.send(viewer, "<gray>Acheté <white><n></white> pour <gold><price></gold>.",
                     Messages.p("n", r.quantity()), Messages.p("price", Messages.coins(r.coins())));

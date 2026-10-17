@@ -8,9 +8,12 @@ import fr.vanillaeconomy.city.CityConfig;
 import fr.vanillaeconomy.city.CityManager;
 import fr.vanillaeconomy.city.CityNotifier;
 import fr.vanillaeconomy.city.CityPresenceListener;
+import fr.vanillaeconomy.city.CityPromotionScheduler;
 import fr.vanillaeconomy.city.CityProtectionListener;
 import fr.vanillaeconomy.city.CityRanking;
 import fr.vanillaeconomy.city.CityTeleport;
+import fr.vanillaeconomy.city.ExtensionManager;
+import fr.vanillaeconomy.city.NitwitPresenceChecker;
 import fr.vanillaeconomy.command.EcoCommand;
 import fr.vanillaeconomy.command.MarketAdminCommand;
 import fr.vanillaeconomy.command.MoneyCommand;
@@ -24,6 +27,7 @@ import fr.vanillaeconomy.gui.BuyGUI;
 import fr.vanillaeconomy.gui.MarketGuiListener;
 import fr.vanillaeconomy.gui.SellGUI;
 import fr.vanillaeconomy.market.ItemConfigLoader;
+import fr.vanillaeconomy.market.LocalPromotions;
 import fr.vanillaeconomy.market.MarketManager;
 import fr.vanillaeconomy.storage.Database;
 import fr.vanillaeconomy.tab.DeathCounter;
@@ -51,6 +55,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     private BorderManager borders;
     private StaffLog staffLog;
     private CityRanking ranking;
+    private CityPromotionScheduler cityPromotions;
+    /** Promotions of the cities with Promotion en folie, set once the cities are loaded. */
+    private LocalPromotions localPromotions = LocalPromotions.NONE;
 
     @Override
     public void onEnable() {
@@ -98,8 +105,8 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
                     20L * Math.max(1, config.getLong("villagers.growth_check_seconds", 10)),
                     config.getDouble("villagers.breeding_nitwit_chance", 0.08));
             villagers.bindGuis(
-                    (player, villager) -> new BuyGUI(market, currency, player, villager).open(),
-                    (player, villager) -> new SellGUI(market, currency, player, villager).open(),
+                    (player, villager) -> new BuyGUI(market, currency, player, villager, localPromotions).open(),
+                    (player, villager) -> new SellGUI(market, currency, player, villager, localPromotions).open(),
                     MarketGuiListener::closeFor);
             getServer().getPluginManager().registerEvents(villagers, this);
             getServer().getPluginManager().registerEvents(new MarketGuiListener(this), this);
@@ -117,15 +124,17 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             MessageConfig cityMessages = new MessageConfig(this, "cities");
             CityManager cities = new CityManager(this, database, cityConfig);
             cities.load();
+            ExtensionManager extensions = new ExtensionManager(this, database, cities, new NitwitPresenceChecker(this),
+                    cityMessages);
+            extensions.load();
             CityNotifier notifier = new CityNotifier(this, database, cityMessages);
             notifier.load();
             CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier, staffLog,
                     new CityTeleport(this, cities, currency, cityMessages, staffLog));
             register("city", cityCommand);
-            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog));
             cities.setAudit(staffLog::city);
             CityBoardGUI.Handler board = new CityBoardGUI.Handler(
-                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier, staffLog));
+                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier, staffLog, extensions));
             register("cityboard", board);
             borders = new BorderManager(this, cities, cityMessages, staffLog);
             register("border", borders);
@@ -138,6 +147,18 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             pm.registerEvents(notifier, this);
             presence.start();
             borders.start();
+
+            // Promotion en folie: extra promotions of the market nitwits standing in a city
+            cityPromotions = new CityPromotionScheduler(this, database, cities, extensions, market, cityMessages);
+            cityPromotions.load();
+            extensions.onPurchase(cityPromotions::onPurchase);
+            market.onDayPlan(cityPromotions::onGlobalPlan);
+            pm.registerEvents(cityPromotions, this);
+            cityPromotions.start();
+            localPromotions = cityPromotions;
+            cityPromotions.onChange(MarketGuiListener::refreshAll);
+            register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog,
+                    cityPromotions));
 
             // 6. Death count in the player list (TAB)
             DeathCounter deaths = null;
@@ -170,6 +191,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
         MarketGuiListener.closeAll();
         if (ranking != null) {
             ranking.stop();
+        }
+        if (cityPromotions != null) {
+            cityPromotions.stop();
         }
         if (staffLog != null) {
             staffLog.serverStopped();

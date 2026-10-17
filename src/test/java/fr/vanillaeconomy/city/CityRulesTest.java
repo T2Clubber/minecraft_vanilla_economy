@@ -233,4 +233,64 @@ class CityRulesTest {
                 ranked.stream().map(CityRules.Standing::name).toList(),
                 "tier first, then extensions, then treasury, then name");
     }
+
+    // ------------------------------------------------------------------
+    // Promotion en folie: purchase conditions
+    // ------------------------------------------------------------------
+
+    private static final List<String> SEVEN = List.of("desert", "jungle", "plains", "savanna", "snow", "swamp", "taiga");
+    private static final Territory CITY = new Territory("world", 0, 0, 128);
+
+    private static CityRules.NitwitSighting nitwit(String type) {
+        return new CityRules.NitwitSighting(type, true, true, true, true, "world", 10, -10);
+    }
+
+    @Test
+    void frenzy_tierTooLow() {
+        List<CityRules.NitwitSighting> all = SEVEN.stream().map(CityRulesTest::nitwit).toList();
+        CityRules.FrenzyCheck check = CityRules.frenzyCheck(2, 3, SEVEN, all, CITY);
+        assertFalse(check.tierOk());
+        assertTrue(check.missing().isEmpty());
+        assertFalse(check.ok(), "tier 3 is required even with the 7 skins");
+    }
+
+    @Test
+    void frenzy_missingSkinsAreListedInConfigOrder() {
+        List<CityRules.NitwitSighting> some = List.of(nitwit("jungle"), nitwit("plains"), nitwit("snow"),
+                nitwit("swamp"), nitwit("taiga"));
+        CityRules.FrenzyCheck check = CityRules.frenzyCheck(3, 3, SEVEN, some, CITY);
+        assertEquals(List.of("desert", "savanna"), check.missing());
+        assertFalse(check.ok());
+    }
+
+    @Test
+    void frenzy_sevenOfSevenValid() {
+        List<CityRules.NitwitSighting> all = SEVEN.stream().map(CityRulesTest::nitwit).toList();
+        assertTrue(CityRules.frenzyCheck(3, 3, SEVEN, all, CITY).ok());
+        assertTrue(CityRules.frenzyCheck(5, 3, SEVEN, all, CITY).ok());
+    }
+
+    @Test
+    void frenzy_invalidNitwitsAreIgnored() {
+        List<CityRules.NitwitSighting> sightings = new java.util.ArrayList<>(
+                SEVEN.stream().filter(t -> !t.equals("desert")).map(CityRulesTest::nitwit).toList());
+        sightings.add(new CityRules.NitwitSighting("desert", true, false, true, true, "world", 0, 0));   // baby
+        sightings.add(new CityRules.NitwitSighting("desert", true, true, true, false, "world", 0, 0));   // not tagged
+        sightings.add(new CityRules.NitwitSighting("desert", true, true, false, true, "world", 0, 0));   // farmer
+        sightings.add(new CityRules.NitwitSighting("desert", false, true, true, true, "world", 0, 0));   // dead
+        sightings.add(new CityRules.NitwitSighting("desert", true, true, true, true, "world", 64, 0));   // just outside
+        sightings.add(new CityRules.NitwitSighting("desert", true, true, true, true, "world_nether", 0, 0));
+        assertEquals(List.of("desert"), CityRules.frenzyCheck(3, 3, SEVEN, sightings, CITY).missing());
+        // a 128x128 city centred on 0 0 covers -64..63: the chunks scanned overhang it
+        sightings.add(new CityRules.NitwitSighting("desert", true, true, true, true, "world", 63, -64));
+        assertTrue(CityRules.frenzyCheck(3, 3, SEVEN, sightings, CITY).ok());
+    }
+
+    @Test
+    void frenzy_duplicatesOfOneTypeCountOnce() {
+        List<CityRules.NitwitSighting> plainsOnly = List.of(nitwit("plains"), nitwit("plains"), nitwit("plains"),
+                nitwit("plains"), nitwit("plains"), nitwit("plains"), nitwit("plains"));
+        assertEquals(Set.of("plains"), CityRules.presentTypes(plainsOnly, CITY));
+        assertEquals(6, CityRules.frenzyCheck(3, 3, SEVEN, plainsOnly, CITY).missing().size());
+    }
 }

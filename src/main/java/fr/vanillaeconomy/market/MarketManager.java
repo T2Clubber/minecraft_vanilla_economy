@@ -71,6 +71,17 @@ public final class MarketManager {
         public boolean sellPromo() { return sellUnit < regularSellUnit; }
     }
 
+    /**
+     * Prices of an item seen by one villager: those of the global promotion, or of the
+     * promotion of the villager's city (Promotion en folie). Stock is always global.
+     */
+    public record ItemView(long stock, double buyUnit, double sellUnit, double regularBuyUnit, double regularSellUnit) {
+        /** The villager pays more than usual (SELL interface promotion). */
+        public boolean buyPromo() { return buyUnit > regularBuyUnit; }
+        /** The villager charges less than usual (BUY interface promotion). */
+        public boolean sellPromo() { return sellUnit < regularSellUnit; }
+    }
+
     public enum TradeStatus { OK, NOT_OFFERED, OUT_OF_STOCK, NOT_ENOUGH_ITEMS, NOT_ENOUGH_MONEY, NO_SPACE, ERROR }
 
     /** {@code quantity} items exchanged for {@code coins}; {@code lot} is the minimum quantity. */
@@ -103,6 +114,13 @@ public final class MarketManager {
 
     private final Map<Material, ItemState> states = new HashMap<>();
     private final Map<String, Rotation<Material>> rotations = new HashMap<>();
+    /** Items on each side of the current rotations, for promotional prices. */
+    private final Set<Material> sellSide = new HashSet<>();
+    private final Set<Material> buySide = new HashSet<>();
+    /** Global promotion plans known in memory (today, tomorrow...): slot index -> percent. */
+    private final Map<LocalDate, Map<Integer, Integer>> plans = new HashMap<>();
+    /** (day, its global plan): called after every rotation and at startup. */
+    private final List<java.util.function.BiConsumer<LocalDate, Map<Integer, Integer>>> dayPlanListeners = new ArrayList<>();
     private long nextRotationAt;
     private long cycle;
     private long cycleStartedAt;
@@ -195,6 +213,7 @@ public final class MarketManager {
                 ensurePlans(c, System.currentTimeMillis());
                 return null;
             });
+            emitDayPlans(System.currentTimeMillis());
         }
     }
 
@@ -222,6 +241,60 @@ public final class MarketManager {
 
     public void onUpcomingPromo(java.util.function.BiConsumer<Long, Integer> listener) {
         upcomingPromoListeners.add(listener);
+    }
+
+    /** Global plans of today and tomorrow, once they exist (startup, every rotation). */
+    public void onDayPlan(java.util.function.BiConsumer<LocalDate, Map<Integer, Integer>> listener) {
+        dayPlanListeners.add(listener);
+    }
+
+    private void emitDayPlans(long millis) {
+        LocalDate today = PromotionManager.dayOf(millis, zone);
+        for (LocalDate day : List.of(today, today.plusDays(1))) {
+            Map<Integer, Integer> plan = globalPlan(day);
+            dayPlanListeners.forEach(l -> l.accept(day, plan));
+        }
+    }
+
+    /** Global promotion plan of a day (memory, read once from the database), empty if none. */
+    public Map<Integer, Integer> globalPlan(LocalDate day) {
+        Map<Integer, Integer> plan = plans.get(day);
+        if (plan == null) {
+            try {
+                Optional<String> stored = db.getMeta(META_PROMO_PLAN + day);
+                if (stored.isEmpty()) {
+                    return Map.of();
+                }
+                plan = PromotionManager.decode(stored.get());
+                plans.put(day, plan);
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Lecture du planning du " + day + " impossible", e);
+                return Map.of();
+            }
+        }
+        return plan;
+    }
+
+    /** Start of the current rotation slot. */
+    public long cycleStartedAt() {
+        return cycleStartedAt;
+    }
+
+    /**
+     * Start of the next global promotion slot after the current one (plans of today and
+     * tomorrow), Long.MAX_VALUE if none is planned.
+     */
+    public long nextGlobalPromoStart(long now) {
+        LocalDate today = PromotionManager.dayOf(now, zone);
+        for (LocalDate day : List.of(today, today.plusDays(1))) {
+            for (int slot : new java.util.TreeSet<>(globalPlan(day).keySet())) {
+                long start = PromotionManager.slotStartOf(day, slot, zone, intervalMillis);
+                if (start > now) {
+                    return start;
+                }
+            }
+        }
+        return Long.MAX_VALUE;
     }
 
     public long intervalMillis() {
@@ -299,6 +372,7 @@ public final class MarketManager {
             announceRotation();
         }
         announceUpcomingPromo(next);
+        emitDayPlans(now);
     }
 
     /** If the rotation starting at {@code nextStart} is a planned promotion, tell the listeners (once). */
@@ -347,10 +421,13 @@ public final class MarketManager {
         String key = META_PROMO_PLAN + day;
         Optional<String> stored = db.getMeta(key);
         if (stored.isPresent()) {
-            return PromotionManager.decode(stored.get());
+            Map<Integer, Integer> plan = PromotionManager.decode(stored.get());
+            plans.put(day, plan);
+            return plan;
         }
         Map<Integer, Integer> plan = promotions.planDay(random);
         Database.setMeta(c, key, PromotionManager.encode(plan));
+        plans.put(day, plan);
         plugin.getLogger().info("Planning des promotions du " + day + " : " + describePlan(plan));
         return plan;
     }
@@ -382,25 +459,46 @@ public final class MarketManager {
      * and BUY-side items the reduced selling price.
      */
     private void applyPromo() {
-        Set<Material> sellSide = new HashSet<>();
-        Set<Material> buySide = new HashSet<>();
+        sellSide.clear();
+        buySide.clear();
         for (Rotation<Material> r : rotations.values()) {
             r.sell().stream().filter(java.util.Objects::nonNull).forEach(sellSide::add);
             r.buy().stream().filter(java.util.Objects::nonNull).forEach(buySide::add);
         }
         for (MarketItem item : config.items().values()) {
             ItemState s = states.get(item.material());
-            PricingEngine.Prices prices = new PricingEngine.Prices(s.regularBuyUnit, s.regularSellUnit);
-            if (promoPercent > 0 && sellSide.contains(item.material())) {
-                prices = pricing.promoBuy(item, s.circulation, prices, promoPercent);
-            } else if (promoPercent > 0 && buySide.contains(item.material())) {
-                prices = pricing.promoSell(prices, promoPercent);
-            }
+            PricingEngine.Prices prices = promoPrices(item, s, promoPercent);
             // Hard constraint, promotions included.
             pricing.check(item, prices);
             s.buyUnit = prices.buyUnit();
             s.sellUnit = prices.sellUnit();
         }
+    }
+
+    /** Regular prices of the cycle with a {@code percent} promotion on the side the item is on. */
+    private PricingEngine.Prices promoPrices(MarketItem item, ItemState s, int percent) {
+        PricingEngine.Prices prices = new PricingEngine.Prices(s.regularBuyUnit, s.regularSellUnit);
+        if (percent > 0 && sellSide.contains(item.material())) {
+            prices = pricing.promoBuy(item, s.circulation, prices, percent);
+        } else if (percent > 0 && buySide.contains(item.material())) {
+            prices = pricing.promoSell(prices, percent);
+        }
+        return prices;
+    }
+
+    /**
+     * Prices of an item for a villager whose applicable promotion is {@code percent} (the
+     * global one, or the one of its city). Same constraints as the global prices.
+     */
+    public ItemView view(Material material, int percent) {
+        ItemState s = states.get(material);
+        if (percent == promoPercent) {
+            return new ItemView(s.stock, s.buyUnit, s.sellUnit, s.regularBuyUnit, s.regularSellUnit);
+        }
+        MarketItem item = config.items().get(material);
+        PricingEngine.Prices prices = promoPrices(item, s, percent);
+        pricing.check(item, prices);
+        return new ItemView(s.stock, prices.buyUnit(), prices.sellUnit(), s.regularBuyUnit, s.regularSellUnit);
     }
 
     /** Discount of the current cycle, 0 when there is no promotion. */
@@ -524,21 +622,23 @@ public final class MarketManager {
     /**
      * Player sells to the villager. Sells one lot, or everything the player carries
      * when {@code all} is set (always at least one lot so that the payout is >= 1 coin
-     * without relying on the minimum-1 rule).
+     * without relying on the minimum-1 rule). {@code promoPercent}: promotion applicable to
+     * this villager (global or of its city).
      */
-    public TradeResult sellToVillager(Player player, String group, Material material, boolean all) {
+    public TradeResult sellToVillager(Player player, String group, Material material, boolean all, int promoPercent) {
         if (!isOffered(group, Side.SELL, material)) {
             return TradeResult.of(TradeStatus.NOT_OFFERED);
         }
         ItemState s = states.get(material);
-        int lot = PricingEngine.lotSize(s.buyUnit);
+        double buyUnit = view(material, promoPercent).buyUnit();
+        int lot = PricingEngine.lotSize(buyUnit);
         int owned = countPlain(player, material);
         if (owned < lot) {
             return new TradeResult(TradeStatus.NOT_ENOUGH_ITEMS, 0, 0, lot);
         }
         // Whole coins only: the player keeps the units that would make a fraction of a coin.
-        long quantity = PricingEngine.sellableQuantity(s.buyUnit, all ? owned : lot);
-        long payout = PricingEngine.payout(s.buyUnit, quantity);
+        long quantity = PricingEngine.sellableQuantity(buyUnit, all ? owned : lot);
+        long payout = PricingEngine.payout(buyUnit, quantity);
         if (quantity <= 0 || payout <= 0) {
             return new TradeResult(TradeStatus.NOT_ENOUGH_ITEMS, 0, 0, lot);
         }
@@ -562,19 +662,20 @@ public final class MarketManager {
     }
 
     /** Player buys from the villager: one lot, or one full stack when {@code stack} is set. */
-    public TradeResult buyFromVillager(Player player, String group, Material material, boolean stack) {
+    public TradeResult buyFromVillager(Player player, String group, Material material, boolean stack, int promoPercent) {
         if (!isOffered(group, Side.BUY, material)) {
             return TradeResult.of(TradeStatus.NOT_OFFERED);
         }
         ItemState s = states.get(material);
-        int lot = PricingEngine.buyLot(s.sellUnit);
+        double sellUnit = view(material, promoPercent).sellUnit();
+        int lot = PricingEngine.buyLot(sellUnit);
         if (s.stock <= 0) {
             return new TradeResult(TradeStatus.OUT_OF_STOCK, 0, 0, lot);
         }
         // Never rounded in the player's favour: whole coins, at least the value of what is bought.
         long requested = Math.min(stack ? Math.max(material.getMaxStackSize(), lot) : lot, s.stock);
-        long quantity = PricingEngine.buyableQuantity(s.sellUnit, requested);
-        long cost = PricingEngine.charge(s.sellUnit, quantity);
+        long quantity = PricingEngine.buyableQuantity(sellUnit, requested);
+        long cost = PricingEngine.charge(sellUnit, quantity);
         if (freeSpaceFor(player, material) < quantity) {
             return new TradeResult(TradeStatus.NO_SPACE, quantity, cost, lot);
         }

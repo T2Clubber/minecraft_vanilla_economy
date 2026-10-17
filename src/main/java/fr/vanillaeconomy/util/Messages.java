@@ -44,6 +44,15 @@ public final class Messages {
         return amount + (Math.abs(amount) > 1 ? " pièces" : " pièce");
     }
 
+    /** "1 h 05 min", "12 min", "moins d'une minute". */
+    public static String duration(long millis) {
+        long minutes = Math.max(0, millis) / 60_000L;
+        if (minutes < 1) {
+            return "moins d'une minute";
+        }
+        return minutes >= 60 ? (minutes / 60) + " h " + String.format("%02d", minutes % 60) + " min" : minutes + " min";
+    }
+
     /** Unit price with enough precision to be meaningful for cheap items. */
     public static String unitPrice(double unit) {
         if (unit >= 10) {

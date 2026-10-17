@@ -1,8 +1,10 @@
 package fr.vanillaeconomy.gui;
 
 import fr.vanillaeconomy.currency.CurrencyManager;
+import fr.vanillaeconomy.market.LocalPromotions;
 import fr.vanillaeconomy.market.MarketManager;
-import fr.vanillaeconomy.market.MarketManager.ItemState;
+import fr.vanillaeconomy.market.MarketManager.ItemView;
+import fr.vanillaeconomy.market.PromotionManager.Applicable;
 import fr.vanillaeconomy.market.MarketManager.TradeResult;
 import fr.vanillaeconomy.market.PricingEngine;
 import fr.vanillaeconomy.market.RotationEngine.Side;
@@ -19,8 +21,14 @@ import java.util.List;
 /** VENTE interface: the player sells to the villager; feeds the global stock. */
 public final class SellGUI extends MarketGui {
 
-    public SellGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager) {
-        super(market, currency, viewer, villager, Messages.parse("<dark_red>Vente"));
+    /** Right click: the city context is resolved from the villager's position. */
+    public SellGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager, LocalPromotions local) {
+        this(market, currency, viewer, villager, local, local.contextAt(villager.getLocation()));
+    }
+
+    SellGUI(MarketManager market, CurrencyManager currency, Player viewer, Villager villager, LocalPromotions local,
+           Integer context) {
+        super(market, currency, viewer, villager, local, context, Messages.parse("<dark_red>Vente"));
     }
 
     @Override
@@ -40,12 +48,13 @@ public final class SellGUI extends MarketGui {
 
     @Override
     protected MarketGui opposite(Villager villager) {
-        return new BuyGUI(market, currency, viewer, villager);
+        return new BuyGUI(market, currency, viewer, villager, local, context);
     }
 
     @Override
     protected ItemStack renderItem(Material material) {
-        ItemState s = market.state(material);
+        Applicable promo = promotion();
+        ItemView s = market.view(material, promo.percent());
         int lot = PricingEngine.lotSize(s.buyUnit());
         int owned = MarketManager.countPlain(viewer, material);
         List<Component> lore = new ArrayList<>();
@@ -76,12 +85,12 @@ public final class SellGUI extends MarketGui {
         ItemStack item = icon(material, lot, lore, false);
         // Real reduction of the reference lot: the villager pays the same price for fewer units.
         long percent = Math.round((1 - s.regularBuyUnit() / s.buyUnit()) * 100);
-        return percent > 0 ? promoStyle(item, percent) : item;
+        return percent > 0 ? promoStyle(item, percent, promo.city()) : item;
     }
 
     @Override
     protected void onItemClick(Material material, boolean bulk) {
-        TradeResult r = market.sellToVillager(viewer, group, material, bulk);
+        TradeResult r = market.sellToVillager(viewer, group, material, bulk, promotion().percent());
         switch (r.status()) {
             case OK -> Messages.send(viewer, "<gray>Vendu <white><n></white> pour <gold><price></gold>.",
                     Messages.p("n", r.quantity()), Messages.p("price", Messages.coins(r.coins())));

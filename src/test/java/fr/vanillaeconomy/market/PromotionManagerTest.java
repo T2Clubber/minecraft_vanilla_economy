@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PromotionManagerTest {
@@ -116,5 +117,44 @@ class PromotionManagerTest {
         PricingEngine.Prices e = pricing.compute(emerald, 0);
         assertEquals(e.buyUnit(), pricing.promoSell(e, 50).sellUnit(), 1e-9);
         assertEquals(e.sellUnit() * 0.8, pricing.promoSell(e, 20).sellUnit(), 1e-9);
+    }
+
+    @Test
+    void cityPromotionsAreDrawnAmongTheSlotsWithoutGlobalPromotion() {
+        PromotionManager global = new PromotionManager(12, 2, 5, 50);
+        PromotionManager city = new PromotionManager(12, 4, 5, 50);
+        Random random = new Random(7);
+        for (int day = 0; day < 2000; day++) {
+            Map<Integer, Integer> globalPlan = global.planDay(random);
+            Map<Integer, Integer> cityPlan = city.planDay(random, globalPlan.keySet());
+            assertEquals(4, cityPlan.size());
+            for (int slot : cityPlan.keySet()) {
+                assertFalse(globalPlan.containsKey(slot), "no city promotion on a global one");
+                assertTrue(slot >= 0 && slot < 12);
+            }
+            java.util.Set<Integer> all = new java.util.HashSet<>(globalPlan.keySet());
+            all.addAll(cityPlan.keySet());
+            assertEquals(6, all.size(), "6 promotions out of 12 rotations for the city's nitwits");
+            cityPlan.values().forEach(pct -> assertTrue(pct >= 5 && pct <= 50));
+        }
+        // not enough free slots: fewer promotions, never an overlap
+        Map<Integer, Integer> crowded = city.planDay(random, java.util.Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+        assertEquals(java.util.Set.of(10, 11), crowded.keySet());
+    }
+
+    @Test
+    void applicablePromotion() {
+        // nitwit outside any city, or in a city without the extension: global promotions only
+        assertEquals(PromotionManager.Applicable.NONE, PromotionManager.applicable(0, false, 0));
+        assertEquals(new PromotionManager.Applicable(20, false), PromotionManager.applicable(20, false, 0));
+        assertEquals(PromotionManager.Applicable.NONE, PromotionManager.applicable(0, false, 35),
+                "a city plan is ignored when the nitwit is not in a city with the extension");
+        // nitwit in a city with Promotion en folie
+        assertEquals(new PromotionManager.Applicable(35, true), PromotionManager.applicable(0, true, 35));
+        assertEquals(PromotionManager.Applicable.NONE, PromotionManager.applicable(0, true, 0), "no city promo this slot");
+        assertEquals(new PromotionManager.Applicable(20, false), PromotionManager.applicable(20, true, 0),
+                "global promotions apply in the city too");
+        assertEquals(new PromotionManager.Applicable(20, false), PromotionManager.applicable(20, true, 35),
+                "a global promotion forced by an admin on a city slot wins");
     }
 }

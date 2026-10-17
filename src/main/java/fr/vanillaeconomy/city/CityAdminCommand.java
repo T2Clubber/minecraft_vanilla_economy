@@ -13,7 +13,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** /cityadmin delete &lt;cité&gt; | settier &lt;cité&gt; &lt;palier&gt; | rename &lt;cité&gt; &lt;nom&gt; | info &lt;cité&gt;. */
+/**
+ * /cityadmin delete &lt;cité&gt; | settier &lt;cité&gt; &lt;palier&gt; | rename &lt;cité&gt; &lt;nom&gt; | info &lt;cité&gt;
+ * | promos &lt;cité&gt; | promo &lt;cité&gt; &lt;pourcentage&gt;.
+ */
 public final class CityAdminCommand implements TabExecutor {
 
     private final CityManager cities;
@@ -21,10 +24,12 @@ public final class CityAdminCommand implements TabExecutor {
     private final CityCommand cityCommand;
     private final CityNotifier notifier;
     private final StaffLog staffLog;
+    private final CityPromotionScheduler promotions;
 
     public CityAdminCommand(CityManager cities, MessageConfig msg, CityCommand cityCommand, CityNotifier notifier,
-                            StaffLog staffLog) {
+                            StaffLog staffLog, CityPromotionScheduler promotions) {
         this.staffLog = staffLog;
+        this.promotions = promotions;
         this.cities = cities;
         this.msg = msg;
         this.cityCommand = cityCommand;
@@ -60,6 +65,32 @@ public final class CityAdminCommand implements TabExecutor {
                 cities.adminRename(city, args[2]);
                 staffLog.admin(sender.getName(), "`/cityadmin rename` **" + oldName + "** → **" + city.name() + "**");
                 msg.send(sender, "admin_renamed", "city", city.name());
+            } else if (sub.equals("promos") && args.length == 2) {
+                City city = cities.require(args[1]);
+                msg.send(sender, "admin_promos", "city", city.name(), "plans", promotions.describePlans(city));
+                staffLog.command(sender, command, args, "planning des promos de **" + StaffLog.md(city.name()) + "** consulté");
+            } else if (sub.equals("promo") && args.length == 3) {
+                City city = cities.require(args[1]);
+                if (!city.hasExtension(CityExtension.PROMO_FRENZY)) {
+                    throw new CityException("admin_no_frenzy", "city", city.name());
+                }
+                int percent;
+                try {
+                    percent = Integer.parseInt(args[2]);
+                } catch (NumberFormatException e) {
+                    percent = -1;
+                }
+                if (percent < 1 || percent > 99) {
+                    throw new CityException("invalid_amount");
+                }
+                try {
+                    promotions.forceNow(city, percent);
+                } catch (java.sql.SQLException e) {
+                    throw new CityException("internal_error");
+                }
+                msg.send(sender, "admin_promo_forced", "city", city.name(), "percent", percent);
+                staffLog.admin(sender.getName(), "`/cityadmin promo` promo de cité -" + percent + " % forcée pour **"
+                        + StaffLog.md(city.name()) + "** sur la rotation en cours");
             } else if (sub.equals("info") && args.length == 2) {
                 City city = cities.require(args[1]);
                 cityCommand.sendInfo(sender, city);
@@ -77,7 +108,7 @@ public final class CityAdminCommand implements TabExecutor {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            options.addAll(List.of("delete", "settier", "rename", "info"));
+            options.addAll(List.of("delete", "settier", "rename", "info", "promos", "promo"));
         } else if (args.length == 2) {
             cities.all().forEach(c -> options.add(c.name()));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("settier")) {

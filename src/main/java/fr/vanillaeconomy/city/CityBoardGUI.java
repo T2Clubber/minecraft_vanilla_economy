@@ -56,7 +56,8 @@ public final class CityBoardGUI implements InventoryHolder {
     private static final int TAB_TIERS = 4;
     private static final int TAB_TREASURY = 5;
     private static final int TAB_EXTENSIONS = 6;
-    private static final int EXTENSIONS_FIRST = 22;
+    /** Extensions on row 3, two slots apart and centred; the skin check button below its extension. */
+    private static final int EXTENSIONS_ROW_CENTRE = 22;
     private static final int PREV = 45;
     private static final int INFO = 49;
     private static final int NEXT = 53;
@@ -84,10 +85,12 @@ public final class CityBoardGUI implements InventoryHolder {
     private final Map<Integer, Integer> tierSlots = new HashMap<>();
     /** Slot -> extension shown there (extensions tab). */
     private final Map<Integer, CityExtension> extensionSlots = new HashMap<>();
+    /** Slot of the "Vérifier les skins" button (extensions tab), -1 if not shown. */
+    private int skinCheckSlot = -1;
 
     /** What the board needs, shared by all instances. */
     public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg,
-                           CityNotifier notifier, StaffLog staffLog) {
+                           CityNotifier notifier, StaffLog staffLog, ExtensionManager extensions) {
     }
 
     private CityBoardGUI(Services services, Player viewer, City city, Tab tab) {
@@ -136,6 +139,7 @@ public final class CityBoardGUI implements InventoryHolder {
         memberSlots.clear();
         tierSlots.clear();
         extensionSlots.clear();
+        skinCheckSlot = -1;
         ItemStack[] contents = new ItemStack[SIZE];
         java.util.Arrays.fill(contents, filler());
         contents[TAB_MEMBERS] = tabItem(Material.PLAYER_HEAD, "<yellow>Membres", Tab.MEMBERS);
@@ -262,20 +266,14 @@ public final class CityBoardGUI implements InventoryHolder {
         CityRole me = city.roleOf(viewer.getUniqueId());
         CityConfig config = services.cities().config();
         CityExtension[] all = CityExtension.values();
+        int first = EXTENSIONS_ROW_CENTRE - (all.length - 1);
         for (int i = 0; i < all.length; i++) {
             CityExtension ext = all[i];
             long price = config.price(ext);
             boolean owned = city.hasExtension(ext);
             boolean enabled = config.enabled(ext);
             int minTier = config.minTier(ext);
-            List<Component> lore = new ArrayList<>();
-            if (ext == CityExtension.TELEPORT) {
-                lore.add(Messages.item("<gray>Les membres se téléportent au centre de la cité"));
-                lore.add(Messages.item("<gray>avec <white>/city tp <name></white>, depuis n'importe quel monde.",
-                        Messages.p("name", city.name())));
-                lore.add(Messages.item("<gray>Chaque téléportation coûte <gold><cost></gold> <dark_gray>(solde personnel)",
-                        Messages.p("cost", Messages.coins(config.teleportUseCost))));
-            }
+            List<Component> lore = new ArrayList<>(description(city, ext, config));
             lore.add(Component.empty());
             if (!enabled) {
                 lore.add(Messages.item("<red>Désactivée par l'administration"));
@@ -285,9 +283,15 @@ public final class CityBoardGUI implements InventoryHolder {
                 lore.add(Messages.item("<gray>Prix : <gold><price></gold> <dark_gray>(solde de la cité)",
                         Messages.p("price", Messages.coins(price))));
                 lore.add(Messages.item("<gray>Solde de la cité : <gold><balance>", Messages.p("balance", Messages.coins(city.balance()))));
+                lore.add(Messages.item((city.tier() >= minTier ? "<green>✔" : "<red>✘") + " <gray>Palier <tier> minimum "
+                        + "<dark_gray>(palier actuel : <current>)", Messages.p("tier", minTier), Messages.p("current", city.tier())));
+                if (ext == CityExtension.PROMO_FRENZY) {
+                    lore.add(Messages.item("<gray>✦ Les <n> skins d'idiots marchands dans la cité :",
+                            Messages.p("n", config.frenzyTypes.size())));
+                    lore.add(Messages.item("<white>  <types>", Messages.p("types", services.extensions().labels(config.frenzyTypes))));
+                }
                 if (city.tier() < minTier) {
-                    lore.add(Messages.item("<red>Débloquée au palier <tier> <dark_gray>(palier actuel : <current>)",
-                            Messages.p("tier", minTier), Messages.p("current", city.tier())));
+                    lore.add(Messages.item("<red>Débloquée au palier <tier>", Messages.p("tier", minTier)));
                 } else if (me.canBuyExtension()) {
                     lore.add(Messages.item(city.balance() >= price
                             ? "<yellow>Clic : acheter (confirmation)" : "<red>Solde de la cité insuffisant"));
@@ -296,17 +300,44 @@ public final class CityBoardGUI implements InventoryHolder {
                 }
             }
             boolean active = enabled && owned;
-            ItemStack item = named(!enabled ? Material.GRAY_DYE : owned ? Material.ENDER_EYE : Material.ENDER_PEARL,
-                    (!enabled ? "<gray>" : owned ? "<green>" : "<white>") + ext.label(), lore);
+            Material icon = !enabled ? Material.GRAY_DYE
+                    : ext == CityExtension.PROMO_FRENZY ? (owned ? Material.EMERALD_BLOCK : Material.EMERALD)
+                    : owned ? Material.ENDER_EYE : Material.ENDER_PEARL;
+            ItemStack item = named(icon, (!enabled ? "<gray>" : owned ? "<green>" : "<white>") + ext.label(), lore);
             if (active) {
                 ItemMeta meta = item.getItemMeta();
                 meta.setEnchantmentGlintOverride(true);
                 item.setItemMeta(meta);
             }
-            contents[EXTENSIONS_FIRST + i] = item;
-            extensionSlots.put(EXTENSIONS_FIRST + i, ext);
+            int slot = first + 2 * i;
+            contents[slot] = item;
+            extensionSlots.put(slot, ext);
+            if (ext == CityExtension.PROMO_FRENZY && enabled && !owned) {
+                skinCheckSlot = slot + 9;
+                contents[skinCheckSlot] = named(Material.SPYGLASS, "<aqua>Vérifier les skins",
+                        List.of(Messages.item("<gray>Compte les idiots marchands présents"),
+                                Messages.item("<gray>dans les limites de la cité."),
+                                Messages.item("<yellow>Clic : vérifier")));
+            }
         }
         return 1;
+    }
+
+    private List<Component> description(City city, CityExtension ext, CityConfig config) {
+        return switch (ext) {
+            case TELEPORT -> List.of(
+                    Messages.item("<gray>Les membres se téléportent au centre de la cité"),
+                    Messages.item("<gray>avec <white>/city tp <name></white>, depuis n'importe quel monde.",
+                            Messages.p("name", city.name())),
+                    Messages.item("<gray>Chaque téléportation coûte <gold><cost></gold> <dark_gray>(solde personnel)",
+                            Messages.p("cost", Messages.coins(config.teleportUseCost))));
+            case PROMO_FRENZY -> List.of(
+                    Messages.item("<gray>Les idiots marchands de la cité font <white><n> promos</white> de plus",
+                            Messages.p("n", config.frenzyPromosPerDay)),
+                    Messages.item("<gray>par jour (<min> à <max> %), en plus des promos globales.",
+                            Messages.p("min", config.frenzyMinPercent), Messages.p("max", config.frenzyMaxPercent)),
+                    Messages.item("<gray>Les membres sont prévenus dans le chat."));
+        };
     }
 
     private ItemStack infoItem(City city) {
@@ -428,6 +459,8 @@ public final class CityBoardGUI implements InventoryHolder {
                     tierClick(city, tierSlots.get(slot));
                 } else if (tab == Tab.EXTENSIONS && extensionSlots.containsKey(slot)) {
                     extensionClick(city, extensionSlots.get(slot));
+                } else if (tab == Tab.EXTENSIONS && slot == skinCheckSlot) {
+                    skinCheck(city);
                 }
             }
         }
@@ -497,28 +530,53 @@ public final class CityBoardGUI implements InventoryHolder {
                 || !city.roleOf(viewer.getUniqueId()).canBuyExtension()) {
             return;
         }
-        long price = services.cities().config().price(extension);
+        long price = config.price(extension);
         try {
-            services.cities().checkExtension(city, viewer.getUniqueId(), extension);
+            services.extensions().check(city, viewer.getUniqueId(), extension);
         } catch (CityException e) {
             services.msg().send(viewer, e.key(), e.vars());
             return;
         }
         ConfirmGUI.open(viewer, extension.label() + " pour " + Messages.coins(price) + " ?", () -> {
-            run(() -> {
-                services.cities().buyExtension(city, viewer.getUniqueId(), extension);
-                long cost = services.cities().config().teleportUseCost;
-                services.msg().send(viewer, "extension_bought", "extension", extension.label(), "city", city.name(),
-                        "price", Messages.coins(price), "cost", Messages.coins(cost));
-                for (UUID member : city.members().keySet()) {
-                    if (!member.equals(viewer.getUniqueId())) {
-                        services.notifier().notify(member, "extension_notify", "extension", extension.label(),
-                                "city", city.name(), "cost", Messages.coins(cost));
-                    }
-                }
-            });
+            if (extension == CityExtension.PROMO_FRENZY) {
+                services.msg().send(viewer, "extension_scanning");
+            }
+            // Every condition again, with a fresh skin scan for Promotion en folie (asynchronous).
+            services.extensions().buy(city, viewer.getUniqueId(), extension, () -> {
+                bought(city, extension, price);
+                refreshOpenBoards();
+            }, e -> services.msg().send(viewer, e.key(), e.vars()));
             reopen(Tab.EXTENSIONS);
         }, () -> reopen(Tab.EXTENSIONS));
+    }
+
+    private void bought(City city, CityExtension extension, long price) {
+        CityConfig config = services.cities().config();
+        Object[] vars = {"extension", extension.label(), "city", city.name(), "price", Messages.coins(price),
+                "cost", Messages.coins(config.teleportUseCost), "n", config.frenzyPromosPerDay};
+        services.msg().send(viewer, "extension_bought_" + extension.key(), vars);
+        for (UUID member : city.members().keySet()) {
+            if (!member.equals(viewer.getUniqueId())) {
+                services.notifier().notify(member, "extension_notify_" + extension.key(), vars);
+            }
+        }
+    }
+
+    /** "Vérifier les skins": asynchronous scan, result in the chat. */
+    private void skinCheck(City city) {
+        services.msg().send(viewer, "extension_scanning");
+        ExtensionManager extensions = services.extensions();
+        extensions.scanTypes(city, missing -> {
+            int required = services.cities().config().frenzyTypes.size();
+            if (missing.isEmpty()) {
+                services.msg().send(viewer, "extension_skins_ok", "city", city.name(), "n", required);
+            } else {
+                services.msg().send(viewer, "extension_skins_check", "city", city.name(),
+                        "present", required - missing.size(), "n", required, "missing", extensions.labels(missing));
+            }
+            services.staffLog().action(viewer, "/cityboard " + city.name(), "vérification des skins de **"
+                    + StaffLog.md(city.name()) + "** : " + (required - missing.size()) + "/" + required);
+        }, e -> services.msg().send(viewer, e.key(), e.vars()));
     }
 
     private void reopen(Tab target) {

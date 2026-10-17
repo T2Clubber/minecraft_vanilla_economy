@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -40,16 +41,52 @@ public final class PromotionManager {
 
     /** Draws a day plan: slot index -> discount percent, {@code promosPerDay} distinct slots. */
     public Map<Integer, Integer> planDay(Random random) {
+        return planDay(random, Set.of());
+    }
+
+    /**
+     * Same, among the slots not in {@code taken} (the global promotions of the day, for the
+     * extra promotions of a city): never two promotions on one slot. Fewer slots are drawn
+     * when not enough are free.
+     */
+    public Map<Integer, Integer> planDay(Random random, Set<Integer> taken) {
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < slotsPerDay; i++) {
-            slots.add(i);
+            if (!taken.contains(i)) {
+                slots.add(i);
+            }
         }
         Collections.shuffle(slots, random);
         Map<Integer, Integer> plan = new TreeMap<>();
-        for (int i = 0; i < promosPerDay; i++) {
+        for (int i = 0; i < promosPerDay && i < slots.size(); i++) {
             plan.put(slots.get(i), minPercent + random.nextInt(maxPercent - minPercent + 1));
         }
         return plan;
+    }
+
+    // ------------------------------------------------------------------
+    // Promotion applicable to one villager
+    // ------------------------------------------------------------------
+
+    /** Discount shown by a villager; {@code city} = it comes from a Promotion en folie plan. */
+    public record Applicable(int percent, boolean city) {
+        public static final Applicable NONE = new Applicable(0, false);
+    }
+
+    /**
+     * Promotion of a villager: the global one, or the one of the city it stands in when that
+     * city has Promotion en folie ({@code cityPercent} is then its discount of the current
+     * slot, 0 if none). City slots never overlap global ones; if an admin forces a global
+     * promotion on a city slot, the global one wins.
+     */
+    public static Applicable applicable(int globalPercent, boolean inCityWithExtension, int cityPercent) {
+        if (globalPercent > 0) {
+            return new Applicable(globalPercent, false);
+        }
+        if (inCityWithExtension && cityPercent > 0) {
+            return new Applicable(cityPercent, true);
+        }
+        return Applicable.NONE;
     }
 
     public int randomPercent(Random random) {
@@ -72,6 +109,11 @@ public final class PromotionManager {
         LocalDate day = Instant.ofEpochMilli(slotStartMillis).atZone(zone).toLocalDate();
         long midnight = day.atStartOfDay(zone).toInstant().toEpochMilli();
         return (int) ((slotStartMillis - midnight) / intervalMillis);
+    }
+
+    /** Start (epoch millis) of slot {@code index} of {@code day}. */
+    public static long slotStartOf(LocalDate day, int index, ZoneId zone, long intervalMillis) {
+        return day.atStartOfDay(zone).toInstant().toEpochMilli() + index * intervalMillis;
     }
 
     public static LocalDate dayOf(long millis, ZoneId zone) {

@@ -118,6 +118,15 @@ public final class Database implements AutoCloseable {
                         bought_at INTEGER NOT NULL,
                         PRIMARY KEY (city_id, extension)
                     )""");
+            // Promotion en folie: extra promotion slots of a city, per day (slot index within the day).
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_promotion_schedule (
+                        city_id          INTEGER NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+                        date             TEXT NOT NULL,
+                        slot_index       INTEGER NOT NULL,
+                        discount_percent INTEGER NOT NULL CHECK (discount_percent BETWEEN 1 AND 99),
+                        PRIMARY KEY (city_id, date, slot_index)
+                    )""");
             // Cities founded before the height of their centre was recorded.
             if (!hasColumn("city", "center_y")) {
                 st.execute("ALTER TABLE city ADD COLUMN center_y INTEGER");

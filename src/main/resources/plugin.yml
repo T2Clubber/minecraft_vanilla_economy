@@ -48,7 +48,7 @@ commands:
     permission: cities.use
   cityadmin:
     description: Administration des cités.
-    usage: "/cityadmin delete|settier|rename|info"
+    usage: "/cityadmin delete|settier|rename|info|promos|promo"
     permission: cities.admin
 
 permissions:

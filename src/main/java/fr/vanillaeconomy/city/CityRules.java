@@ -136,6 +136,47 @@ public final class CityRules {
     }
 
     // ------------------------------------------------------------------
+    // Promotion en folie: purchase conditions
+    // ------------------------------------------------------------------
+
+    /** A villager seen in the chunks of a city during the skin scan. */
+    public record NitwitSighting(String type, boolean alive, boolean adult, boolean nitwit, boolean marketTagged,
+                                 String world, int x, int z) {
+    }
+
+    /**
+     * Villager types (skins) represented by at least one valid market nitwit standing inside
+     * the EXACT limits of the territory (the scanned chunks overhang it): alive, adult,
+     * profession NITWIT and tagged isMarketNPC. Several nitwits of one type count once.
+     */
+    public static Set<String> presentTypes(java.util.Collection<NitwitSighting> sightings, Territory territory) {
+        Set<String> types = new java.util.HashSet<>();
+        for (NitwitSighting n : sightings) {
+            if (n.alive() && n.adult() && n.nitwit() && n.marketTagged() && territory.contains(n.world(), n.x(), n.z())) {
+                types.add(n.type());
+            }
+        }
+        return types;
+    }
+
+    /** Required types not present, in the order of the configuration. */
+    public static List<String> missingTypes(List<String> required, Set<String> present) {
+        return required.stream().filter(t -> !present.contains(t)).toList();
+    }
+
+    /** Result of the purchase conditions of Promotion en folie (both must hold). */
+    public record FrenzyCheck(boolean tierOk, List<String> missing) {
+        public boolean ok() {
+            return tierOk && missing.isEmpty();
+        }
+    }
+
+    public static FrenzyCheck frenzyCheck(int tier, int minTier, List<String> required,
+                                          java.util.Collection<NitwitSighting> sightings, Territory territory) {
+        return new FrenzyCheck(tier >= minTier, missingTypes(required, presentTypes(sightings, territory)));
+    }
+
+    // ------------------------------------------------------------------
     // Ranking
     // ------------------------------------------------------------------
 
