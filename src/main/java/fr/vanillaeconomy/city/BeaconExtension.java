@@ -29,6 +29,19 @@ public final class BeaconExtension {
     public record BeaconSighting(Pos pos, int pyramid, boolean lit, String primary, String secondary) {
     }
 
+    /**
+     * Secondary effect key of a beacon read through the API: a level II primary effect is
+     * reported as one primary effect with amplifier 1 and no secondary; it is turned back
+     * into "secondary = primary" (vanilla's own representation) so that {@link #union}
+     * gives level II.
+     */
+    public static String secondaryKey(String primaryKey, int primaryAmplifier, String secondaryKey) {
+        if (primaryKey != null && primaryAmplifier >= 1 && secondaryKey == null) {
+            return primaryKey;
+        }
+        return secondaryKey;
+    }
+
     /** Why a beacon does not count, in the order they are checked. */
     public enum Invalid { OUTSIDE, INCOMPLETE_PYRAMID, UNLIT, NO_EFFECT }
 

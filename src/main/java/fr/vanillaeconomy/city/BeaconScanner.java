@@ -78,8 +78,11 @@ public final class BeaconScanner {
     /** One beacon as read now (main thread, chunk loaded). */
     public static BeaconSighting sighting(Beacon beacon) {
         Block block = beacon.getBlock();
-        return new BeaconSighting(pos(block), beacon.getTier(), beamClear(block),
-                key(beacon.getPrimaryEffect()), key(beacon.getSecondaryEffect()));
+        PotionEffect primary = beacon.getPrimaryEffect();
+        String primaryKey = key(primary);
+        return new BeaconSighting(pos(block), beacon.getTier(), beamClear(block), primaryKey,
+                BeaconExtension.secondaryKey(primaryKey, primary == null ? 0 : primary.getAmplifier(),
+                        key(beacon.getSecondaryEffect())));
     }
 
     public static Pos pos(Block block) {

@@ -106,6 +106,19 @@ class BeaconExtensionTest {
     }
 
     @Test
+    void levelTwoReportedAsAmplifierOneIsKept() {
+        // Speed II read through the API: primary Speed with amplifier 1, no secondary
+        String secondary = BeaconExtension.secondaryKey("minecraft:speed", 1, null);
+        assertEquals("minecraft:speed", secondary);
+        assertEquals(Map.of("minecraft:speed", 1),
+                BeaconExtension.union(List.of(new BeaconEffects<>("minecraft:speed", secondary))));
+        // level I with regeneration, or level I alone: unchanged
+        assertEquals("minecraft:regeneration", BeaconExtension.secondaryKey("minecraft:speed", 0, "minecraft:regeneration"));
+        assertEquals(null, BeaconExtension.secondaryKey("minecraft:speed", 0, null));
+        assertEquals(null, BeaconExtension.secondaryKey(null, 0, null));
+    }
+
+    @Test
     void secondaryEffectIsRegenerationLevelOne() {
         Map<String, Integer> union = BeaconExtension.union(List.of(
                 new BeaconEffects<>("haste", "regeneration"), new BeaconEffects<>("strength", null),
