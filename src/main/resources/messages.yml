@@ -96,6 +96,20 @@ cities:
   extension_skins_check: "<yellow>{present}/{n} skins présents dans la cité <aqua>{city}</aqua>. Skins manquants : <white>{missing}</white>."
   extension_skins_missing: "<red>Achat impossible : il manque des idiots marchands dans la cité <aqua>{city}</aqua>. Skins manquants : <white>{missing}</white>."
 
+  extension_bought_beacon: "<green>Extension <white>{extension}</white> achetée pour la cité <aqua>{city}</aqua> (<gold>{price}</gold> du solde de la cité). <gray>Les effets de ses beacons s'appliquent désormais dans toute la cité."
+  extension_notify_beacon: "<green>La cité <aqua>{city}</aqua> a débloqué l'extension <white>Beacon</white> : les effets de ses beacons s'appliquent dans toute la cité !"
+  extension_scanning_beacons: "<gray>Vérification des beacons de la cité…"
+  extension_beacon_cooldown: "<yellow>Patientez encore {seconds} s avant une nouvelle vérification des beacons."
+  extension_beacons_ok: "<green>{found} beacons valides dans la cité <aqua>{city}</aqua> ({required} requis) : condition remplie !<gray>{reasons}"
+  extension_beacons_check: "<yellow>{found}/{required} beacons valides dans la cité <aqua>{city}</aqua>.<gray>{reasons}"
+  extension_beacons_missing: "<red>Achat impossible : <white>{found}/{required}</white> beacons valides dans la cité <aqua>{city}</aqua>.<gray>{reasons}"
+  # Raisons d'invalidité d'un beacon.
+  beacon_invalid_prefix: "Invalides :"
+  beacon_invalid_outside: "hors territoire"
+  beacon_invalid_incomplete_pyramid: "pyramide incomplète"
+  beacon_invalid_unlit: "éteint (faisceau obstrué)"
+  beacon_invalid_no_effect: "aucun effet choisi"
+
   # Noms des skins (types de villageois) dans les messages ci-dessus.
   villager_type_desert: "désert"
   villager_type_jungle: "jungle"

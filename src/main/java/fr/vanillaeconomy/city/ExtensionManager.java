@@ -24,7 +24,8 @@ import java.util.logging.Level;
 /**
  * City extensions: loading (table city_extension), purchase conditions and purchase with
  * the city's treasury. Promotion en folie also needs the 7 nitwit skins inside the city,
- * checked by an asynchronous scan ({@link NitwitPresenceChecker}) at the time of purchase.
+ * checked by an asynchronous scan ({@link NitwitPresenceChecker}) at the time of purchase;
+ * Beacon needs 6 valid beacons ({@link BeaconScanner}), which then fill its effect cache.
  */
 public final class ExtensionManager {
 
@@ -33,17 +34,23 @@ public final class ExtensionManager {
     private final CityManager cities;
     private final NitwitPresenceChecker presence;
     private final MessageConfig msg;
+    private final BeaconScanner beaconScanner;
+    private final BeaconEffectCache beaconCache;
+    /** City id -> time of its last "Vérifier les beacons". */
+    private final Map<Integer, Long> beaconChecks = new HashMap<>();
     private final List<BiConsumer<City, CityExtension>> purchaseListeners = new ArrayList<>();
     /** Cities whose skin scan is running (one at a time per city). */
     private final Set<Integer> scanning = new java.util.HashSet<>();
 
     public ExtensionManager(Plugin plugin, Database db, CityManager cities, NitwitPresenceChecker presence,
-                            MessageConfig msg) {
+                            MessageConfig msg, BeaconScanner beaconScanner, BeaconEffectCache beaconCache) {
         this.plugin = plugin;
         this.db = db;
         this.cities = cities;
         this.presence = presence;
         this.msg = msg;
+        this.beaconScanner = beaconScanner;
+        this.beaconCache = beaconCache;
     }
 
     public CityConfig config() {
@@ -127,6 +134,20 @@ public final class ExtensionManager {
             onFailure.accept(e);
             return;
         }
+        if (extension == CityExtension.BEACON) {
+            scanBeacons(city, false, check -> {
+                if (!check.ok()) {
+                    onFailure.accept(new CityException("extension_beacons_missing", "city", city.name(),
+                            "found", check.valid().size(), "required", check.required(), "reasons", reasons(check)));
+                    return;
+                }
+                complete(city, actor, extension, () -> {
+                    beaconCache.replace(city.id(), check.valid());
+                    onSuccess.run();
+                }, onFailure);
+            }, onFailure);
+            return;
+        }
         if (extension != CityExtension.PROMO_FRENZY) {
             complete(city, actor, extension, onSuccess, onFailure);
             return;
@@ -156,6 +177,51 @@ public final class ExtensionManager {
             }
             onResult.accept(CityRules.missingTypes(config().frenzyTypes, present));
         });
+    }
+
+    /**
+     * Beacon scan of the city against the purchase conditions. {@code button}: "Vérifier les
+     * beacons", limited to one scan per city every check_cooldown_seconds.
+     */
+    public void scanBeacons(City city, boolean button, Consumer<BeaconExtension.Check> onResult,
+                            Consumer<CityException> onFailure) {
+        CityConfig config = config();
+        long now = System.currentTimeMillis();
+        if (button) {
+            long wait = beaconChecks.getOrDefault(city.id(), 0L) + config.beaconCheckCooldownMillis - now;
+            if (wait > 0) {
+                onFailure.accept(new CityException("extension_beacon_cooldown", "seconds", (wait + 999) / 1000));
+                return;
+            }
+        }
+        if (!scanning.add(city.id())) {
+            onFailure.accept(new CityException("extension_scan_running"));
+            return;
+        }
+        if (button) {
+            beaconChecks.put(city.id(), now);
+        }
+        beaconScanner.scan(city).whenComplete((beacons, error) -> {
+            scanning.remove(city.id());
+            if (error != null) {
+                plugin.getLogger().log(Level.WARNING, "Vérification des beacons de " + city.name() + " impossible", error);
+                onFailure.accept(new CityException("extension_scan_failed", "city", city.name()));
+                return;
+            }
+            onResult.accept(BeaconExtension.check(city.tier(), config.minTier(CityExtension.BEACON),
+                    config.beaconRequired, config.beaconPyramid, beacons, city.territory()));
+        });
+    }
+
+    /** " Invalides : 2 pyramide incomplète, 1 éteint." (empty when every beacon found is valid). */
+    public String reasons(BeaconExtension.Check check) {
+        if (check.invalid().isEmpty()) {
+            return "";
+        }
+        List<String> parts = new ArrayList<>();
+        check.invalid().forEach((reason, n) -> parts.add(n + " " + msg.text("beacon_invalid_"
+                + reason.name().toLowerCase(java.util.Locale.ROOT), reason.name())));
+        return " " + msg.text("beacon_invalid_prefix", "Invalides :") + " " + String.join(", ", parts) + ".";
     }
 
     private void complete(City city, UUID actor, CityExtension extension, Runnable onSuccess,

@@ -40,6 +40,11 @@ public final class CityPresenceListener implements Listener {
     }
 
     /** Initial state for players already online (plugin enabled while players are connected). */
+    /** City the player currently stands in (memory), null outside any city. */
+    public Integer cityOf(UUID player) {
+        return current.get(player);
+    }
+
     public void start() {
         Bukkit.getOnlinePlayers().forEach(p -> {
             City city = cities.at(p.getLocation());

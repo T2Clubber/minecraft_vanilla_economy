@@ -1,5 +1,9 @@
 package fr.vanillaeconomy;
 
+import fr.vanillaeconomy.city.BeaconCacheListener;
+import fr.vanillaeconomy.city.BeaconEffectCache;
+import fr.vanillaeconomy.city.BeaconEffectTask;
+import fr.vanillaeconomy.city.BeaconScanner;
 import fr.vanillaeconomy.city.BorderManager;
 import fr.vanillaeconomy.city.CityAdminCommand;
 import fr.vanillaeconomy.city.CityBoardGUI;
@@ -56,6 +60,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     private StaffLog staffLog;
     private CityRanking ranking;
     private CityPromotionScheduler cityPromotions;
+    private BeaconEffectTask beaconTask;
     /** Promotions of the cities with Promotion en folie, set once the cities are loaded. */
     private LocalPromotions localPromotions = LocalPromotions.NONE;
 
@@ -124,8 +129,10 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             MessageConfig cityMessages = new MessageConfig(this, "cities");
             CityManager cities = new CityManager(this, database, cityConfig);
             cities.load();
+            BeaconScanner beaconScanner = new BeaconScanner(this);
+            BeaconEffectCache beaconCache = new BeaconEffectCache();
             ExtensionManager extensions = new ExtensionManager(this, database, cities, new NitwitPresenceChecker(this),
-                    cityMessages);
+                    cityMessages, beaconScanner, beaconCache);
             extensions.load();
             CityNotifier notifier = new CityNotifier(this, database, cityMessages);
             notifier.load();
@@ -157,6 +164,13 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             cityPromotions.start();
             localPromotions = cityPromotions;
             cityPromotions.onChange(MarketGuiListener::refreshAll);
+
+            // Beacon: effects of the city's beacons in the whole territory
+            BeaconCacheListener beaconListener = new BeaconCacheListener(this, cities, extensions, beaconScanner, beaconCache);
+            pm.registerEvents(beaconListener, this);
+            beaconListener.start();
+            beaconTask = new BeaconEffectTask(this, cities, extensions, beaconCache, presence);
+            beaconTask.start();
             register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog,
                     cityPromotions));
 
@@ -194,6 +208,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
         }
         if (cityPromotions != null) {
             cityPromotions.stop();
+        }
+        if (beaconTask != null) {
+            beaconTask.stop();
         }
         if (staffLog != null) {
             staffLog.serverStopped();

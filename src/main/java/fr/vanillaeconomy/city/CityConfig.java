@@ -51,6 +51,13 @@ public final class CityConfig {
     public final long frenzyWarningMillis;
     public final boolean frenzyStart;
     public final boolean frenzyJoinReminder;
+    /** Beacon: valid beacons required, pyramid levels, skin-check cooldown, effect task. */
+    public final int beaconRequired;
+    public final int beaconPyramid;
+    public final long beaconCheckCooldownMillis;
+    public final long beaconApplyIntervalTicks;
+    public final int beaconEffectDurationTicks;
+    public final boolean beaconMembersOnly;
     public final int rankingSize;
 
     public CityConfig(YamlConfiguration yaml, Logger logger) {
@@ -116,6 +123,19 @@ public final class CityConfig {
         frenzyWarningMillis = Math.max(1, yaml.getLong(frenzy + "announcements.warning_minutes_before", 120)) * 60_000L;
         frenzyStart = yaml.getBoolean(frenzy + "announcements.start", true);
         frenzyJoinReminder = yaml.getBoolean(frenzy + "announcements.join_reminder", true);
+        String beacon = "extensions.beacon.";
+        beaconRequired = Math.max(1, yaml.getInt(beacon + "required_beacons", 6));
+        beaconPyramid = Math.max(1, Math.min(4, yaml.getInt(beacon + "required_pyramid_levels", 4)));
+        beaconCheckCooldownMillis = Math.max(0, yaml.getLong(beacon + "check_cooldown_seconds", 30)) * 1000L;
+        beaconApplyIntervalTicks = Math.max(10, yaml.getLong(beacon + "apply_interval_ticks", 80));
+        int duration = yaml.getInt(beacon + "effect_duration_ticks", 200);
+        if (duration <= beaconApplyIntervalTicks) {
+            logger.warning("cities.yml : extensions.beacon.effect_duration_ticks doit dépasser apply_interval_ticks "
+                    + "(sinon les effets clignotent) : " + (beaconApplyIntervalTicks + 40) + " utilisé.");
+            duration = (int) beaconApplyIntervalTicks + 40;
+        }
+        beaconEffectDurationTicks = duration;
+        beaconMembersOnly = yaml.getBoolean(beacon + "members_only", false);
         rankingSize = Math.max(1, Math.min(15, yaml.getInt("ranking.size", 10)));
     }
 

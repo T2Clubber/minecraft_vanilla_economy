@@ -86,8 +86,8 @@ public final class CityBoardGUI implements InventoryHolder {
     private final Map<Integer, Integer> tierSlots = new HashMap<>();
     /** Slot -> extension shown there (extensions tab). */
     private final Map<Integer, CityExtension> extensionSlots = new HashMap<>();
-    /** Slot of the "Vérifier les skins" button (extensions tab), -1 if not shown. */
-    private int skinCheckSlot = -1;
+    /** Slot -> extension whose conditions the button there checks ("Vérifier les skins / les beacons"). */
+    private final Map<Integer, CityExtension> checkSlots = new HashMap<>();
 
     /** What the board needs, shared by all instances. */
     public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg,
@@ -140,7 +140,7 @@ public final class CityBoardGUI implements InventoryHolder {
         memberSlots.clear();
         tierSlots.clear();
         extensionSlots.clear();
-        skinCheckSlot = -1;
+        checkSlots.clear();
         ItemStack[] contents = new ItemStack[SIZE];
         java.util.Arrays.fill(contents, filler());
         contents[TAB_MEMBERS] = tabItem(Material.PLAYER_HEAD, "<yellow>Membres", Tab.MEMBERS);
@@ -290,6 +290,10 @@ public final class CityBoardGUI implements InventoryHolder {
                     lore.add(Messages.item("<gray>✦ Les <n> skins d'idiots marchands dans la cité :",
                             Messages.p("n", config.frenzyTypes.size())));
                     lore.add(Messages.item("<white>  <types>", Messages.p("types", services.extensions().labels(config.frenzyTypes))));
+                } else if (ext == CityExtension.BEACON) {
+                    lore.add(Messages.item("<gray>✦ <n> beacons dans la cité, pyramide à <levels> étages,",
+                            Messages.p("n", config.beaconRequired), Messages.p("levels", config.beaconPyramid)));
+                    lore.add(Messages.item("<gray>  allumés et avec un effet primaire choisi"));
                 }
                 if (city.tier() < minTier) {
                     lore.add(Messages.item("<red>Débloquée au palier <tier>", Messages.p("tier", minTier)));
@@ -301,9 +305,11 @@ public final class CityBoardGUI implements InventoryHolder {
                 }
             }
             boolean active = enabled && owned;
-            Material icon = !enabled ? Material.GRAY_DYE
-                    : ext == CityExtension.PROMO_FRENZY ? (owned ? Material.EMERALD_BLOCK : Material.EMERALD)
-                    : owned ? Material.ENDER_EYE : Material.ENDER_PEARL;
+            Material icon = !enabled ? Material.GRAY_DYE : switch (ext) {
+                case TELEPORT -> owned ? Material.ENDER_EYE : Material.ENDER_PEARL;
+                case PROMO_FRENZY -> owned ? Material.EMERALD_BLOCK : Material.EMERALD;
+                case BEACON -> owned ? Material.BEACON : Material.NETHER_STAR;
+            };
             ItemStack item = named(icon, (!enabled ? "<gray>" : owned ? "<green>" : "<white>") + ext.label(), lore);
             if (active) {
                 ItemMeta meta = item.getItemMeta();
@@ -314,10 +320,18 @@ public final class CityBoardGUI implements InventoryHolder {
             contents[slot] = item;
             extensionSlots.put(slot, ext);
             if (ext == CityExtension.PROMO_FRENZY && enabled && !owned) {
-                skinCheckSlot = slot + 9;
-                contents[skinCheckSlot] = named(Material.SPYGLASS, "<aqua>Vérifier les skins",
+                checkSlots.put(slot + 9, ext);
+                contents[slot + 9] = named(Material.SPYGLASS, "<aqua>Vérifier les skins",
                         List.of(Messages.item("<gray>Compte les idiots marchands présents"),
                                 Messages.item("<gray>dans les limites de la cité."),
+                                Messages.item("<yellow>Clic : vérifier")));
+            } else if (ext == CityExtension.BEACON && enabled && !owned) {
+                checkSlots.put(slot + 9, ext);
+                contents[slot + 9] = named(Material.SPYGLASS, "<aqua>Vérifier les beacons",
+                        List.of(Messages.item("<gray>Compte les beacons valides"),
+                                Messages.item("<gray>dans les limites de la cité."),
+                                Messages.item("<dark_gray>Une vérification toutes les <s> s", Messages.p("s",
+                                        config.beaconCheckCooldownMillis / 1000)),
                                 Messages.item("<yellow>Clic : vérifier")));
             }
         }
@@ -332,6 +346,11 @@ public final class CityBoardGUI implements InventoryHolder {
                             Messages.p("name", city.name())),
                     Messages.item("<gray>Chaque téléportation coûte <gold><cost></gold> <dark_gray>(solde personnel)",
                             Messages.p("cost", Messages.coins(config.teleportUseCost))));
+            case BEACON -> List.of(
+                    Messages.item("<gray>Les effets des beacons de la cité s'appliquent"),
+                    Messages.item("<gray>à tout joueur présent dans la cité, quelle que"),
+                    Messages.item("<gray>soit sa distance aux beacons<members>.",
+                            Messages.p("members", config.beaconMembersOnly ? " (membres uniquement)" : "")));
             case PROMO_FRENZY -> List.of(
                     Messages.item("<gray>Les idiots marchands de la cité font <white><n> promos</white> de plus",
                             Messages.p("n", config.frenzyPromosPerDay)),
@@ -460,8 +479,10 @@ public final class CityBoardGUI implements InventoryHolder {
                     tierClick(city, tierSlots.get(slot));
                 } else if (tab == Tab.EXTENSIONS && extensionSlots.containsKey(slot)) {
                     extensionClick(city, extensionSlots.get(slot));
-                } else if (tab == Tab.EXTENSIONS && slot == skinCheckSlot) {
+                } else if (tab == Tab.EXTENSIONS && checkSlots.get(slot) == CityExtension.PROMO_FRENZY) {
                     skinCheck(city);
+                } else if (tab == Tab.EXTENSIONS && checkSlots.get(slot) == CityExtension.BEACON) {
+                    beaconCheck(city);
                 }
             }
         }
@@ -541,6 +562,8 @@ public final class CityBoardGUI implements InventoryHolder {
         ConfirmGUI.open(viewer, extension.label() + " pour " + Messages.coins(price) + " ?", () -> {
             if (extension == CityExtension.PROMO_FRENZY) {
                 services.msg().send(viewer, "extension_scanning");
+            } else if (extension == CityExtension.BEACON) {
+                services.msg().send(viewer, "extension_scanning_beacons");
             }
             // Every condition again, with a fresh skin scan for Promotion en folie (asynchronous).
             services.extensions().buy(city, viewer.getUniqueId(), extension, () -> {
@@ -549,6 +572,22 @@ public final class CityBoardGUI implements InventoryHolder {
             }, e -> services.msg().send(viewer, e.key(), e.vars()));
             reopen(Tab.EXTENSIONS);
         }, () -> reopen(Tab.EXTENSIONS));
+    }
+
+    /** "Vérifier les beacons": asynchronous scan (cooldown per city), result in the chat. */
+    private void beaconCheck(City city) {
+        ExtensionManager extensions = services.extensions();
+        extensions.scanBeacons(city, true, check -> {
+            if (check.valid().size() >= check.required()) {
+                services.msg().send(viewer, "extension_beacons_ok", "city", city.name(), "found", check.valid().size(),
+                        "required", check.required(), "reasons", extensions.reasons(check));
+            } else {
+                services.msg().send(viewer, "extension_beacons_check", "city", city.name(), "found", check.valid().size(),
+                        "required", check.required(), "reasons", extensions.reasons(check));
+            }
+            services.staffLog().action(viewer, "/cityboard " + city.name(), "vérification des beacons de **"
+                    + StaffLog.md(city.name()) + "** : " + check.valid().size() + "/" + check.required());
+        }, e -> services.msg().send(viewer, e.key(), e.vars()));
     }
 
     private void bought(City city, CityExtension extension, long price) {

@@ -16,7 +16,12 @@ public enum CityExtension {
      * Market nitwits standing in the city get extra promotion rotations every day. Requires
      * the 7 nitwit skins inside the city when it is bought.
      */
-    PROMO_FRENZY("Promotion en folie", 3, 10_000);
+    PROMO_FRENZY("Promotion en folie", 3, 10_000),
+    /**
+     * The effects of the city's beacons apply to every player inside the territory, whatever
+     * his distance to them. Requires 6 beacons with a full 4-level pyramid when bought.
+     */
+    BEACON("Beacon", 4, 10_000);
 
     private final String label;
     private final int defaultMinTier;

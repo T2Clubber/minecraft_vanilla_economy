@@ -65,6 +65,28 @@ extensions:
       warning_minutes_before: 120
       start: true
       join_reminder: true
+  beacon:
+    # « Beacon » : les effets des beacons de la cité s'appliquent à tout
+    # joueur présent dans le territoire, quelle que soit sa distance aux
+    # beacons (leur portée vanilla ne change pas).
+    enabled: true
+    min_tier: 4
+    price: 10000
+    # Conditions d'achat : au moins required_beacons beacons dans les
+    # limites de la cité, pyramide complète (required_pyramid_levels
+    # étages), faisceau non obstrué et effet primaire choisi.
+    required_beacons: 6
+    required_pyramid_levels: 4
+    # Délai entre deux clics sur « Vérifier les beacons » pour une cité.
+    check_cooldown_seconds: 30
+    # Application des effets : toutes les apply_interval_ticks (20 = 1 s),
+    # pour une durée effect_duration_ticks (plus longue que l'intervalle,
+    # pour éviter les coupures ; courte pour que l'effet disparaisse vite à
+    # la sortie de la cité).
+    apply_interval_ticks: 80
+    effect_duration_ticks: 200
+    # true : seuls les membres de la cité reçoivent les effets.
+    members_only: false
 
 # Classement des cités (/classement on|off, à droite de l'écran) : palier,
 # puis nombre d'extensions, puis solde de la cité.
