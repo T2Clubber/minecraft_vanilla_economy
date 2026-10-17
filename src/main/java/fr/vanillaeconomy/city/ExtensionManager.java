@@ -25,7 +25,7 @@ import java.util.logging.Level;
  * City extensions: loading (table city_extension), purchase conditions and purchase with
  * the city's treasury. Promotion en folie also needs the 7 nitwit skins inside the city,
  * checked by an asynchronous scan ({@link NitwitPresenceChecker}) at the time of purchase;
- * Beacon needs 6 valid beacons ({@link BeaconScanner}), which then fill its effect cache.
+ * Beacon needs 5 valid beacons ({@link BeaconScanner}), which then fill its effect cache.
  */
 public final class ExtensionManager {
 

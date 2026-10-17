@@ -36,7 +36,7 @@ class BeaconExtensionTest {
     }
 
     private static BeaconExtension.Check check(int cityTier, List<BeaconSighting> beacons) {
-        return BeaconExtension.check(cityTier, 4, 6, 4, beacons, CITY);
+        return BeaconExtension.check(cityTier, 4, 5, 4, beacons, CITY);
     }
 
     // ------------------------------------------------------------------
@@ -45,40 +45,40 @@ class BeaconExtensionTest {
 
     @Test
     void tierTooLow() {
-        BeaconExtension.Check c = check(3, valid(6, 0));
+        BeaconExtension.Check c = check(3, valid(5, 0));
         assertFalse(c.tierOk());
-        assertEquals(6, c.valid().size());
-        assertFalse(c.ok());
-    }
-
-    @Test
-    void fiveOfSixRefusedSixOfSixAccepted() {
-        assertFalse(check(4, valid(5, 0)).ok());
-        assertEquals(5, check(4, valid(5, 0)).valid().size());
-        assertTrue(check(4, valid(6, 0)).ok());
-        assertTrue(check(5, valid(9, 0)).ok());
-    }
-
-    @Test
-    void duplicatePositionsCountOnce() {
-        List<BeaconSighting> beacons = valid(5, 0);
-        beacons.add(valid(0));
-        beacons.add(valid(0));
-        BeaconExtension.Check c = check(4, beacons);
         assertEquals(5, c.valid().size());
         assertFalse(c.ok());
     }
 
     @Test
+    void fourOfFiveRefusedFiveOfFiveAccepted() {
+        assertFalse(check(4, valid(4, 0)).ok());
+        assertEquals(4, check(4, valid(4, 0)).valid().size());
+        assertTrue(check(4, valid(5, 0)).ok());
+        assertTrue(check(5, valid(9, 0)).ok());
+    }
+
+    @Test
+    void duplicatePositionsCountOnce() {
+        List<BeaconSighting> beacons = valid(4, 0);
+        beacons.add(valid(0));
+        beacons.add(valid(0));
+        BeaconExtension.Check c = check(4, beacons);
+        assertEquals(4, c.valid().size());
+        assertFalse(c.ok(), "4 distinct beacons, not 6");
+    }
+
+    @Test
     void invalidBeaconsAreCountedByReason() {
-        List<BeaconSighting> beacons = valid(5, 0);
+        List<BeaconSighting> beacons = valid(4, 0);
         beacons.add(beacon(100, 3, true, "minecraft:speed", null));     // 3-level pyramid
         beacons.add(beacon(110, 0, true, "minecraft:speed", null));     // no pyramid
         beacons.add(valid(128));                                          // just outside (city ends at 127)
         beacons.add(beacon(90, 4, true, null, null));                     // no effect chosen
         beacons.add(beacon(80, 4, false, "minecraft:haste", null));       // beam obstructed
         BeaconExtension.Check c = check(4, beacons);
-        assertEquals(5, c.valid().size());
+        assertEquals(4, c.valid().size());
         assertFalse(c.ok());
         assertEquals(Map.of(Invalid.INCOMPLETE_PYRAMID, 2, Invalid.OUTSIDE, 1, Invalid.NO_EFFECT, 1, Invalid.UNLIT, 1),
                 c.invalid());

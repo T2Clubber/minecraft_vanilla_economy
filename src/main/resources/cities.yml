@@ -75,7 +75,7 @@ extensions:
     # Conditions d'achat : au moins required_beacons beacons dans les
     # limites de la cité, pyramide complète (required_pyramid_levels
     # étages), faisceau non obstrué et effet primaire choisi.
-    required_beacons: 6
+    required_beacons: 5
     required_pyramid_levels: 4
     # Délai entre deux clics sur « Vérifier les beacons » pour une cité.
     check_cooldown_seconds: 30

@@ -19,7 +19,7 @@ public enum CityExtension {
     PROMO_FRENZY("Promotion en folie", 3, 10_000),
     /**
      * The effects of the city's beacons apply to every player inside the territory, whatever
-     * his distance to them. Requires 6 beacons with a full 4-level pyramid when bought.
+     * his distance to them. Requires 5 beacons with a full 4-level pyramid when bought.
      */
     BEACON("Beacon", 4, 10_000);
 

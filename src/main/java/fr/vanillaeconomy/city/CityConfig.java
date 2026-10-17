@@ -124,7 +124,7 @@ public final class CityConfig {
         frenzyStart = yaml.getBoolean(frenzy + "announcements.start", true);
         frenzyJoinReminder = yaml.getBoolean(frenzy + "announcements.join_reminder", true);
         String beacon = "extensions.beacon.";
-        beaconRequired = Math.max(1, yaml.getInt(beacon + "required_beacons", 6));
+        beaconRequired = Math.max(1, yaml.getInt(beacon + "required_beacons", 5));
         beaconPyramid = Math.max(1, Math.min(4, yaml.getInt(beacon + "required_pyramid_levels", 4)));
         beaconCheckCooldownMillis = Math.max(0, yaml.getLong(beacon + "check_cooldown_seconds", 30)) * 1000L;
         beaconApplyIntervalTicks = Math.max(10, yaml.getLong(beacon + "apply_interval_ticks", 80));
