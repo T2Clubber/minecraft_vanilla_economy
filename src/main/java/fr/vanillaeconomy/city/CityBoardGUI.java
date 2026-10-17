@@ -52,10 +52,11 @@ public final class CityBoardGUI implements InventoryHolder {
     public enum Tab { MEMBERS, TIERS, TREASURY, EXTENSIONS }
 
     private static final int SIZE = 54;
-    private static final int TAB_MEMBERS = 3;
-    private static final int TAB_TIERS = 4;
+    /** Tabs on the first row, one slot out of two. */
+    private static final int TAB_MEMBERS = 1;
+    private static final int TAB_TIERS = 3;
     private static final int TAB_TREASURY = 5;
-    private static final int TAB_EXTENSIONS = 6;
+    private static final int TAB_EXTENSIONS = 7;
     /** Extensions on row 3, two slots apart and centred; the skin check button below its extension. */
     private static final int EXTENSIONS_ROW_CENTRE = 22;
     private static final int PREV = 45;
