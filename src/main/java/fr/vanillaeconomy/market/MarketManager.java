@@ -56,6 +56,8 @@ public final class MarketManager {
         private double sellUnit;
         private double regularBuyUnit;
         private double regularSellUnit;
+        /** Circulation when the prices of the cycle were computed: promotional prices use it, so they stay fixed during the rotation. */
+        private double cycleCirculation;
 
         public double circulation() { return circulation; }
         public long stock() { return stock; }
@@ -475,11 +477,16 @@ public final class MarketManager {
         }
     }
 
-    /** Regular prices of the cycle with a {@code percent} promotion on the side the item is on. */
+    /**
+     * Regular prices of the cycle with a {@code percent} promotion on the side the item is on.
+     * Computed from the circulation of the start of the cycle, never the live one: prices do
+     * not move during a rotation, whatever players sell (city promotions are computed on
+     * every display).
+     */
     private PricingEngine.Prices promoPrices(MarketItem item, ItemState s, int percent) {
         PricingEngine.Prices prices = new PricingEngine.Prices(s.regularBuyUnit, s.regularSellUnit);
         if (percent > 0 && sellSide.contains(item.material())) {
-            prices = pricing.promoBuy(item, s.circulation, prices, percent);
+            prices = pricing.promoBuy(item, s.cycleCirculation, prices, percent);
         } else if (percent > 0 && buySide.contains(item.material())) {
             prices = pricing.promoSell(prices, percent);
         }
@@ -510,6 +517,7 @@ public final class MarketManager {
         for (MarketItem item : config.items().values()) {
             ItemState s = states.get(item.material());
             PricingEngine.Prices prices = pricing.compute(item, s.circulation);
+            s.cycleCirculation = s.circulation;
             s.buyUnit = s.regularBuyUnit = prices.buyUnit();
             s.sellUnit = s.regularSellUnit = prices.sellUnit();
         }
