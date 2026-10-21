@@ -28,7 +28,8 @@ class RelativeFloorConfigTest {
     void serverConfigWithoutTheSectionUsesTheBundledDefaults() {
         // config.yml of a server installed before the setting existed
         var floors = MarketManager.relativeFloors(server("market:\n  markup: 1.4\n  circulation_decay: 0.06\n"), CATEGORIES, LOG);
-        assertEquals(Map.of("minerals", 0.2, "other", 0.2), floors);
+        assertEquals(Map.of("minerals", 0.2, "food_nature", 0.2, "hostile_mob", 0.2, "blocks", 0.2, "other", 0.2), floors,
+                "\"*\" covers every category of items.yml");
     }
 
     @Test
@@ -36,7 +37,11 @@ class RelativeFloorConfigTest {
         var floors = MarketManager.relativeFloors(server(
                 "market:\n  relative_floor:\n    percent: 35\n    categories: [minerals, unknown]\n"), CATEGORIES, LOG);
         assertEquals(Map.of("minerals", 0.35), floors);
-        assertEquals(Map.of("minerals", 0.0, "other", 0.0), MarketManager.relativeFloors(server(
-                "market:\n  relative_floor:\n    percent: 0\n"), CATEGORIES, LOG), "0 % disables the floor");
+        assertEquals(Map.of("minerals", 0.0, "food_nature", 0.0, "hostile_mob", 0.0, "blocks", 0.0, "other", 0.0),
+                MarketManager.relativeFloors(server("market:\n  relative_floor:\n    percent: 0\n"), CATEGORIES, LOG),
+                "0 % disables the floor");
+        // a server that listed its categories keeps its own list
+        assertEquals(Map.of("minerals", 0.2, "other", 0.2), MarketManager.relativeFloors(server(
+                "market:\n  relative_floor:\n    percent: 20\n    categories: [minerals, other]\n"), CATEGORIES, LOG));
     }
 }

@@ -189,7 +189,7 @@ public final class PricingEngine {
 
     /**
      * Applied once per rotation: lowers the counter by exactly what raises the buying price
-     * by {@code rate} (0.06 = +6 % per rotation) until it is back to the base price.
+     * by {@code rate} (0.1 = +10 % per rotation) until it is back to the base price.
      */
     public double recover(MarketItem item, double circulation, double rate) {
         if (k == 0) {

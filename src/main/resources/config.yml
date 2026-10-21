@@ -52,15 +52,16 @@ market:
   # prix suivent à la rotation suivante. Les ventes faites quand le prix
   # est déjà au plancher ne l'enfoncent pas davantage.
   # Remontée du prix de rachat à chaque rotation, jusqu'au prix de base
-  # (0.06 = +6 % par rotation : un diamant passe de 6 à 30 pièces en 28
-  # rotations, ~2,3 jours).
-  circulation_decay: 0.06
+  # (0.1 = +10 % par rotation : un diamant passe de 6 à 30 pièces en 17
+  # rotations, ~1,4 jour).
+  circulation_decay: 0.1
   # Plancher relatif : pour ces catégories d'items.yml, le prix de rachat
   # ne descend jamais sous percent % du prix de base (diamant à 30 :
   # jamais moins de 6 pièces). Le plancher absolu de 1/64 reste valable.
+  # "*" = toutes les catégories, y compris celles ajoutées plus tard.
   relative_floor:
     percent: 20
-    categories: [minerals, other]
+    categories: ["*"]
   # Pondération du tirage de la liste ACHAT : poids d'un item en stock
   # (un item en rupture a un poids de 1).
   in_stock_weight: 4.0

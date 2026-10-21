@@ -181,5 +181,13 @@ class PricingEngineTest {
         }
         assertEquals(28, rotations, "6 -> 30 in 28 rotations (~2.3 days)");
         assertEquals(0, c);
+        // +10 % per rotation (config.yml default): 17 rotations
+        c = floored.bound(diamond, 1e6, 1_000_000);
+        rotations = 0;
+        while (floored.compute(diamond, c).buyUnit() < 30 - 1e-9) {
+            c = floored.recover(diamond, c, 0.1);
+            rotations++;
+        }
+        assertEquals(17, rotations, "6 -> 30 in 17 rotations (~1.4 days)");
     }
 }

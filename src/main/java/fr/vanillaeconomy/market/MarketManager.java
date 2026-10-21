@@ -143,7 +143,7 @@ public final class MarketManager {
         double scaleLots = m == null ? 64 : m.getDouble("scale_lots", 64);
         this.pricing = new PricingEngine(config.global().priceFloorPerUnit(), k, scaleLots, markup,
                 relativeFloors(plugin.getConfig(), categoriesOf(config), plugin.getLogger()));
-        this.priceRecovery = m == null ? 0.06 : m.getDouble("circulation_decay", 0.06);
+        this.priceRecovery = plugin.getConfig().getDouble("market.circulation_decay");
         this.broadcastRotation = m == null || m.getBoolean("broadcast_rotation", true);
         this.intervalMillis = (long) (config.global().rotationIntervalHours() * 3_600_000L);
         double inStockWeight = m == null ? 4.0 : m.getDouble("in_stock_weight", 4.0);
@@ -727,6 +727,9 @@ public final class MarketManager {
             return Map.of();
         }
         Map<String, Double> floors = new HashMap<>();
+        if (categories.contains("*")) {
+            categories = List.copyOf(knownCategories);
+        }
         for (String category : categories) {
             if (knownCategories.contains(category)) {
                 floors.put(category, percent / 100.0);

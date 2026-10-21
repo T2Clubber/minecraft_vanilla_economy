@@ -26,11 +26,12 @@
 #    TOUJOURS exprimé par unité, indépendamment du base_number de
 #    l'item (voir point 4) : price_unitaire_min = 1/64.
 #    Pour les catégories de market.relative_floor (config.yml, par défaut
-#    minerals et other), le plancher est relevé à 20 % du prix unitaire
-#    de base : un diamant à 30 ne se rachète jamais moins de 6 pièces.
+#    toutes), le plancher est relevé à 20 % du prix unitaire de base :
+#    un diamant à 30 ne se rachète jamais moins de 6 pièces.
 #    La baisse du prix de rachat se résorbe avec les achats des joueurs,
-#    et le prix remonte de 6 % par rotation jusqu'au prix de base
-#    (market.circulation_decay) : un diamant passe de 6 à 30 en ~2,3 jours.
+#    et le prix remonte de 10 % par rotation jusqu'au prix de base
+#    (market.circulation_decay) : du plancher au prix de base en 17
+#    rotations, ~1,4 jour.
 #
 # 4. BASE_NUMBER : chaque item a son propre "lot de référence". base_price
 #    est le prix de base_number unités de cet item (pas forcément 64).
