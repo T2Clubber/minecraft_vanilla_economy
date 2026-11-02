@@ -68,9 +68,13 @@ public final class BuyGUI extends MarketGui {
                     Messages.p("price", Messages.coins(PricingEngine.charge(s.sellUnit(), shown))), Messages.p("n", shown)));
         }
         lore.add(Messages.item("<dark_gray><unit> pièce / unité", Messages.p("unit", Messages.unitPrice(s.sellUnit()))));
+        // Real reduction of the price: the announced one (only the 1/64 floor could reduce it).
+        long percent = Math.round((1 - s.sellUnit() / s.regularSellUnit()) * 100);
         if (s.stock() <= 0) {
             lore.add(Messages.item("<red><bold>Rupture de stock"));
-            return icon(material, 1, lore, true);
+            // the promotion is shown on the whole stall, out-of-stock items included
+            ItemStack greyed = icon(material, 1, lore, true);
+            return percent > 0 ? promoStyle(greyed, percent, promo.city()) : greyed;
         }
         lore.add(Messages.item("<gray>Stock : <white><stock>", Messages.p("stock", s.stock())));
         lore.add(Component.empty());
@@ -84,8 +88,6 @@ public final class BuyGUI extends MarketGui {
                     Messages.p("price", Messages.coins(PricingEngine.charge(s.sellUnit(), bulk)))));
         }
         ItemStack item = icon(material, lot, lore, false);
-        // Real reduction of the price (the formula may cap it at the villager's buying price).
-        long percent = Math.round((1 - s.sellUnit() / s.regularSellUnit()) * 100);
         return percent > 0 ? promoStyle(item, percent, promo.city()) : item;
     }
 
