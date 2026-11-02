@@ -76,7 +76,8 @@ market:
   # appliquent une réduction aléatoire entre min_percent et max_percent :
   #  - interface VENTE : base_number effectif réduit (items avec base_number > 1)
   #    -> l'idiot paie plus cher par unité ;
-  #  - interface ACHAT : prix_vente = max(prix_achat, prix_vente * (1 - réduction)).
+  #  - interface ACHAT : prix_vente * (1 - réduction), réduction complète même
+  #    sous le prix de rachat (achat en promo puis revente avec plus-value).
   promo:
     per_day: 2
     min_percent: 5

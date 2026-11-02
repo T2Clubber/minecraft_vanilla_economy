@@ -76,11 +76,14 @@ public final class PricingEngine {
     }
 
     /**
-     * BUY-interface promotion (villager sells cheaper):
-     * {@code sell_promo = max(buy, sell * (1 - percent))}, so sell &gt;= buy still holds.
+     * BUY-interface promotion (villager sells cheaper): {@code sell_promo = sell * (1 - percent)},
+     * the full announced discount, never below the absolute floor. It may go below what the
+     * villagers pay for the item: buying during a promotion to sell back later is a wanted
+     * gameplay (players who follow the rotations make a profit). An item is never on both
+     * sides in the same cycle.
      */
     public Prices promoSell(Prices regular, int percent) {
-        return new Prices(regular.buyUnit(), Math.max(regular.buyUnit(), regular.sellUnit() * (1 - percent / 100.0)));
+        return new Prices(regular.buyUnit(), Math.max(floorPerUnit, regular.sellUnit() * (1 - percent / 100.0)));
     }
 
     /**
@@ -106,6 +109,18 @@ public final class PricingEngine {
         if (!(prices.buyUnit() >= floorFor(item) - 1e-12) || !(prices.sellUnit() >= prices.buyUnit())
                 || Double.isNaN(prices.sellUnit()) || Double.isInfinite(prices.sellUnit())) {
             throw new IllegalStateException("Contrainte de prix violée pour " + item.material() + " : " + prices);
+        }
+    }
+
+    /**
+     * Constraints of promotional prices: floors and finite values. Unlike {@link #check}, the
+     * selling price may be lower than the buying price (BUY-interface promotions).
+     */
+    public void checkPromo(MarketItem item, Prices prices) {
+        if (!(prices.buyUnit() >= floorFor(item) - 1e-12) || !(prices.sellUnit() >= floorPerUnit - 1e-12)
+                || Double.isNaN(prices.sellUnit()) || Double.isInfinite(prices.sellUnit())
+                || Double.isNaN(prices.buyUnit()) || Double.isInfinite(prices.buyUnit())) {
+            throw new IllegalStateException("Contrainte de prix promo violée pour " + item.material() + " : " + prices);
         }
     }
 

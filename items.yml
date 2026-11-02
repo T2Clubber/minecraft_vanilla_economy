@@ -17,9 +17,12 @@
 #    price_sell est FIXE : il ne dépend que de base_price / base_number
 #    (prix_unitaire, voir point 4) et pas des ventes des joueurs :
 #    price_sell = max(prix_unitaire * markup, prix_unitaire +
-#    price_floor_per_unit). Seules les promotions le font baisser, sans
-#    jamais passer sous price_buy. price_buy, lui, baisse quand les
-#    joueurs vendent beaucoup, donc l'inégalité tient toujours.
+#    price_floor_per_unit). price_buy, lui, baisse quand les joueurs
+#    vendent beaucoup, donc l'inégalité tient toujours hors promotions.
+#    Exception voulue : une promotion côté ACHAT applique toute la
+#    réduction annoncée, même sous price_buy (plancher 1/64), pour que
+#    les joueurs qui suivent les rotations puissent acheter en promo et
+#    revendre avec plus-value.
 #
 # 3. PRICE FLOOR : prix plancher global = 1 pièce pour 64 unités d'un
 #    item (price_floor_per_unit = 1/64 ≈ 0.015625). Ce plancher est

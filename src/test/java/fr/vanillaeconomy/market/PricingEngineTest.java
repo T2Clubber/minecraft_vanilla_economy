@@ -63,11 +63,13 @@ class PricingEngineTest {
         }
         MarketItem dirt = SAMPLE.get(0);
         assertEquals(2.0 / 64, pricing.compute(dirt, 1e9).sellUnit(), 1e-12, "base + floor on cheap items");
-        // promotions still lower it, never below what the villager pays
+        // promotions lower it by the full discount, even below what the villagers pay (resale)
         PricingEngine.Prices regular = pricing.compute(diamond, 0);
-        assertEquals(30, pricing.promoSell(regular, 50).sellUnit(), 1e-9);
+        assertEquals(21, pricing.promoSell(regular, 50).sellUnit(), 1e-9, "-50 % of 42, below the buying price 30");
         PricingEngine.Prices crashed = pricing.compute(diamond, 1e6);
         assertEquals(21, pricing.promoSell(crashed, 50).sellUnit(), 1e-9);
+        assertEquals(1.0 / 64, pricing.promoSell(pricing.compute(dirt, 0), 50).sellUnit(), 1e-12,
+                "never below the absolute floor");
     }
 
     @Test

@@ -470,8 +470,8 @@ public final class MarketManager {
         for (MarketItem item : config.items().values()) {
             ItemState s = states.get(item.material());
             PricingEngine.Prices prices = promoPrices(item, s, promoPercent);
-            // Hard constraint, promotions included.
-            pricing.check(item, prices);
+            // Floors, promotions included (a promoted selling price may be below the buying one).
+            pricing.checkPromo(item, prices);
             s.buyUnit = prices.buyUnit();
             s.sellUnit = prices.sellUnit();
         }
@@ -504,7 +504,7 @@ public final class MarketManager {
         }
         MarketItem item = config.items().get(material);
         PricingEngine.Prices prices = promoPrices(item, s, percent);
-        pricing.check(item, prices);
+        pricing.checkPromo(item, prices);
         return new ItemView(s.stock, prices.buyUnit(), prices.sellUnit(), s.regularBuyUnit, s.regularSellUnit);
     }
 

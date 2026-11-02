@@ -84,7 +84,7 @@ class PromotionManagerTest {
     }
 
     @Test
-    void promoPricesKeepSellGteBuy() {
+    void promoPricesRespectTheFloors() {
         PricingEngine pricing = new PricingEngine(1.0 / 64, 1.0, 64, 1.4);
         List<MarketItem> items = List.of(
                 new MarketItem(Material.DIRT, "blocks", "common", 1, 64),
@@ -95,12 +95,12 @@ class PromotionManagerTest {
                 PricingEngine.Prices regular = pricing.compute(item, circulation);
                 for (int pct = 5; pct <= 50; pct++) {
                     PricingEngine.Prices sell = pricing.promoSell(regular, pct);
-                    pricing.check(item, sell);
+                    pricing.checkPromo(item, sell);
                     assertTrue(sell.sellUnit() <= regular.sellUnit());
                     assertEquals(regular.buyUnit(), sell.buyUnit());
 
                     PricingEngine.Prices buy = pricing.promoBuy(item, circulation, regular, pct);
-                    pricing.check(item, buy);
+                    pricing.checkPromo(item, buy);
                     assertTrue(buy.buyUnit() >= regular.buyUnit());
                     if (item.baseNumber() == 1) {
                         assertEquals(regular, buy, "base_number 1 items are not promoted on the SELL side");
@@ -112,10 +112,11 @@ class PromotionManagerTest {
         MarketItem diamond = items.get(1);
         PricingEngine.Prices r = pricing.compute(diamond, 0);
         assertEquals(250.0 / 8, pricing.promoBuy(diamond, 0, r, 50).buyUnit(), 1e-9);
-        // BUY side: 1.75 * 0.5 = 0.875 < buy 1.25 => clamped to buy
+        // BUY side: the full discount, 1.75 * 0.5 = 0.875, below the buying price 1.25 (resale allowed)
         MarketItem emerald = new MarketItem(Material.EMERALD, "minerals", "rare", 40, 32);
         PricingEngine.Prices e = pricing.compute(emerald, 0);
-        assertEquals(e.buyUnit(), pricing.promoSell(e, 50).sellUnit(), 1e-9);
+        assertEquals(e.sellUnit() * 0.5, pricing.promoSell(e, 50).sellUnit(), 1e-9);
+        assertTrue(pricing.promoSell(e, 50).sellUnit() < e.buyUnit());
         assertEquals(e.sellUnit() * 0.8, pricing.promoSell(e, 20).sellUnit(), 1e-9);
     }
 
