@@ -1,0 +1,244 @@
+# ===================================================================
+# VanillaEconomy - Quêtes de cité (extension "Quêtes de cité")
+#
+# Chaque cité qui possède l'extension a UNE quête à la fois : une
+# collecte d'items rares. Les membres déposent les items (/city quest
+# deposit ou l'onglet Quêtes de /cityboard) ; les items déposés sont
+# définitivement consommés. Objectif atteint avant l'échéance : la
+# récompense est versée sur le solde de la cité.
+#
+# Ce fichier se modifie sans toucher au code, puis :
+#   /cityadmin quests reload   (permission cities.admin.quests)
+# Une entrée invalide est ignorée avec un avertissement dans la console,
+# les autres sont chargées. Les quêtes déjà tirées gardent leurs valeurs :
+# une modification ne s'applique qu'aux tirages suivants.
+# Options générales (répétition, rappel, historique...) : cities.yml,
+# section quests.
+# ===================================================================
+
+# -------------------------------------------------------------------
+# Difficultés
+#   name           : nom affiché (français)
+#   color          : couleur dans l'interface et le chat (BLACK, DARK_BLUE,
+#                    DARK_GREEN, DARK_AQUA, DARK_RED, DARK_PURPLE, GOLD, GRAY,
+#                    DARK_GRAY, BLUE, GREEN, AQUA, RED, LIGHT_PURPLE, YELLOW,
+#                    WHITE ; inconnue = WHITE)
+#   weight         : poids au tirage (0 = jamais tirée). Une difficulté est
+#                    d'abord tirée selon ce poids, puis une de ses quêtes.
+#   default_reward : récompense (pièces) des quêtes qui n'en précisent pas
+#   duration_hours : durée des quêtes qui n'en précisent pas
+# Pour ajouter une difficulté : copier un bloc et changer sa clé.
+# -------------------------------------------------------------------
+difficulties:
+  EASY:   { name: "Facile",    color: GREEN,        weight: 40, default_reward: 400,  duration_hours: 24 }
+  MEDIUM: { name: "Moyenne",   color: YELLOW,       weight: 30, default_reward: 800,  duration_hours: 36 }
+  HARD:   { name: "Difficile", color: RED,          weight: 20, default_reward: 1500, duration_hours: 48 }
+  EPIC:   { name: "Épique",    color: LIGHT_PURPLE, weight: 10, default_reward: 3000, duration_hours: 48 }
+
+# -------------------------------------------------------------------
+# Quêtes (la clé est l'identifiant unique de la quête)
+#   name           : nom affiché
+#   difficulty     : clé d'une difficulté ci-dessus
+#   amount         : quantité à rassembler (> 0)
+#   item demandé, sous UNE des trois formes :
+#     material: X           un seul item (nom de Material Minecraft)
+#     materials: [X, Y]     n'importe lequel compte, additionnés
+#     tag: "minecraft:..."  tag d'items Minecraft (n'importe quel item du tag)
+#   Optionnels :
+#     enabled        : false pour désactiver la quête (sa progression est
+#                      conservée et reprend si elle est réactivée)
+#     reward         : récompense, sinon default_reward de la difficulté
+#     duration_hours : durée, sinon celle de la difficulté
+#     weight         : poids dans sa difficulté (défaut 1, 0 = jamais tirée)
+#     hint           : texte affiché pour les quêtes multi-items
+# Refusés : l'item de la pièce du plugin, et les items du marché des idiots
+# (items.yml), sauf avec quests.allow-market-items: true dans cities.yml.
+# Pour supprimer une quête : retirer son entrée ou mettre enabled: false.
+#
+# Exemple prêt à copier :
+#   ma_quete:
+#     name: "Plumes de poulet"
+#     difficulty: EASY
+#     material: FEATHER
+#     amount: 64
+#     reward: 300
+#     duration_hours: 12
+#     weight: 1
+# -------------------------------------------------------------------
+quests:
+
+  # --- Facile ---------------------------------------------------------
+  phantom_membrane:
+    name: "Membranes de phantom"
+    difficulty: EASY
+    material: PHANTOM_MEMBRANE
+    amount: 16
+  glow_ink_sac:
+    name: "Poches d'encre luisante"
+    difficulty: EASY
+    material: GLOW_INK_SAC
+    amount: 24
+  rabbit_foot:
+    name: "Pattes de lapin"
+    difficulty: EASY
+    material: RABBIT_FOOT
+    amount: 12
+  sponge:
+    name: "Éponges"
+    difficulty: EASY
+    material: SPONGE
+    amount: 10
+  armadillo_scute:
+    name: "Écailles de tatou"
+    difficulty: EASY
+    material: ARMADILLO_SCUTE
+    amount: 12
+
+  # --- Moyenne --------------------------------------------------------
+  echo_shard:
+    name: "Éclats d'écho"
+    difficulty: MEDIUM
+    material: ECHO_SHARD
+    amount: 8
+  trial_key:
+    name: "Clés des épreuves"
+    difficulty: MEDIUM
+    material: TRIAL_KEY
+    amount: 10
+  goat_horn:
+    name: "Cornes de chèvre"
+    difficulty: MEDIUM
+    material: GOAT_HORN
+    amount: 4
+  creaking_heart:
+    name: "Cœurs de grinceur"
+    difficulty: MEDIUM
+    material: CREAKING_HEART
+    amount: 4
+  disc_fragment_5:
+    name: "Fragments de disque"
+    difficulty: MEDIUM
+    material: DISC_FRAGMENT_5
+    amount: 9
+  sculk_catalyst:
+    name: "Catalyseurs de sculk"
+    difficulty: MEDIUM
+    material: SCULK_CATALYST
+    amount: 6
+  # Garnitures (trims) : chaque modèle vient d'une structure qui ne sert à
+  # aucune autre quête. Structures exclues : cité antique, salles des
+  # épreuves, monument océanique, manoir des bois et forteresse du Nether.
+  sentry_trim:
+    name: "Garniture Sentinelle (avant-poste de pillards)"
+    difficulty: MEDIUM
+    material: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 4
+  dune_trim:
+    name: "Garniture Dune (temple du désert)"
+    difficulty: MEDIUM
+    material: DUNE_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 4
+  coast_trim:
+    name: "Garniture Côte (épave)"
+    difficulty: MEDIUM
+    material: COAST_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 4
+  pottery_sherds:
+    name: "Tessons de poterie"
+    difficulty: MEDIUM
+    tag: "minecraft:decorated_pot_sherds"
+    amount: 12
+    hint: "N'importe quel tesson de poterie"
+
+  # --- Difficile ------------------------------------------------------
+  sniffer_egg:
+    name: "Œufs de renifleur"
+    difficulty: HARD
+    material: SNIFFER_EGG
+    amount: 10
+  dried_ghast:
+    name: "Ghasts desséchés"
+    difficulty: HARD
+    material: DRIED_GHAST
+    amount: 20
+  ominous_trial_key:
+    name: "Clés sinistres"
+    difficulty: HARD
+    material: OMINOUS_TRIAL_KEY
+    amount: 6
+  heavy_core:
+    name: "Noyaux lourds"
+    difficulty: HARD
+    material: HEAVY_CORE
+    amount: 3
+  totem_of_undying:
+    name: "Totems d'immortalité"
+    difficulty: HARD
+    material: TOTEM_OF_UNDYING
+    amount: 4
+  wild_trim:
+    name: "Garniture Sauvage (temple de la jungle)"
+    difficulty: HARD
+    material: WILD_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 3
+  eye_trim:
+    name: "Garniture Œil (fort de l'End)"
+    difficulty: HARD
+    material: EYE_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 3
+  snout_trim:
+    name: "Garniture Groin (vestige de bastion)"
+    difficulty: HARD
+    material: SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 3
+  spire_trim:
+    name: "Garniture Flèche (cité de l'End)"
+    difficulty: HARD
+    material: SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 3
+  wayfinder_trim:
+    name: "Garniture Éclaireur (ruines de sentier)"
+    difficulty: HARD
+    material: WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE
+    amount: 3
+  pottery_sherds_hard:
+    name: "Grande collection de tessons"
+    difficulty: HARD
+    tag: "minecraft:decorated_pot_sherds"
+    amount: 30
+    hint: "N'importe quel tesson de poterie"
+  # Seau de cube de soufre (26.3) : n'importe quel seau de cube de soufre,
+  # quel que soit le bloc absorbé par le cube (un seul Material). Ignorée avec
+  # un avertissement sur un serveur qui ne connaît pas encore cet item.
+  sulfur_cube_bucket:
+    name: "Seau de cube de soufre"
+    difficulty: HARD
+    material: SULFUR_CUBE_BUCKET
+    amount: 1
+
+  # --- Épique ---------------------------------------------------------
+  enchanted_golden_apple:
+    name: "Pommes d'or enchantées"
+    difficulty: EPIC
+    material: ENCHANTED_GOLDEN_APPLE
+    amount: 3
+  heart_of_the_sea:
+    name: "Cœurs de la mer"
+    difficulty: EPIC
+    material: HEART_OF_THE_SEA
+    amount: 3
+  wither_skeleton_skull:
+    name: "Crânes de wither squelette"
+    difficulty: EPIC
+    material: WITHER_SKELETON_SKULL
+    amount: 4
+  piglin_head:
+    name: "Têtes de piglin"
+    difficulty: EPIC
+    material: PIGLIN_HEAD
+    amount: 3
+  dragon_head:
+    name: "Têtes de dragon"
+    difficulty: EPIC
+    material: DRAGON_HEAD
+    amount: 2

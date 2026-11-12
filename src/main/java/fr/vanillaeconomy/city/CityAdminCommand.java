@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * /cityadmin delete &lt;cité&gt; | settier &lt;cité&gt; &lt;palier&gt; | rename &lt;cité&gt; &lt;nom&gt; | info &lt;cité&gt;
- * | promos &lt;cité&gt; | promo &lt;cité&gt; &lt;pourcentage&gt;.
+ * | promos &lt;cité&gt; | promo &lt;cité&gt; &lt;pourcentage&gt; | quests reload.
  */
 public final class CityAdminCommand implements TabExecutor {
 
@@ -25,11 +25,14 @@ public final class CityAdminCommand implements TabExecutor {
     private final CityNotifier notifier;
     private final StaffLog staffLog;
     private final CityPromotionScheduler promotions;
+    private final fr.vanillaeconomy.city.quest.CityQuestExtension quests;
 
     public CityAdminCommand(CityManager cities, MessageConfig msg, CityCommand cityCommand, CityNotifier notifier,
-                            StaffLog staffLog, CityPromotionScheduler promotions) {
+                            StaffLog staffLog, CityPromotionScheduler promotions,
+                            fr.vanillaeconomy.city.quest.CityQuestExtension quests) {
         this.staffLog = staffLog;
         this.promotions = promotions;
+        this.quests = quests;
         this.cities = cities;
         this.msg = msg;
         this.cityCommand = cityCommand;
@@ -65,6 +68,19 @@ public final class CityAdminCommand implements TabExecutor {
                 cities.adminRename(city, args[2]);
                 staffLog.admin(sender.getName(), "`/cityadmin rename` **" + oldName + "** → **" + city.name() + "**");
                 msg.send(sender, "admin_renamed", "city", city.name());
+            } else if (sub.equals("quests") && args.length == 2 && args[1].equalsIgnoreCase("reload")) {
+                if (!sender.hasPermission("cities.admin.quests")) {
+                    throw new CityException("no_permission");
+                }
+                var summary = quests.reload();
+                msg.send(sender, "quest_reload_summary", "quests", summary.quests(), "disabled", summary.disabled(),
+                        "difficulties", summary.difficulties(), "warnings", summary.warnings().size());
+                summary.warnings().stream().limit(15).forEach(w -> msg.send(sender, "quest_reload_warning", "warning", w));
+                if (summary.warnings().size() > 15) {
+                    msg.send(sender, "quest_reload_more", "n", summary.warnings().size() - 15);
+                }
+                staffLog.admin(sender.getName(), "`/cityadmin quests reload` : " + summary.quests() + " quête(s) active(s), "
+                        + summary.disabled() + " désactivée(s), " + summary.warnings().size() + " avertissement(s)");
             } else if (sub.equals("promos") && args.length == 2) {
                 City city = cities.require(args[1]);
                 msg.send(sender, "admin_promos", "city", city.name(), "plans", promotions.describePlans(city));
@@ -108,7 +124,9 @@ public final class CityAdminCommand implements TabExecutor {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            options.addAll(List.of("delete", "settier", "rename", "info", "promos", "promo"));
+            options.addAll(List.of("delete", "settier", "rename", "info", "promos", "promo", "quests"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("quests")) {
+            options.add("reload");
         } else if (args.length == 2) {
             cities.all().forEach(c -> options.add(c.name()));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("settier")) {

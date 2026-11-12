@@ -293,4 +293,18 @@ class CityRulesTest {
         assertEquals(Set.of("plains"), CityRules.presentTypes(plainsOnly, CITY));
         assertEquals(6, CityRules.frenzyCheck(3, 3, SEVEN, plainsOnly, CITY).missing().size());
     }
+
+    @Test
+    void disbandRefundIsCappedAtTheContributions() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Map<UUID, Long> contributions = Map.of(a, 3000L, b, 1000L);
+        // 4 000 contributed, 1 000 spent, 3 000 of quest rewards: balance 6 000
+        assertEquals(4000, CityRules.refundable(6000, contributions, false), "quest rewards are not taken out");
+        assertEquals(6000, CityRules.refundable(6000, contributions, true), "disband.refund-quest-rewards: true");
+        assertEquals(2500, CityRules.refundable(2500, contributions, false), "below the cap: the whole balance");
+        assertEquals(0, CityRules.refundable(3000, Map.of(), false), "rewards only, no contribution: nothing");
+        Map<UUID, Long> refunds = CityRules.refunds(contributions, CityRules.refundable(6000, contributions, false), a);
+        assertEquals(Map.of(a, 3000L, b, 1000L), refunds, "prorata of the capped amount");
+    }
 }

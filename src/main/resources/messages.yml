@@ -38,6 +38,7 @@ cities:
     <yellow>/city disband</yellow> <gray>- dissoudre votre cité</gray>
     <yellow>/city rename <nom> <nouveau nom></yellow> <gray>- renommer votre cité</gray>
     <yellow>/city tp <nom></yellow> <gray>- se téléporter au centre de sa cité (extension)</gray>
+    <yellow>/city quest [nom]</yellow> <gray>- quête de la cité (extension) ; deposit <nom> [quantité|all], history [nom] [page]</gray>
     <yellow>/cityboard <nom></yellow> <gray>- tableau de bord (membres)</gray>
     <yellow>/border <nom> on|off</yellow> <gray>- afficher les bordures</gray>
     <yellow>/classement on|off</yellow> <gray>- classement des cités à l'écran</gray>
@@ -176,8 +177,50 @@ cities:
   ranking_stats: "<green>P{tier} <dark_gray>· <light_purple>✦ {extensions}"
   ranking_empty: "<gray><italic>Aucune cité pour l'instant"
 
+  # --- Quêtes de cité ----------------------------------------------------
+  # Variables : {city} {name} {difficulty} {amount} {progress} {target} {bar}
+  # {reward} {duration} {remaining} {passage} {top}
+  quest_no_extension: "<red>La cité <aqua>{city}</aqua> n'a pas l'extension Quêtes de cité."
+  quest_no_city: "<red>Aucune de vos cités n'a l'extension Quêtes de cité : précisez le nom d'une cité."
+  quest_ambiguous: "<red>Plusieurs de vos cités ont des quêtes : précisez le nom de la cité."
+  quest_none: "<yellow>Aucune quête en cours pour la cité <aqua>{city}</aqua> (aucune quête disponible)."
+  quest_already_completed: "<yellow>La quête « {name} » de <aqua>{city}</aqua> est déjà terminée : la suivante arrive à son échéance."
+  quest_deposit_usage: "<red>Usage : /city quest deposit <cité> [quantité|all] <gray>(les items déposés sont définitivement consommés)"
+  quest_deposit_nothing: "<red>Vous n'avez aucun item utile pour la quête « {name} »."
+  quest_deposit_refused: "<red>Dépôt refusé (la quête « {name} » a changé entre-temps) : aucun item consommé."
+  quest_deposited: "<green>{amount} item(s) définitivement consommé(s) pour « {name} ». <gray>Progression : <white>{progress}/{target}</white>."
+  quest_deposited_completed: "<green>{amount} item(s) définitivement consommé(s) : la quête « {name} » est réussie ({progress}/{target}) !"
+  quest_status: |-
+    <gold>Quête de <aqua>{city}</aqua> : <yellow>{name}</yellow></gold> <gray>({difficulty}<gray>)</gray>
+    <aqua>{bar}</aqua> <white>{progress}/{target}</white>
+    <gray>Temps restant : <white>{remaining}</white> · durée {duration} · récompense <gold>{reward}</gold> <dark_gray>(solde de la cité)</dark_gray>
+    <dark_gray>Déposer : /city quest deposit {city} [quantité|all] — les items déposés sont définitivement consommés.</dark_gray>
+  quest_status_completed: |-
+    <gold>Quête de <aqua>{city}</aqua> : <yellow>{name}</yellow></gold> <green>✔ réussie</green> <white>{progress}/{target}</white>
+    <gray>Récompense <gold>{reward}</gold> versée. Prochaine quête dans <white>{remaining}</white>.
+  quest_resume: "<light_purple>Reprise : {progress}/{target} déjà accumulés (passage n°{passage})."
+  quest_hint: "<gray>{hint}"
+  quest_ranking_line: "<gray>{rank}. <white>{player}</white> : <gold>{amount}</gold>"
+  quest_history_header: "<gold>Historique des quêtes de <aqua>{city}</aqua> <gray>(page {page}/{pages})"
+  quest_history_empty: "<gray>Aucune quête terminée ou expirée pour l'instant."
+  quest_history_completed: "<green>✔</green> <white>{name}</white> <gray>[{difficulty}<gray>] réussie {progress}/{target} — {date} — {top}"
+  quest_history_expired: "<red>✘</red> <white>{name}</white> <gray>[{difficulty}<gray>] expirée {progress}/{target} — {date} — {top}"
+  quest_history_totals: "<gray>Totaux : <green>{completed} réussie(s)</green>, <red>{expired} expirée(s)</red>, <white>{items}</white> items donnés. Meilleurs contributeurs :"
+  # Annonces dans le chat aux membres en ligne (sans le préfixe [Cité]).
+  quest_new: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <white>Nouvelle quête : <yellow>{name}</yellow> — {amount} à rassembler, difficulté {difficulty}<white>, récompense <gold>{reward}</gold>, durée {duration}."
+  quest_reminder: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <white>Plus que <yellow>{remaining}</yellow> pour terminer « {name} » : <white>{progress}/{target}</white>."
+  quest_completed: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <green>Quête « {name} » réussie !</green> <gold>{reward}</gold> <white>versées au solde de la cité. Meilleurs contributeurs : {top}."
+  quest_expired: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <red>Quête « {name} » échouée : temps écoulé, aucune récompense.</red>"
+  quest_expired_kept: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <red>Quête « {name} » échouée : temps écoulé, aucune récompense.</red> <gray>Progression conservée : {progress}/{target}, elle reprendra si la quête revient."
+  quest_join: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <white>« {name} » : {progress}/{target}, encore <yellow>{remaining}</yellow>. /city quest {city}"
+  quest_join_completed: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <green>« {name} » réussie</green><white>, prochaine quête dans {remaining}."
+  quest_reload_summary: "<green>city_quests.yml rechargé : {quests} quête(s) active(s), {disabled} désactivée(s), {difficulties} difficulté(s), {warnings} entrée(s) ignorée(s) ou avertissement(s)."
+  quest_reload_warning: "<yellow>• {warning}"
+  quest_reload_more: "<gray>… et {n} autre(s), voir la console."
+  no_permission: "<red>Vous n'avez pas la permission."
+
   # --- administration ------------------------------------------------
-  admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité> | promos <cité> | promo <cité> <pourcentage>"
+  admin_usage: "<red>Usage : /cityadmin delete <cité> | settier <cité> <palier> | rename <cité> <nom> | info <cité> | promos <cité> | promo <cité> <pourcentage> | quests reload"
   admin_promos: "<gray>Promotion en folie, <aqua>{city}</aqua> : <white>{plans}"
   admin_promo_forced: "<green>Promo de cité -{percent} % forcée pour <aqua>{city}</aqua> sur la rotation en cours."
   admin_no_frenzy: "<red>La cité <aqua>{city}</aqua> n'a pas l'extension Promotion en folie."

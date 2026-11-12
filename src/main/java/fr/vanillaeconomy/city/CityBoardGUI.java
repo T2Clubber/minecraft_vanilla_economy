@@ -49,14 +49,23 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class CityBoardGUI implements InventoryHolder {
 
-    public enum Tab { MEMBERS, TIERS, TREASURY, EXTENSIONS }
+    public enum Tab { MEMBERS, TIERS, TREASURY, EXTENSIONS, QUESTS }
 
     private static final int SIZE = 54;
     /** Tabs on the first row, one slot out of two. */
-    private static final int TAB_MEMBERS = 1;
-    private static final int TAB_TIERS = 3;
-    private static final int TAB_TREASURY = 5;
-    private static final int TAB_EXTENSIONS = 7;
+    private static final int TAB_MEMBERS = 0;
+    private static final int TAB_TIERS = 2;
+    private static final int TAB_TREASURY = 4;
+    private static final int TAB_EXTENSIONS = 6;
+    private static final int TAB_QUESTS = 8;
+    /** Quests tab: the quest, then the deposit, ranking and history buttons. */
+    private static final int QUEST_ITEM = 13;
+    private static final int QUEST_DEPOSIT = 29;
+    private static final int QUEST_RANKING = 31;
+    private static final int QUEST_HISTORY = 33;
+    private static final int QUEST_HISTORY_PER_PAGE = 27;   // slots 9..35
+    private static final int QUEST_TOTALS = 47;
+    private static final int QUEST_BACK = 51;
     /** Extensions on row 3, two slots apart and centred; the skin check button below its extension. */
     private static final int EXTENSIONS_ROW_CENTRE = 22;
     private static final int PREV = 45;
@@ -88,10 +97,14 @@ public final class CityBoardGUI implements InventoryHolder {
     private final Map<Integer, CityExtension> extensionSlots = new HashMap<>();
     /** Slot -> extension whose conditions the button there checks ("Vérifier les skins / les beacons"). */
     private final Map<Integer, CityExtension> checkSlots = new HashMap<>();
+    /** Quests tab showing the history instead of the current quest. */
+    private boolean questHistory;
 
     /** What the board needs, shared by all instances. */
     public record Services(Plugin plugin, CityManager cities, CurrencyManager currency, MessageConfig msg,
-                           CityNotifier notifier, StaffLog staffLog, ExtensionManager extensions) {
+                           CityNotifier notifier, StaffLog staffLog, ExtensionManager extensions,
+                           fr.vanillaeconomy.city.quest.CityQuestExtension quests,
+                           fr.vanillaeconomy.city.quest.QuestDepositService deposits) {
     }
 
     private CityBoardGUI(Services services, Player viewer, City city, Tab tab) {
@@ -147,12 +160,14 @@ public final class CityBoardGUI implements InventoryHolder {
         contents[TAB_TIERS] = tabItem(Material.FILLED_MAP, "<yellow>Paliers", Tab.TIERS);
         contents[TAB_TREASURY] = tabItem(Material.GOLD_INGOT, "<yellow>Trésorerie", Tab.TREASURY);
         contents[TAB_EXTENSIONS] = tabItem(Material.ENDER_PEARL, "<yellow>Extensions", Tab.EXTENSIONS);
+        contents[TAB_QUESTS] = tabItem(Material.WRITABLE_BOOK, "<yellow>Quêtes", Tab.QUESTS);
         contents[INFO] = infoItem(city);
         int pages = switch (tab) {
             case MEMBERS -> renderMembers(city, contents);
             case TIERS -> renderTiers(city, contents);
             case TREASURY -> renderTreasury(city, contents);
             case EXTENSIONS -> renderExtensions(city, contents);
+            case QUESTS -> renderQuests(city, contents);
         };
         if (page > 0) {
             contents[PREV] = named(Material.ARROW, "<white>Page précédente", List.of());
@@ -309,6 +324,7 @@ public final class CityBoardGUI implements InventoryHolder {
                 case TELEPORT -> owned ? Material.ENDER_EYE : Material.ENDER_PEARL;
                 case PROMO_FRENZY -> owned ? Material.EMERALD_BLOCK : Material.EMERALD;
                 case BEACON -> owned ? Material.BEACON : Material.NETHER_STAR;
+                case QUESTS -> owned ? Material.WRITABLE_BOOK : Material.BOOK;
             };
             ItemStack item = named(icon, (!enabled ? "<gray>" : owned ? "<green>" : "<white>") + ext.label(), lore);
             if (active) {
@@ -351,6 +367,10 @@ public final class CityBoardGUI implements InventoryHolder {
                     Messages.item("<gray>à tout joueur présent dans la cité, quelle que"),
                     Messages.item("<gray>soit sa distance aux beacons<members>.",
                             Messages.p("members", config.beaconMembersOnly ? " (membres uniquement)" : "")));
+            case QUESTS -> List.of(
+                    Messages.item("<gray>Une quête à la fois : rassembler des items rares"),
+                    Messages.item("<gray>avant l'échéance. Récompense versée au solde"),
+                    Messages.item("<gray>de la cité. Onglet <white>Quêtes</white> et <white>/city quest</white>."));
             case PROMO_FRENZY -> List.of(
                     Messages.item("<gray>Les idiots marchands de la cité font <white><n> promos</white> de plus",
                             Messages.p("n", config.frenzyPromosPerDay)),
@@ -358,6 +378,160 @@ public final class CityBoardGUI implements InventoryHolder {
                             Messages.p("min", config.frenzyMinPercent), Messages.p("max", config.frenzyMaxPercent)),
                     Messages.item("<gray>Les membres sont prévenus dans le chat."));
         };
+    }
+
+    // ------------------------------------------------------------------
+    // Quests tab
+    // ------------------------------------------------------------------
+
+    private int renderQuests(City city, ItemStack[] contents) {
+        var quests = services.quests();
+        if (!quests.active(city)) {
+            CityConfig config = services.cities().config();
+            contents[22] = named(Material.BOOK, "<white>Quêtes de cité", List.of(
+                    Messages.item("<gray>Extension non acquise."),
+                    Messages.item("<gray>Prix : <gold><price></gold> <dark_gray>(solde de la cité)",
+                            Messages.p("price", Messages.coins(config.price(CityExtension.QUESTS)))),
+                    Messages.item("<yellow>À acheter par le propriétaire dans l'onglet Extensions.")));
+            return 1;
+        }
+        if (questHistory) {
+            return renderQuestHistory(city, contents);
+        }
+        var current = quests.manager().current(city.id());
+        if (current.isEmpty()) {
+            contents[QUEST_ITEM] = named(Material.BARRIER, "<gray>Aucune quête en cours",
+                    List.of(Messages.item("<gray>Aucune quête disponible pour le moment.")));
+        } else {
+            var quest = current.get();
+            long now = System.currentTimeMillis();
+            boolean done = quest.status() == fr.vanillaeconomy.city.quest.CityQuest.Status.COMPLETED;
+            List<Component> lore = new ArrayList<>();
+            lore.add(Messages.item("<gray>Difficulté : ").append(fr.vanillaeconomy.city.quest.CityQuestExtension.difficulty(quest)));
+            if (quest.hint() != null) {
+                lore.add(Messages.item("<gray><hint>", Messages.p("hint", quest.hint())));
+            }
+            lore.add(Component.empty());
+            lore.add(Messages.item((done ? "<green>" : "<aqua>") + "<bar> <white><progress>/<target>",
+                    Messages.p("bar", fr.vanillaeconomy.city.quest.QuestRules.bar(quest.progress(), quest.target(), 20)),
+                    Messages.p("progress", quest.progress()), Messages.p("target", quest.target())));
+            if (quest.resumed()) {
+                lore.add(Messages.item("<light_purple>Reprise : <white><p>/<t></white> déjà accumulés (passage n°<n>)",
+                        Messages.p("p", quest.startProgress()), Messages.p("t", quest.target()), Messages.p("n", quest.passage())));
+            }
+            lore.add(Messages.item(done ? "<green>✔ Terminée <gray>— prochaine quête dans <white><time>"
+                    : "<gray>Temps restant : <white><time>", Messages.p("time", Messages.duration(quest.endsAt() - now))));
+            lore.add(Messages.item("<gray>Durée : <white><d>", Messages.p("d",
+                    fr.vanillaeconomy.city.quest.CityQuestExtension.hours(quest.durationHours()))));
+            lore.add(Messages.item("<gray>Récompense : <gold><r></gold> <dark_gray>(solde de la cité)",
+                    Messages.p("r", Messages.coins(quest.reward()))));
+            ItemStack item = named(fr.vanillaeconomy.city.quest.CityQuestExtension.icon(quest), "<white><name>", lore,
+                    Messages.p("name", quest.name()));
+            if (done) {
+                ItemMeta meta = item.getItemMeta();
+                meta.setEnchantmentGlintOverride(true);
+                item.setItemMeta(meta);
+            }
+            contents[QUEST_ITEM] = item;
+            contents[QUEST_DEPOSIT] = named(done ? Material.GRAY_DYE : Material.HOPPER,
+                    done ? "<gray>Quête terminée" : "<green>Déposer", done ? List.of() : List.of(
+                            Messages.item("<gray>Dépose tous les items utiles"),
+                            Messages.item("<gray>de votre inventaire (jamais plus que"),
+                            Messages.item("<gray>ce qu'il reste à rassembler)."),
+                            Messages.item("<red>Les items déposés sont définitivement consommés."),
+                            Messages.item("<yellow>Clic : déposer")));
+            List<Component> ranking = new ArrayList<>();
+            try {
+                var top = quests.manager().ranking(quest);
+                for (int i = 0; i < top.size() && i < 10; i++) {
+                    ranking.add(Messages.item("<gray><rank>. <white><player></white> : <gold><amount>",
+                            Messages.p("rank", i + 1), Messages.p("player", CityManager.nameOf(top.get(i).player())),
+                            Messages.p("amount", top.get(i).amount())));
+                }
+            } catch (java.sql.SQLException e) {
+                ranking.add(Messages.item("<red>Classement indisponible"));
+            }
+            if (ranking.isEmpty()) {
+                ranking.add(Messages.item("<gray>Aucune contribution pour l'instant."));
+            }
+            contents[QUEST_RANKING] = named(Material.GOLDEN_HELMET, "<gold>Classement de la quête", ranking);
+        }
+        contents[QUEST_HISTORY] = named(Material.BOOKSHELF, "<aqua>Historique",
+                List.of(Messages.item("<gray>Quêtes réussies et expirées de la cité."), Messages.item("<yellow>Clic : afficher")));
+        return 1;
+    }
+
+    private int renderQuestHistory(City city, ItemStack[] contents) {
+        var manager = services.quests().manager();
+        try {
+            int size = manager.historySize(city.id());
+            int pages = Math.max(1, (size + QUEST_HISTORY_PER_PAGE - 1) / QUEST_HISTORY_PER_PAGE);
+            page = Math.min(page, pages - 1);
+            var entries = manager.history(city.id(), page, QUEST_HISTORY_PER_PAGE);
+            for (int i = 0; i < entries.size(); i++) {
+                var q = entries.get(i);
+                boolean ok = q.status() == fr.vanillaeconomy.city.quest.CityQuest.Status.COMPLETED;
+                contents[9 + i] = named(ok ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE,
+                        (ok ? "<green>✔ " : "<red>✘ ") + "<white><name>", List.of(
+                                Messages.item("<gray>Difficulté : ").append(fr.vanillaeconomy.city.quest.CityQuestExtension.difficulty(q)),
+                                Messages.item(ok ? "<green>Réussie" : "<red>Expirée"),
+                                Messages.item("<gray>Progression : <white><p>/<t>", Messages.p("p", q.progress()), Messages.p("t", q.target())),
+                                Messages.item("<gray>Le <white><date>", Messages.p("date",
+                                        fr.vanillaeconomy.city.quest.QuestCommands.date(q.finishedAt()))),
+                                Messages.item("<gray>Contributeurs : <white><top>", Messages.p("top",
+                                        fr.vanillaeconomy.city.quest.CityQuestExtension.top(manager.contributors(q), 3)))),
+                        Messages.p("name", q.name()));
+            }
+            var totals = manager.totals(city.id());
+            List<Component> lore = new ArrayList<>();
+            lore.add(Messages.item("<green>Réussies : <white><n>", Messages.p("n", totals.completed())));
+            lore.add(Messages.item("<red>Expirées : <white><n>", Messages.p("n", totals.expired())));
+            lore.add(Messages.item("<gray>Items donnés : <white><n>", Messages.p("n", totals.items())));
+            int rank = 0;
+            for (var e : totals.byPlayer().entrySet()) {
+                if (++rank > 8) {
+                    break;
+                }
+                lore.add(Messages.item("<gray><rank>. <white><player></white> : <gold><n>", Messages.p("rank", rank),
+                        Messages.p("player", CityManager.nameOf(e.getKey())), Messages.p("n", e.getValue())));
+            }
+            contents[QUEST_TOTALS] = named(Material.BOOK, "<aqua>Totaux de la cité", lore);
+            contents[QUEST_BACK] = named(Material.ARROW, "<white>Retour à la quête", List.of());
+            return pages;
+        } catch (java.sql.SQLException e) {
+            contents[22] = named(Material.BARRIER, "<red>Historique indisponible", List.of());
+            return 1;
+        }
+    }
+
+    private void questClick(City city, int slot) {
+        if (!services.quests().active(city)) {
+            return;
+        }
+        if (questHistory) {
+            if (slot == QUEST_BACK) {
+                questHistory = false;
+                page = 0;
+                render();
+            }
+            return;
+        }
+        if (slot == QUEST_HISTORY) {
+            questHistory = true;
+            page = 0;
+            render();
+        } else if (slot == QUEST_DEPOSIT) {
+            // membership, extension and quest state checked again by the service
+            try {
+                var result = services.deposits().deposit(viewer, city, null);
+                services.staffLog().action(viewer, "/cityboard " + city.name(), result.accepted() + " items déposés pour « "
+                        + StaffLog.md(result.quest().name()) + " » (" + result.quest().progress() + "/"
+                        + result.quest().target() + ")" + (result.completed() ? " : quête réussie" : ""));
+            } catch (CityException e) {
+                services.msg().send(viewer, e.key(), e.vars());
+            }
+            refreshOpenBoards();
+        }
     }
 
     private ItemStack infoItem(City city) {
@@ -428,10 +602,12 @@ public final class CityBoardGUI implements InventoryHolder {
         }
     }
 
-    private static ItemStack named(Material mat, String name, List<Component> lore) {
+    /** {@code vars}: placeholders of the name (texts such as a quest name are never parsed). */
+    private static ItemStack named(Material mat, String name, List<Component> lore,
+                                   net.kyori.adventure.text.minimessage.tag.resolver.TagResolver... vars) {
         ItemStack item = ItemStack.of(mat);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(Messages.item(name));
+        meta.displayName(Messages.item(name, vars));
         meta.lore(lore);
         item.setItemMeta(meta);
         return item;
@@ -464,6 +640,10 @@ public final class CityBoardGUI implements InventoryHolder {
             case TAB_TIERS -> switchTab(Tab.TIERS);
             case TAB_TREASURY -> switchTab(Tab.TREASURY);
             case TAB_EXTENSIONS -> switchTab(Tab.EXTENSIONS);
+            case TAB_QUESTS -> {
+                questHistory = false;
+                switchTab(Tab.QUESTS);
+            }
             case PREV -> {
                 page = Math.max(0, page - 1);
                 render();
@@ -483,6 +663,8 @@ public final class CityBoardGUI implements InventoryHolder {
                     skinCheck(city);
                 } else if (tab == Tab.EXTENSIONS && checkSlots.get(slot) == CityExtension.BEACON) {
                     beaconCheck(city);
+                } else if (tab == Tab.QUESTS) {
+                    questClick(city, slot);
                 }
             }
         }

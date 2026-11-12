@@ -933,6 +933,13 @@ public final class MarketManager {
         return states.get(material);
     }
 
+    /** Material names of the market pool (items.yml). */
+    public Set<String> itemNames() {
+        Set<String> names = new HashSet<>();
+        config.items().keySet().forEach(m -> names.add(m.name()));
+        return names;
+    }
+
     public MarketItem item(Material material) {
         return config.items().get(material);
     }

@@ -70,6 +70,17 @@ public final class CityManager {
         this.audit = audit;
     }
 
+    /**
+     * A quest reward was credited in the database: the city's balance in memory follows. It
+     * is not a contribution (not in the treasury ranking, not refunded at dissolution).
+     */
+    public void applyQuestReward(int cityId, long amount) {
+        City city = byId.get(cityId);
+        if (city != null) {
+            city.setBalance(city.balance() + amount);
+        }
+    }
+
     /** Staff journal entry (#logs-serveur) for a city event. */
     void audit(String title, String details) {
         audit.accept(title, details);
@@ -498,7 +509,9 @@ public final class CityManager {
     }
 
     public Map<UUID, Long> delete(City city) throws CityException {
-        Map<UUID, Long> refunds = CityRules.refunds(city.contributionTotals(), city.balance(), city.owner());
+        Map<UUID, Long> totals = city.contributionTotals();
+        Map<UUID, Long> refunds = CityRules.refunds(totals,
+                CityRules.refundable(city.balance(), totals, config.refundQuestRewards), city.owner());
         write("suppression de " + city.name(), c -> {
             for (var e : refunds.entrySet()) {
                 CurrencyManager.credit(c, e.getKey(), e.getValue());

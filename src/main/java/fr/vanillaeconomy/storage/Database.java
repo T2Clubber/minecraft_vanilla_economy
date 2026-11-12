@@ -127,6 +127,64 @@ public final class Database implements AutoCloseable {
                         discount_percent INTEGER NOT NULL CHECK (discount_percent BETWEEN 1 AND 99),
                         PRIMARY KEY (city_id, date, slot_index)
                     )""");
+            // City quests: one row per passage of a quest (frozen values), contributions per
+            // player, progress kept between passages of the same quest, rewards journal.
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_quest (
+                        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                        city_id          INTEGER NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+                        quest_id         TEXT NOT NULL,
+                        attempt_id       INTEGER,
+                        passage_number   INTEGER NOT NULL,
+                        status           TEXT NOT NULL,
+                        target           INTEGER NOT NULL,
+                        progress         INTEGER NOT NULL,
+                        start_progress   INTEGER NOT NULL DEFAULT 0,
+                        name             TEXT NOT NULL,
+                        materials        TEXT NOT NULL,
+                        tag              TEXT,
+                        hint             TEXT,
+                        signature        TEXT NOT NULL,
+                        reward           INTEGER NOT NULL,
+                        difficulty_id    TEXT NOT NULL,
+                        difficulty_name  TEXT NOT NULL,
+                        difficulty_color TEXT NOT NULL,
+                        duration_hours   INTEGER NOT NULL,
+                        starts_at        INTEGER NOT NULL,
+                        ends_at          INTEGER NOT NULL,
+                        completed_at     INTEGER,
+                        finished_at      INTEGER,
+                        reward_paid_at   INTEGER
+                    )""");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_city_quest_city ON city_quest(city_id, finished_at)");
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_quest_contribution (
+                        city_quest_id INTEGER NOT NULL REFERENCES city_quest(id) ON DELETE CASCADE,
+                        player_uuid   TEXT NOT NULL,
+                        amount        INTEGER NOT NULL CHECK (amount > 0),
+                        PRIMARY KEY (city_quest_id, player_uuid)
+                    )""");
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_quest_progress (
+                        city_id    INTEGER NOT NULL REFERENCES city(id) ON DELETE CASCADE,
+                        quest_id   TEXT NOT NULL,
+                        signature  TEXT NOT NULL,
+                        progress   INTEGER NOT NULL,
+                        attempt_id INTEGER NOT NULL,
+                        passages   INTEGER NOT NULL DEFAULT 1,
+                        updated_at INTEGER NOT NULL,
+                        PRIMARY KEY (city_id, quest_id)
+                    )""");
+            // Kept after a dissolution (audit of the coins created by quests).
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS city_quest_reward (
+                        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                        city_id       INTEGER NOT NULL,
+                        city_quest_id INTEGER NOT NULL,
+                        quest_id      TEXT NOT NULL,
+                        amount        INTEGER NOT NULL,
+                        paid_at       INTEGER NOT NULL
+                    )""");
             // Cities founded before the height of their centre was recorded.
             if (!hasColumn("city", "center_y")) {
                 st.execute("ALTER TABLE city ADD COLUMN center_y INTEGER");

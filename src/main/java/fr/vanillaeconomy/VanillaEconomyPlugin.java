@@ -18,6 +18,10 @@ import fr.vanillaeconomy.city.CityRanking;
 import fr.vanillaeconomy.city.CityTeleport;
 import fr.vanillaeconomy.city.ExtensionManager;
 import fr.vanillaeconomy.city.NitwitPresenceChecker;
+import fr.vanillaeconomy.city.quest.CityQuestExtension;
+import fr.vanillaeconomy.city.quest.CityQuestScheduler;
+import fr.vanillaeconomy.city.quest.QuestCommands;
+import fr.vanillaeconomy.city.quest.QuestDepositService;
 import fr.vanillaeconomy.command.EcoCommand;
 import fr.vanillaeconomy.command.MarketAdminCommand;
 import fr.vanillaeconomy.command.MoneyCommand;
@@ -61,6 +65,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
     private CityRanking ranking;
     private CityPromotionScheduler cityPromotions;
     private BeaconEffectTask beaconTask;
+    private CityQuestScheduler questScheduler;
     /** Promotions of the cities with Promotion en folie, set once the cities are loaded. */
     private LocalPromotions localPromotions = LocalPromotions.NONE;
 
@@ -134,14 +139,21 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             ExtensionManager extensions = new ExtensionManager(this, database, cities, new NitwitPresenceChecker(this),
                     cityMessages, beaconScanner, beaconCache);
             extensions.load();
+            // City quests: city_quests.yml, deposits, commands
+            CityQuestExtension quests = new CityQuestExtension(this, database, cities, extensions, cityMessages, staffLog,
+                    market.itemNames(), config.getString("currency.material"));
+            quests.reload();
+            extensions.onPurchase(quests::onPurchase);
+            QuestDepositService questDeposits = new QuestDepositService(this, quests);
             CityNotifier notifier = new CityNotifier(this, database, cityMessages);
             notifier.load();
             CityCommand cityCommand = new CityCommand(cities, cityMessages, notifier, staffLog,
-                    new CityTeleport(this, cities, currency, cityMessages, staffLog));
+                    new CityTeleport(this, cities, currency, cityMessages, staffLog), new QuestCommands(quests, questDeposits));
             register("city", cityCommand);
             cities.setAudit(staffLog::city);
             CityBoardGUI.Handler board = new CityBoardGUI.Handler(
-                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier, staffLog, extensions));
+                    new CityBoardGUI.Services(this, cities, currency, cityMessages, notifier, staffLog, extensions,
+                            quests, questDeposits));
             register("cityboard", board);
             borders = new BorderManager(this, cities, cityMessages, staffLog);
             register("border", borders);
@@ -172,7 +184,10 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             beaconTask = new BeaconEffectTask(this, cities, extensions, beaconCache, presence);
             beaconTask.start();
             register("cityadmin", new CityAdminCommand(cities, cityMessages, cityCommand, notifier, staffLog,
-                    cityPromotions));
+                    cityPromotions, quests));
+            questScheduler = new CityQuestScheduler(this, quests);
+            pm.registerEvents(questScheduler, this);
+            questScheduler.start();
 
             // 6. Death count in the player list (TAB)
             DeathCounter deaths = null;
@@ -211,6 +226,9 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
         }
         if (beaconTask != null) {
             beaconTask.stop();
+        }
+        if (questScheduler != null) {
+            questScheduler.stop();
         }
         if (staffLog != null) {
             staffLog.serverStopped();

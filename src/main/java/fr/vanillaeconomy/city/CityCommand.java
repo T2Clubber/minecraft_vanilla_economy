@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-/** /city create|info|add|kick|leave|coowner|contribute|upgrade|disband|rename|tp. */
+/** /city create|info|add|kick|leave|coowner|contribute|upgrade|disband|rename|tp|quest. */
 public final class CityCommand implements TabExecutor {
 
     private enum Pending { DISBAND, UPGRADE }
@@ -30,22 +30,24 @@ public final class CityCommand implements TabExecutor {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "create", "info", "add", "kick", "leave", "coowner", "contribute", "upgrade", "disband", "rename", "tp",
-            "help");
+            "quest", "help");
 
     private final CityManager cities;
     private final MessageConfig msg;
     private final CityNotifier notifier;
     private final StaffLog staffLog;
     private final CityTeleport teleport;
+    private final fr.vanillaeconomy.city.quest.QuestCommands quests;
     private final Map<UUID, Confirmation> confirmations = new HashMap<>();
 
     public CityCommand(CityManager cities, MessageConfig msg, CityNotifier notifier, StaffLog staffLog,
-                       CityTeleport teleport) {
+                       CityTeleport teleport, fr.vanillaeconomy.city.quest.QuestCommands quests) {
         this.cities = cities;
         this.msg = msg;
         this.notifier = notifier;
         this.staffLog = staffLog;
         this.teleport = teleport;
+        this.quests = quests;
     }
 
     @Override
@@ -69,6 +71,7 @@ public final class CityCommand implements TabExecutor {
                 case "upgrade" -> upgrade(player, args);
                 case "disband" -> disband(player, args);
                 case "rename" -> rename(player, args);
+                case "quest" -> quests.handle(player, args);
                 case "tp" -> {
                     // asynchronous: logged by CityTeleport once the player has arrived
                     if (args.length != 2) {
@@ -326,6 +329,16 @@ public final class CityCommand implements TabExecutor {
                         cities.citiesOf(me).stream()
                                 .filter(c -> cities.config().enabled(CityExtension.TELEPORT) && c.hasExtension(CityExtension.TELEPORT))
                                 .forEach(c -> options.add(c.name()));
+                    }
+                }
+                case "quest" -> {
+                    if (args.length == 2) {
+                        options.addAll(List.of("deposit", "history"));
+                        cities.citiesOf(me).forEach(c -> options.add(c.name()));
+                    } else if (args.length == 3 && (args[1].equalsIgnoreCase("deposit") || args[1].equalsIgnoreCase("history"))) {
+                        cities.citiesOf(me).forEach(c -> options.add(c.name()));
+                    } else if (args.length == 4 && args[1].equalsIgnoreCase("deposit")) {
+                        options.add("all");
                     }
                 }
                 case "rename" -> {

@@ -59,6 +59,9 @@ public final class CityConfig {
     public final int beaconEffectDurationTicks;
     public final boolean beaconMembersOnly;
     public final int rankingSize;
+    /** City quests options (section quests) and disband.refund-quest-rewards. */
+    public final fr.vanillaeconomy.city.quest.QuestOptions questOptions;
+    public final boolean refundQuestRewards;
 
     public CityConfig(YamlConfiguration yaml, Logger logger) {
         creationCost = Math.max(0, yaml.getLong("creation_cost", 2500));
@@ -137,6 +140,13 @@ public final class CityConfig {
         beaconEffectDurationTicks = duration;
         beaconMembersOnly = yaml.getBoolean(beacon + "members_only", false);
         rankingSize = Math.max(1, Math.min(15, yaml.getInt("ranking.size", 10)));
+        questOptions = new fr.vanillaeconomy.city.quest.QuestOptions(
+                yaml.getBoolean("quests.allow-market-items", false),
+                yaml.getBoolean("quests.repeat-completed", true),
+                yaml.getBoolean("quests.draw-next-on-completion", false),
+                yaml.getInt("quests.history-retention-days", -1),
+                Math.max(0, yaml.getLong("quests.reminder-hours-before", 6)));
+        refundQuestRewards = yaml.getBoolean("disband.refund-quest-rewards", false);
     }
 
     /** Disabled by the administration: not for sale and not usable, even if already bought. */

@@ -72,6 +72,9 @@ permissions:
   cities.admin:
     description: Supprimer / modifier n'importe quelle cité.
     default: op
+  cities.admin.quests:
+    description: Recharger city_quests.yml (/cityadmin quests reload).
+    default: op
   cities.admin.bypass:
     description: Ignorer la protection des territoires.
     default: op

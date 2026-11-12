@@ -25,6 +25,19 @@ public final class CityRules {
      * contributions (largest-remainder rounding, so the shares add up to the balance
      * exactly). Without any contribution, everything goes to {@code fallback}.
      */
+    /**
+     * Part of the balance refunded at dissolution: capped at the total of the contributions,
+     * so that quest rewards cannot be taken out of a city (the rest is destroyed), unless
+     * disband.refund-quest-rewards is true.
+     */
+    public static long refundable(long balance, Map<UUID, Long> contributions, boolean refundQuestRewards) {
+        if (refundQuestRewards) {
+            return balance;
+        }
+        long total = contributions.values().stream().filter(v -> v > 0).mapToLong(Long::longValue).sum();
+        return Math.max(0, Math.min(balance, total));
+    }
+
     public static Map<UUID, Long> refunds(Map<UUID, Long> contributions, long balance, UUID fallback) {
         Map<UUID, Long> result = new LinkedHashMap<>();
         if (balance <= 0) {

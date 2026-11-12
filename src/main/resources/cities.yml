@@ -65,6 +65,12 @@ extensions:
       warning_minutes_before: 120
       start: true
       join_reminder: true
+  quests:
+    # « Quêtes de cité » : une quête de collecte d'items rares à la fois,
+    # récompensée sur le solde de la cité (voir city_quests.yml).
+    enabled: true
+    min_tier: 1
+    price: 1000
   beacon:
     # « Beacon » : les effets des beacons de la cité s'appliquent à tout
     # joueur présent dans le territoire, quelle que soit sa distance aux
@@ -87,6 +93,32 @@ extensions:
     effect_duration_ticks: 200
     # true : seuls les membres de la cité reçoivent les effets.
     members_only: false
+
+# Quêtes de cité (extension "quests" ci-dessus) : les quêtes et leurs
+# difficultés sont dans city_quests.yml (rechargeable avec
+# /cityadmin quests reload). Ces options demandent un redémarrage.
+quests:
+  # true : une quête peut demander un item du marché des idiots (items.yml),
+  # ce qui permet de l'acheter aux idiots : déconseillé.
+  allow-market-items: false
+  # true : une quête réussie peut être tirée de nouveau (elle repart de 0).
+  # false : elle est écartée tant qu'il reste d'autres quêtes, puis la liste
+  # repart à zéro quand toutes ont été réussies.
+  repeat-completed: true
+  # true : la quête suivante est tirée dès qu'une quête est réussie. false :
+  # la quête réussie reste affichée jusqu'à son échéance.
+  draw-next-on-completion: false
+  # Durée de conservation de l'historique, en jours (-1 = illimitée).
+  history-retention-days: -1
+  # Rappel aux membres avant l'échéance d'une quête non terminée (heures,
+  # plafonné à la moitié de la durée de la quête).
+  reminder-hours-before: 6
+
+disband:
+  # false : à la dissolution, le remboursement (au prorata des contributions)
+  # est plafonné au total des contributions ; le reste du solde, qui vient
+  # des récompenses de quêtes, est détruit. true : tout le solde est remboursé.
+  refund-quest-rewards: false
 
 # Classement des cités (/classement on|off, à droite de l'écran) : palier,
 # puis nombre d'extensions, puis solde de la cité.

@@ -62,7 +62,10 @@ public final class MessageConfig {
         for (int i = 0; i + 1 < vars.length; i += 2) {
             String name = String.valueOf(vars[i]);
             raw = raw.replace("{" + name + "}", "<" + name + ">");
-            resolvers.add(Placeholder.unparsed(name, String.valueOf(vars[i + 1])));
+            Object value = vars[i + 1];
+            // A Component keeps its own style (e.g. a difficulty in its colour); anything else is plain text.
+            resolvers.add(value instanceof net.kyori.adventure.text.ComponentLike component
+                    ? Placeholder.component(name, component) : Placeholder.unparsed(name, String.valueOf(value)));
         }
         return MM.deserialize(raw, TagResolver.resolver(resolvers));
     }

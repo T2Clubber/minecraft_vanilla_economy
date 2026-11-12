@@ -21,7 +21,9 @@ public enum CityExtension {
      * The effects of the city's beacons apply to every player inside the territory, whatever
      * his distance to them. Requires 5 beacons with a full 4-level pyramid when bought.
      */
-    BEACON("Beacon", 4, 10_000);
+    BEACON("Beacon", 4, 10_000),
+    /** One rare-items collection quest at a time, rewarded on the city's treasury. */
+    QUESTS("Quêtes de cité", 1, 1_000);
 
     private final String label;
     private final int defaultMinTier;
