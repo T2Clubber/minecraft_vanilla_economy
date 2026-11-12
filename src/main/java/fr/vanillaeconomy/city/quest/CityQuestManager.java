@@ -2,7 +2,6 @@ package fr.vanillaeconomy.city.quest;
 
 import fr.vanillaeconomy.city.quest.CityQuest.Status;
 import fr.vanillaeconomy.city.quest.QuestProgressRepository.Contributor;
-import fr.vanillaeconomy.city.quest.QuestProgressRepository.Totals;
 import fr.vanillaeconomy.city.quest.QuestRules.Resume;
 import fr.vanillaeconomy.city.quest.QuestRules.SavedProgress;
 import fr.vanillaeconomy.storage.Database;
@@ -266,8 +265,18 @@ public final class CityQuestManager {
         return repo.contributors(db.connection(), quest.id());
     }
 
-    public Totals totals(int cityId) throws SQLException {
-        return repo.totals(db.connection(), cityId);
+    /**
+     * Quests of the current list completed at least once by the city ("3/32"): drawable
+     * quests only, so a quest disabled or removed from city_quests.yml counts for neither.
+     */
+    public Completion completion(int cityId) throws SQLException {
+        Set<String> done = repo.completedQuestIds(db.connection(), cityId);
+        List<QuestDefinition> drawable = catalog.drawable();
+        int completed = (int) drawable.stream().filter(q -> done.contains(q.id())).count();
+        return new Completion(completed, drawable.size());
+    }
+
+    public record Completion(int completed, int total) {
     }
 
     /** Daily purge of the archived quests older than history-retention-days (-1 = never). */

@@ -202,10 +202,9 @@ cities:
   quest_hint: "<gray>{hint}"
   quest_ranking_line: "<gray>{rank}. <white>{player}</white> : <gold>{amount}</gold>"
   quest_history_header: "<gold>Historique des quêtes de <aqua>{city}</aqua> <gray>(page {page}/{pages})"
-  quest_history_empty: "<gray>Aucune quête terminée ou expirée pour l'instant."
-  quest_history_completed: "<green>✔</green> <white>{name}</white> <gray>[{difficulty}<gray>] réussie {progress}/{target} — {date} — {top}"
-  quest_history_expired: "<red>✘</red> <white>{name}</white> <gray>[{difficulty}<gray>] expirée {progress}/{target} — {date} — {top}"
-  quest_history_totals: "<gray>Totaux : <green>{completed} réussie(s)</green>, <red>{expired} expirée(s)</red>, <white>{items}</white> items donnés. Meilleurs contributeurs :"
+  quest_history_empty: "<gray>Aucune quête réussie pour l'instant."
+  quest_history_completed: "<green>✔</green> <white>{name}</white> <gray>[{difficulty}<gray>] {target} items — {date} — {top}"
+  quest_history_totals: "<gray>Quêtes réalisées : <green>{completed}</green>/<white>{total}</white>"
   # Annonces dans le chat aux membres en ligne (sans le préfixe [Cité]).
   quest_new: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <white>Nouvelle quête : <yellow>{name}</yellow> — {amount} à rassembler, difficulté {difficulty}<white>, récompense <gold>{reward}</gold>, durée {duration}."
   quest_reminder: "<gold>✦ Quête de cité</gold> <gray>[<aqua>{city}</aqua>]</gray> <white>Plus que <yellow>{remaining}</yellow> pour terminer « {name} » : <white>{progress}/{target}</white>."

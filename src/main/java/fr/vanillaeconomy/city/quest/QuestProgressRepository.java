@@ -11,9 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -26,10 +24,6 @@ public final class QuestProgressRepository {
 
     /** A player's total in a ranking. */
     public record Contributor(UUID player, long amount) {
-    }
-
-    /** Totals of a city's history. */
-    public record Totals(int completed, int expired, long items, Map<UUID, Long> byPlayer) {
     }
 
     private static final String COLUMNS = "id, city_id, quest_id, attempt_id, passage_number, status, target, progress, "
@@ -298,10 +292,10 @@ public final class QuestProgressRepository {
     // History
     // ------------------------------------------------------------------
 
-    /** Finished instances (completed or expired with at least one contribution), latest first. */
+    /** Completed instances, the quest still running included as soon as it is completed, latest first. */
     public List<CityQuest> history(Connection c, int cityId, int offset, int limit) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("SELECT " + COLUMNS
-                + " FROM city_quest WHERE city_id = ? AND finished_at IS NOT NULL ORDER BY finished_at DESC, id DESC LIMIT ? OFFSET ?")) {
+                + " FROM city_quest WHERE city_id = ? AND status = 'COMPLETED' ORDER BY completed_at DESC, id DESC LIMIT ? OFFSET ?")) {
             ps.setInt(1, cityId);
             ps.setInt(2, limit);
             ps.setInt(3, offset);
@@ -317,7 +311,7 @@ public final class QuestProgressRepository {
 
     public int historySize(Connection c, int cityId) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(
-                "SELECT COUNT(*) FROM city_quest WHERE city_id = ? AND finished_at IS NOT NULL")) {
+                "SELECT COUNT(*) FROM city_quest WHERE city_id = ? AND status = 'COMPLETED'")) {
             ps.setInt(1, cityId);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -326,31 +320,19 @@ public final class QuestProgressRepository {
         }
     }
 
-    public Totals totals(Connection c, int cityId) throws SQLException {
-        int completed;
-        int expired;
-        try (PreparedStatement ps = c.prepareStatement("""
-                SELECT COALESCE(SUM(status = 'COMPLETED'), 0), COALESCE(SUM(status = 'EXPIRED'), 0)
-                FROM city_quest WHERE city_id = ? AND finished_at IS NOT NULL""")) {
+    /** Ids of the quests the city completed at least once (still in the history). */
+    public Set<String> completedQuestIds(Connection c, int cityId) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(
+                "SELECT DISTINCT quest_id FROM city_quest WHERE city_id = ? AND status = 'COMPLETED'")) {
             ps.setInt(1, cityId);
+            Set<String> ids = new HashSet<>();
             try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                completed = rs.getInt(1);
-                expired = rs.getInt(2);
+                while (rs.next()) {
+                    ids.add(rs.getString(1));
+                }
             }
+            return ids;
         }
-        Map<UUID, Long> byPlayer = new LinkedHashMap<>();
-        long items = 0;
-        try (PreparedStatement ps = c.prepareStatement("""
-                SELECT k.player_uuid, SUM(k.amount) FROM city_quest_contribution k JOIN city_quest q ON q.id = k.city_quest_id
-                WHERE q.city_id = ? GROUP BY k.player_uuid ORDER BY 2 DESC, 1""")) {
-            ps.setInt(1, cityId);
-            for (Contributor contributor : contributors(ps)) {
-                byPlayer.put(contributor.player(), contributor.amount());
-                items += contributor.amount();
-            }
-        }
-        return new Totals(completed, expired, items, byPlayer);
     }
 
     /** history-retention-days: archived instances finished before {@code before} are deleted. */

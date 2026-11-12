@@ -4,7 +4,6 @@ import fr.vanillaeconomy.city.City;
 import fr.vanillaeconomy.city.CityException;
 import fr.vanillaeconomy.city.CityManager;
 import fr.vanillaeconomy.city.quest.QuestProgressRepository.Contributor;
-import fr.vanillaeconomy.city.quest.QuestProgressRepository.Totals;
 import fr.vanillaeconomy.discord.StaffLog;
 import fr.vanillaeconomy.util.MessageConfig;
 import fr.vanillaeconomy.util.ServerTime;
@@ -15,7 +14,6 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * /city quest [cité] | deposit &lt;cité&gt; [quantité|all] | history [cité] [page]. Returns the
@@ -127,22 +125,13 @@ public final class QuestCommands {
                 return;
             }
             for (CityQuest q : quests.manager().history(city.id(), shown - 1, HISTORY_PAGE)) {
-                player.sendMessage(msg.get(q.status() == CityQuest.Status.COMPLETED ? "quest_history_completed" : "quest_history_expired",
-                        "name", q.name(), "difficulty", CityQuestExtension.difficulty(q), "progress", q.progress(),
-                        "target", q.target(), "date", date(q.finishedAt()),
-                        "top", CityQuestExtension.top(quests.manager().contributors(q), 3)));
+                player.sendMessage(msg.get("quest_history_completed", "name", q.name(),
+                        "difficulty", CityQuestExtension.difficulty(q), "target", q.target(), "date", date(q.completedAt()),
+                        "top", CityQuestExtension.top(quests.manager().ranking(q), 5)));
             }
-            Totals totals = quests.manager().totals(city.id());
-            player.sendMessage(msg.get("quest_history_totals", "completed", totals.completed(), "expired", totals.expired(),
-                    "items", totals.items()));
-            int rank = 0;
-            for (Map.Entry<java.util.UUID, Long> e : totals.byPlayer().entrySet()) {
-                if (++rank > 5) {
-                    break;
-                }
-                player.sendMessage(msg.get("quest_ranking_line", "rank", rank, "player", CityManager.nameOf(e.getKey()),
-                        "amount", e.getValue()));
-            }
+            CityQuestManager.Completion completion = quests.manager().completion(city.id());
+            player.sendMessage(msg.get("quest_history_totals", "completed", completion.completed(),
+                    "total", completion.total()));
         } catch (SQLException e) {
             throw new CityException("internal_error");
         }

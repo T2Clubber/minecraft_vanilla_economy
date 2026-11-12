@@ -3,7 +3,7 @@
 #
 # Chaque cité qui possède l'extension a UNE quête à la fois : une
 # collecte d'items rares. Les membres déposent les items (/city quest
-# deposit ou l'onglet Quêtes de /cityboard) ; les items déposés sont
+# deposit ou le livre de l'extension dans /cityboard) ; les items déposés sont
 # définitivement consommés. Objectif atteint avant l'échéance : la
 # récompense est versée sur le solde de la cité.
 #

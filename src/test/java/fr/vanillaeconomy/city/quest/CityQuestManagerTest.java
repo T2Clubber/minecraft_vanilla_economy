@@ -333,7 +333,37 @@ class CityQuestManagerTest {
     // ------------------------------------------------------------------
 
     @Test
-    void historyTotalsAndRetention() throws Exception {
+    void historyListsTheCompletedQuestsWithTheirContributors() throws Exception {
+        manager = manager(new QuestOptions(false, true, false, 30, 6));
+        manager.setCatalog(catalog(QuestRulesTest.quest("sponge", "EASY", 10, 1, "SPONGE"),
+                QuestRulesTest.quest("foot", "EASY", 10, 1, "RABBIT_FOOT"),
+                QuestRulesTest.quest("ink", "EASY", 10, 1, "GLOW_INK_SAC")));
+        manager.start(paris);
+        String first = current(paris).questId();
+        manager.deposit(paris, BOB, 4);
+        manager.deposit(paris, ALICE, 6);                        // completed
+        assertEquals(1, manager.historySize(paris), "shown as soon as it is completed, before its end");
+        CityQuest done = manager.history(paris, 0, 10).getFirst();
+        assertEquals(first, done.questId());
+        assertEquals(List.of(new Contributor(ALICE, 6), new Contributor(BOB, 4)), manager.ranking(done));
+        assertEquals(new CityQuestManager.Completion(1, 3), manager.completion(paris));
+
+        clock.set(current(paris).endsAt());
+        manager.tick(List.of(paris), false);
+        manager.deposit(paris, BOB, 3);                          // expired with a contribution
+        clock.set(current(paris).endsAt());
+        manager.tick(List.of(paris), false);
+        assertEquals(1, manager.historySize(paris), "expired quests are not in the history");
+        assertEquals(Status.COMPLETED, manager.history(paris, 0, 10).getFirst().status());
+        assertEquals(new CityQuestManager.Completion(1, 3), manager.completion(paris));
+        assertEquals(0, manager.historySize(lyon));
+
+        manager.setCatalog(catalog(QuestRulesTest.quest("other", "EASY", 10, 1, "SPONGE")));
+        assertEquals(new CityQuestManager.Completion(0, 1), manager.completion(paris), "quests of the current list only");
+    }
+
+    @Test
+    void historyRetention() throws Exception {
         manager = manager(new QuestOptions(false, true, false, 30, 6));
         manager.start(paris);
         manager.deposit(paris, ALICE, 10);                       // completed
@@ -342,16 +372,10 @@ class CityQuestManagerTest {
         manager.deposit(paris, BOB, 3);                          // expired with a contribution
         clock.set(current(paris).endsAt());
         manager.tick(List.of(paris), false);
-        assertEquals(2, manager.historySize(paris));
-        var totals = manager.totals(paris);
-        assertEquals(1, totals.completed());
-        assertEquals(1, totals.expired());
-        assertEquals(13, totals.items());
-        assertEquals(Map.of(ALICE, 10L, BOB, 3L), totals.byPlayer());
-        assertEquals(Status.EXPIRED, manager.history(paris, 0, 10).getFirst().status(), "latest first");
+        assertEquals(1, manager.historySize(paris));
         assertEquals(0, manager.purge(), "younger than 30 days");
         clock.addAndGet(31 * 24 * H);
-        assertEquals(2, manager.purge());
+        assertEquals(2, manager.purge(), "the completed and the expired instance");
         assertEquals(0, manager.historySize(paris));
     }
 

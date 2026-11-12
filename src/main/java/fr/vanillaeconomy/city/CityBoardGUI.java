@@ -44,29 +44,33 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * /cityboard &lt;cité&gt;: 54-slot board for members, with four tabs (MEMBRES, PALIERS,
- * TRÉSORERIE, EXTENSIONS). Every click is cancelled and its rights are checked again on the server
+ * TRÉSORERIE, EXTENSIONS); the quests page opens from the Quêtes de cité extension. Every click is cancelled and its rights are checked again on the server
  * (role read from the live city), skins are loaded off the main thread.
  */
 public final class CityBoardGUI implements InventoryHolder {
 
+    /** QUESTS is not a tab of its own: the page opened by the Quêtes de cité extension. */
     public enum Tab { MEMBERS, TIERS, TREASURY, EXTENSIONS, QUESTS }
 
     private static final int SIZE = 54;
     /** Tabs on the first row, one slot out of two. */
-    private static final int TAB_MEMBERS = 0;
-    private static final int TAB_TIERS = 2;
-    private static final int TAB_TREASURY = 4;
-    private static final int TAB_EXTENSIONS = 6;
-    private static final int TAB_QUESTS = 8;
-    /** Quests tab: the quest, then the deposit, ranking and history buttons. */
+    private static final int TAB_MEMBERS = 1;
+    private static final int TAB_TIERS = 3;
+    private static final int TAB_TREASURY = 5;
+    private static final int TAB_EXTENSIONS = 7;
+    /** Quests page: the quest, then the deposit, ranking and history buttons. */
     private static final int QUEST_ITEM = 13;
     private static final int QUEST_DEPOSIT = 29;
     private static final int QUEST_RANKING = 31;
     private static final int QUEST_HISTORY = 33;
     private static final int QUEST_HISTORY_PER_PAGE = 27;   // slots 9..35
+    private static final int QUEST_CONTRIBUTORS_SHOWN = 15;
     private static final int QUEST_TOTALS = 47;
     private static final int QUEST_BACK = 51;
-    /** Extensions on row 3, two slots apart and centred; the skin check button below its extension. */
+    /**
+     * Extensions on row 3, two slots apart and centred, in the order they unlock (tier
+     * required); the skin check button below its extension.
+     */
     private static final int EXTENSIONS_ROW_CENTRE = 22;
     private static final int PREV = 45;
     private static final int INFO = 49;
@@ -160,7 +164,6 @@ public final class CityBoardGUI implements InventoryHolder {
         contents[TAB_TIERS] = tabItem(Material.FILLED_MAP, "<yellow>Paliers", Tab.TIERS);
         contents[TAB_TREASURY] = tabItem(Material.GOLD_INGOT, "<yellow>Trésorerie", Tab.TREASURY);
         contents[TAB_EXTENSIONS] = tabItem(Material.ENDER_PEARL, "<yellow>Extensions", Tab.EXTENSIONS);
-        contents[TAB_QUESTS] = tabItem(Material.WRITABLE_BOOK, "<yellow>Quêtes", Tab.QUESTS);
         contents[INFO] = infoItem(city);
         int pages = switch (tab) {
             case MEMBERS -> renderMembers(city, contents);
@@ -281,10 +284,11 @@ public final class CityBoardGUI implements InventoryHolder {
     private int renderExtensions(City city, ItemStack[] contents) {
         CityRole me = city.roleOf(viewer.getUniqueId());
         CityConfig config = services.cities().config();
-        CityExtension[] all = CityExtension.values();
-        int first = EXTENSIONS_ROW_CENTRE - (all.length - 1);
-        for (int i = 0; i < all.length; i++) {
-            CityExtension ext = all[i];
+        List<CityExtension> all = java.util.Arrays.stream(CityExtension.values())
+                .sorted(java.util.Comparator.comparingInt(config::minTier)).toList();   // stable: enum order on a tie
+        int first = EXTENSIONS_ROW_CENTRE - (all.size() - 1);
+        for (int i = 0; i < all.size(); i++) {
+            CityExtension ext = all.get(i);
             long price = config.price(ext);
             boolean owned = city.hasExtension(ext);
             boolean enabled = config.enabled(ext);
@@ -295,6 +299,9 @@ public final class CityBoardGUI implements InventoryHolder {
                 lore.add(Messages.item("<red>Désactivée par l'administration"));
             } else if (owned) {
                 lore.add(Messages.item("<green>✔ Acquise"));
+                if (ext == CityExtension.QUESTS) {
+                    lore.add(Messages.item("<yellow>Clic : ouvrir les quêtes"));
+                }
             } else {
                 lore.add(Messages.item("<gray>Prix : <gold><price></gold> <dark_gray>(solde de la cité)",
                         Messages.p("price", Messages.coins(price))));
@@ -370,7 +377,8 @@ public final class CityBoardGUI implements InventoryHolder {
             case QUESTS -> List.of(
                     Messages.item("<gray>Une quête à la fois : rassembler des items rares"),
                     Messages.item("<gray>avant l'échéance. Récompense versée au solde"),
-                    Messages.item("<gray>de la cité. Onglet <white>Quêtes</white> et <white>/city quest</white>."));
+                    Messages.item("<gray>de la cité. Clic sur ce livre une fois acquise,"),
+                    Messages.item("<gray>ou <white>/city quest</white>."));
             case PROMO_FRENZY -> List.of(
                     Messages.item("<gray>Les idiots marchands de la cité font <white><n> promos</white> de plus",
                             Messages.p("n", config.frenzyPromosPerDay)),
@@ -381,23 +389,20 @@ public final class CityBoardGUI implements InventoryHolder {
     }
 
     // ------------------------------------------------------------------
-    // Quests tab
+    // Quests page (opened from the Quêtes de cité extension)
     // ------------------------------------------------------------------
 
     private int renderQuests(City city, ItemStack[] contents) {
         var quests = services.quests();
         if (!quests.active(city)) {
-            CityConfig config = services.cities().config();
-            contents[22] = named(Material.BOOK, "<white>Quêtes de cité", List.of(
-                    Messages.item("<gray>Extension non acquise."),
-                    Messages.item("<gray>Prix : <gold><price></gold> <dark_gray>(solde de la cité)",
-                            Messages.p("price", Messages.coins(config.price(CityExtension.QUESTS)))),
-                    Messages.item("<yellow>À acheter par le propriétaire dans l'onglet Extensions.")));
-            return 1;
+            // extension disabled by the administration while the page was open
+            tab = Tab.EXTENSIONS;
+            return renderExtensions(city, contents);
         }
         if (questHistory) {
             return renderQuestHistory(city, contents);
         }
+        contents[QUEST_BACK] = named(Material.ARROW, "<white>Retour aux extensions", List.of());
         var current = quests.manager().current(city.id());
         if (current.isEmpty()) {
             contents[QUEST_ITEM] = named(Material.BARRIER, "<gray>Aucune quête en cours",
@@ -457,7 +462,7 @@ public final class CityBoardGUI implements InventoryHolder {
             contents[QUEST_RANKING] = named(Material.GOLDEN_HELMET, "<gold>Classement de la quête", ranking);
         }
         contents[QUEST_HISTORY] = named(Material.BOOKSHELF, "<aqua>Historique",
-                List.of(Messages.item("<gray>Quêtes réussies et expirées de la cité."), Messages.item("<yellow>Clic : afficher")));
+                List.of(Messages.item("<gray>Quêtes réussies par la cité."), Messages.item("<yellow>Clic : afficher")));
         return 1;
     }
 
@@ -470,32 +475,35 @@ public final class CityBoardGUI implements InventoryHolder {
             var entries = manager.history(city.id(), page, QUEST_HISTORY_PER_PAGE);
             for (int i = 0; i < entries.size(); i++) {
                 var q = entries.get(i);
-                boolean ok = q.status() == fr.vanillaeconomy.city.quest.CityQuest.Status.COMPLETED;
-                contents[9 + i] = named(ok ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE,
-                        (ok ? "<green>✔ " : "<red>✘ ") + "<white><name>", List.of(
-                                Messages.item("<gray>Difficulté : ").append(fr.vanillaeconomy.city.quest.CityQuestExtension.difficulty(q)),
-                                Messages.item(ok ? "<green>Réussie" : "<red>Expirée"),
-                                Messages.item("<gray>Progression : <white><p>/<t>", Messages.p("p", q.progress()), Messages.p("t", q.target())),
-                                Messages.item("<gray>Le <white><date>", Messages.p("date",
-                                        fr.vanillaeconomy.city.quest.QuestCommands.date(q.finishedAt()))),
-                                Messages.item("<gray>Contributeurs : <white><top>", Messages.p("top",
-                                        fr.vanillaeconomy.city.quest.CityQuestExtension.top(manager.contributors(q), 3)))),
-                        Messages.p("name", q.name()));
-            }
-            var totals = manager.totals(city.id());
-            List<Component> lore = new ArrayList<>();
-            lore.add(Messages.item("<green>Réussies : <white><n>", Messages.p("n", totals.completed())));
-            lore.add(Messages.item("<red>Expirées : <white><n>", Messages.p("n", totals.expired())));
-            lore.add(Messages.item("<gray>Items donnés : <white><n>", Messages.p("n", totals.items())));
-            int rank = 0;
-            for (var e : totals.byPlayer().entrySet()) {
-                if (++rank > 8) {
-                    break;
+                List<Component> lore = new ArrayList<>();
+                lore.add(Messages.item("<gray>Difficulté : ").append(fr.vanillaeconomy.city.quest.CityQuestExtension.difficulty(q)));
+                lore.add(Messages.item("<gray><t> items rassemblés", Messages.p("t", q.target())));
+                lore.add(Messages.item("<gray>Réussie le <white><date>", Messages.p("date",
+                        fr.vanillaeconomy.city.quest.QuestCommands.date(q.completedAt()))));
+                lore.add(Messages.item("<gray>Récompense : <gold><r>", Messages.p("r", Messages.coins(q.reward()))));
+                lore.add(Component.empty());
+                lore.add(Messages.item("<aqua>Contributeurs :"));
+                // every passage of the attempt, as in the ranking of the quest
+                var contributors = manager.ranking(q);
+                for (int k = 0; k < contributors.size() && k < QUEST_CONTRIBUTORS_SHOWN; k++) {
+                    lore.add(Messages.item("<gray>• <white><player></white> : <gold><amount>",
+                            Messages.p("player", CityManager.nameOf(contributors.get(k).player())),
+                            Messages.p("amount", contributors.get(k).amount())));
                 }
-                lore.add(Messages.item("<gray><rank>. <white><player></white> : <gold><n>", Messages.p("rank", rank),
-                        Messages.p("player", CityManager.nameOf(e.getKey())), Messages.p("n", e.getValue())));
+                if (contributors.size() > QUEST_CONTRIBUTORS_SHOWN) {
+                    lore.add(Messages.item("<dark_gray>… et <n> autre(s)", Messages.p("n",
+                            contributors.size() - QUEST_CONTRIBUTORS_SHOWN)));
+                }
+                contents[9 + i] = named(fr.vanillaeconomy.city.quest.CityQuestExtension.icon(q),
+                        "<green>✔ <white><name>", lore, Messages.p("name", q.name()));
             }
-            contents[QUEST_TOTALS] = named(Material.BOOK, "<aqua>Totaux de la cité", lore);
+            if (entries.isEmpty()) {
+                contents[22] = named(Material.GRAY_DYE, "<gray>Aucune quête réussie pour l'instant", List.of());
+            }
+            var completion = manager.completion(city.id());
+            List<Component> lore = List.of(Messages.item("<gray>Quêtes réalisées : <green><n></green>/<white><total>",
+                    Messages.p("n", completion.completed()), Messages.p("total", completion.total())));
+            contents[QUEST_TOTALS] = named(Material.BOOK, "<aqua>Récapitulatif", lore);
             contents[QUEST_BACK] = named(Material.ARROW, "<white>Retour à la quête", List.of());
             return pages;
         } catch (java.sql.SQLException e) {
@@ -516,7 +524,9 @@ public final class CityBoardGUI implements InventoryHolder {
             }
             return;
         }
-        if (slot == QUEST_HISTORY) {
+        if (slot == QUEST_BACK) {
+            switchTab(Tab.EXTENSIONS);
+        } else if (slot == QUEST_HISTORY) {
             questHistory = true;
             page = 0;
             render();
@@ -554,8 +564,10 @@ public final class CityBoardGUI implements InventoryHolder {
     }
 
     private ItemStack tabItem(Material mat, String name, Tab target) {
-        ItemStack item = named(mat, name, List.of(Messages.item(tab == target ? "<green>Onglet affiché" : "<gray>Clic : afficher")));
-        if (tab == target) {
+        // the quests page belongs to the extensions tab
+        boolean shown = tab == target || (tab == Tab.QUESTS && target == Tab.EXTENSIONS);
+        ItemStack item = named(mat, name, List.of(Messages.item(shown ? "<green>Onglet affiché" : "<gray>Clic : afficher")));
+        if (shown) {
             ItemMeta meta = item.getItemMeta();
             meta.setEnchantmentGlintOverride(true);
             item.setItemMeta(meta);
@@ -640,10 +652,6 @@ public final class CityBoardGUI implements InventoryHolder {
             case TAB_TIERS -> switchTab(Tab.TIERS);
             case TAB_TREASURY -> switchTab(Tab.TREASURY);
             case TAB_EXTENSIONS -> switchTab(Tab.EXTENSIONS);
-            case TAB_QUESTS -> {
-                questHistory = false;
-                switchTab(Tab.QUESTS);
-            }
             case PREV -> {
                 page = Math.max(0, page - 1);
                 render();
@@ -730,6 +738,11 @@ public final class CityBoardGUI implements InventoryHolder {
 
     private void extensionClick(City city, CityExtension extension) {
         CityConfig config = services.cities().config();
+        if (extension == CityExtension.QUESTS && services.quests().active(city)) {
+            questHistory = false;
+            switchTab(Tab.QUESTS);
+            return;
+        }
         if (!config.enabled(extension) || city.hasExtension(extension) || city.tier() < config.minTier(extension)
                 || !city.roleOf(viewer.getUniqueId()).canBuyExtension()) {
             return;
