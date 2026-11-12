@@ -98,13 +98,13 @@ quests:
   # --- Moyenne --------------------------------------------------------
   dried_ghast:
     name: "Ghasts desséchés"
-    difficulty: HARD
+    difficulty: MEDIUM
     material: DRIED_GHAST
     amount: 20
     reward: 1500
   sponge:
     name: "Éponges"
-    difficulty: EASY
+    difficulty: MEDIUM
     material: SPONGE
     amount: 5
     reward: 750
@@ -243,10 +243,10 @@ quests:
     difficulty: HARD
     material: SULFUR_CUBE_BUCKET
     amount: 1
-    reward: 1000
+    reward: 800
   heart_of_the_sea:
     name: "Cœurs de la mer"
-    difficulty: EPIC
+    difficulty: HARD
     material: HEART_OF_THE_SEA
     amount: 3
     reward: 3000
