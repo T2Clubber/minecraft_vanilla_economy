@@ -68,8 +68,8 @@ class QuestDefinitionLoaderTest {
 
     static final String DIFFICULTIES = """
             difficulties:
-              EASY:   { name: "Facile", color: GREEN, weight: 40, default_reward: 400, duration_hours: 24 }
-              HARD:   { name: "Difficile", color: RED, weight: 20, default_reward: 1500, duration_hours: 48 }
+              EASY:   { name: "Facile", color: GREEN, weight: 40, duration_hours: 24 }
+              HARD:   { name: "Difficile", color: RED, weight: 20, duration_hours: 48 }
             """;
 
     static QuestCatalog load(String quests) {
@@ -122,26 +122,28 @@ class QuestDefinitionLoaderTest {
     @Test
     void invalidEntriesAreIgnoredAndValidOnesKept() {
         QuestCatalog catalog = load("""
-                  ok:            { difficulty: EASY, material: SPONGE, amount: 10 }
-                  OK:            { difficulty: EASY, material: RABBIT_FOOT, amount: 10 }
-                  unknown_item:  { difficulty: EASY, material: NOT_AN_ITEM, amount: 10 }
-                  unknown_tag:   { difficulty: EASY, tag: "minecraft:nope", amount: 10 }
-                  zero:          { difficulty: EASY, material: SPONGE, amount: 0 }
+                  ok:            { difficulty: EASY, material: SPONGE, amount: 10, reward: 100 }
+                  OK:            { difficulty: EASY, material: RABBIT_FOOT, amount: 10, reward: 100 }
+                  unknown_item:  { difficulty: EASY, material: NOT_AN_ITEM, amount: 10, reward: 100 }
+                  unknown_tag:   { difficulty: EASY, tag: "minecraft:nope", amount: 10, reward: 100 }
+                  zero:          { difficulty: EASY, material: SPONGE, amount: 0, reward: 100 }
                   negative_rew:  { difficulty: EASY, material: SPONGE, amount: 5, reward: -1 }
-                  bad_duration:  { difficulty: EASY, material: SPONGE, amount: 5, duration_hours: 0 }
-                  no_difficulty: { difficulty: LEGEND, material: SPONGE, amount: 5 }
-                  negative_w:    { difficulty: EASY, material: SPONGE, amount: 5, weight: -2 }
-                  coin:          { difficulty: EASY, material: GOLD_NUGGET, amount: 5 }
-                  two_forms:     { difficulty: EASY, material: SPONGE, tag: "minecraft:decorated_pot_sherds", amount: 5 }
-                  market:        { difficulty: EASY, material: DIAMOND, amount: 5 }
+                  bad_duration:  { difficulty: EASY, material: SPONGE, amount: 5, duration_hours: 0, reward: 100 }
+                  no_difficulty: { difficulty: LEGEND, material: SPONGE, amount: 5, reward: 100 }
+                  negative_w:    { difficulty: EASY, material: SPONGE, amount: 5, weight: -2, reward: 100 }
+                  coin:          { difficulty: EASY, material: GOLD_NUGGET, amount: 5, reward: 100 }
+                  two_forms:     { difficulty: EASY, material: SPONGE, tag: "minecraft:decorated_pot_sherds", amount: 5, reward: 100 }
+                  market:        { difficulty: EASY, material: DIAMOND, amount: 5, reward: 100 }
+                  no_reward:     { difficulty: EASY, material: HEART_OF_THE_SEA, amount: 5 }
+                  text_reward:   { difficulty: EASY, material: HEART_OF_THE_SEA, amount: 5, reward: beaucoup }
                 """);
         assertEquals(Set.of("ok"), catalog.quests().keySet());
         List<String> questWarnings = catalog.warnings().stream().filter(w -> w.startsWith("quête")).toList();
-        assertEquals(11, questWarnings.size(), String.join("\n", catalog.warnings()));
+        assertEquals(13, questWarnings.size(), String.join("\n", catalog.warnings()));
         String all = String.join("\n", catalog.warnings());
         for (String expected : List.of("id dupliqué", "Material inconnu « NOT_AN_ITEM »", "tag d'items inconnu",
                 "amount doit être > 0", "reward négatif", "duration_hours doit être > 0", "difficulté inconnue « LEGEND »",
-                "weight négatif", "pièce du plugin", "exactement un de", "item du marché")) {
+                "weight négatif", "pièce du plugin", "exactement un de", "item du marché", "reward manquant ou invalide")) {
             assertTrue(all.contains(expected), "missing warning: " + expected);
         }
     }
@@ -150,7 +152,7 @@ class QuestDefinitionLoaderTest {
     void marketItemsAcceptedWithAllowMarketItems() {
         QuestCatalog catalog = QuestDefinitionLoader.load(yaml(DIFFICULTIES + """
                 quests:
-                  diamonds: { difficulty: HARD, material: DIAMOND, amount: 5 }
+                  diamonds: { difficulty: HARD, material: DIAMOND, amount: 5, reward: 100 }
                 """), resolver(), marketItems(), "GOLD_NUGGET", true);
         assertEquals(Set.of("diamonds"), catalog.quests().keySet());
         assertTrue(catalog.warnings().stream().noneMatch(w -> w.startsWith("quête")), String.join("\n", catalog.warnings()));
@@ -159,7 +161,7 @@ class QuestDefinitionLoaderTest {
     @Test
     void multiMaterialQuestAddsUpItsItems() {
         QuestDefinition quest = load("""
-                  heads: { difficulty: HARD, materials: [PIGLIN_HEAD, DRAGON_HEAD], amount: 3 }
+                  heads: { difficulty: HARD, materials: [PIGLIN_HEAD, DRAGON_HEAD], amount: 3, reward: 100 }
                 """).quests().get("heads");
         assertEquals(Set.of("PIGLIN_HEAD", "DRAGON_HEAD"), quest.materials());
         assertEquals("materials:DRAGON_HEAD,PIGLIN_HEAD", quest.signature(), "normalised list");
@@ -174,12 +176,12 @@ class QuestDefinitionLoaderTest {
     void difficultiesCanBeAddedRemovedAndRenamed() {
         QuestCatalog catalog = QuestDefinitionLoader.load(yaml("""
                 difficulties:
-                  EASY:   { name: "Tranquille", color: GREEN, weight: 40, default_reward: 400, duration_hours: 24 }
-                  LEGEND: { name: "Légendaire", color: GOLD, weight: 5, default_reward: 9000, duration_hours: 72 }
+                  EASY:   { name: "Tranquille", color: GREEN, weight: 40, duration_hours: 24 }
+                  LEGEND: { name: "Légendaire", color: GOLD, weight: 5, duration_hours: 72 }
                 quests:
-                  a: { difficulty: EASY, material: SPONGE, amount: 10 }
-                  b: { difficulty: LEGEND, material: DRAGON_HEAD, amount: 1 }
-                  c: { difficulty: MEDIUM, material: ECHO_SHARD, amount: 8 }
+                  a: { difficulty: EASY, material: SPONGE, amount: 10, reward: 100 }
+                  b: { difficulty: LEGEND, material: DRAGON_HEAD, amount: 1, reward: 9000 }
+                  c: { difficulty: MEDIUM, material: ECHO_SHARD, amount: 8, reward: 100 }
                 """), resolver(), marketItems(), "GOLD_NUGGET", false);
         assertEquals("Tranquille", catalog.difficulties().get("EASY").name(), "renamed");
         assertEquals("gold", catalog.difficulties().get("LEGEND").color(), "added");
@@ -189,31 +191,47 @@ class QuestDefinitionLoaderTest {
     }
 
     @Test
-    void defaultRewardAndDurationComeFromTheDifficultyUnlessOverridden() {
+    void rewardBelongsToEachQuestDurationDefaultsToTheDifficulty() {
         QuestCatalog catalog = load("""
-                  plain:  { difficulty: HARD, material: HEAVY_CORE, amount: 3 }
-                  custom: { difficulty: HARD, material: TOTEM_OF_UNDYING, amount: 4, reward: 2222, duration_hours: 12, weight: 5 }
+                  core:   { difficulty: HARD, material: HEAVY_CORE, amount: 3, reward: 2600 }
+                  totem:  { difficulty: HARD, material: TOTEM_OF_UNDYING, amount: 4, reward: 900, duration_hours: 12, weight: 5 }
+                  free:   { difficulty: HARD, material: SNIFFER_EGG, amount: 2, reward: 0 }
                 """);
-        assertEquals(1500, catalog.quests().get("plain").reward());
-        assertEquals(48, catalog.quests().get("plain").durationHours());
-        assertEquals(1, catalog.quests().get("plain").weight(), "default weight");
-        assertEquals(2222, catalog.quests().get("custom").reward());
-        assertEquals(12, catalog.quests().get("custom").durationHours());
-        assertEquals(5, catalog.quests().get("custom").weight());
+        assertEquals(2600, catalog.quests().get("core").reward());
+        assertEquals(900, catalog.quests().get("totem").reward(), "same difficulty, its own reward");
+        assertEquals(0, catalog.quests().get("free").reward());
+        assertEquals(48, catalog.quests().get("core").durationHours(), "duration of the difficulty");
+        assertEquals(1, catalog.quests().get("core").weight(), "default weight");
+        assertEquals(12, catalog.quests().get("totem").durationHours());
+        assertEquals(5, catalog.quests().get("totem").weight());
+    }
+
+    @Test
+    void oldDefaultRewardOfADifficultyIsIgnoredWithAWarning() {
+        QuestCatalog catalog = QuestDefinitionLoader.load(yaml("""
+                difficulties:
+                  EASY: { name: "Facile", color: GREEN, weight: 40, default_reward: 400, duration_hours: 24 }
+                quests:
+                  a: { difficulty: EASY, material: SPONGE, amount: 10 }
+                  b: { difficulty: EASY, material: RABBIT_FOOT, amount: 10, reward: 250 }
+                """), resolver(), marketItems(), "GOLD_NUGGET", false);
+        assertEquals(Set.of("b"), catalog.quests().keySet(), "no reward taken from the difficulty");
+        assertEquals(250, catalog.quests().get("b").reward());
+        assertTrue(String.join("\n", catalog.warnings()).contains("default_reward n'est plus utilisé"));
     }
 
     @Test
     void zeroWeightAndEmptyDifficultiesAreLeftOutOfTheDraw() {
         QuestCatalog catalog = QuestDefinitionLoader.load(yaml("""
                 difficulties:
-                  EASY:  { name: "Facile", color: GREEN, weight: 0, default_reward: 400, duration_hours: 24 }
-                  HARD:  { name: "Difficile", color: RED, weight: 20, default_reward: 1500, duration_hours: 48 }
-                  EMPTY: { name: "Vide", color: PINK_SPARKLES, weight: 10, default_reward: 1, duration_hours: 1 }
+                  EASY:  { name: "Facile", color: GREEN, weight: 0, duration_hours: 24 }
+                  HARD:  { name: "Difficile", color: RED, weight: 20, duration_hours: 48 }
+                  EMPTY: { name: "Vide", color: PINK_SPARKLES, weight: 10, duration_hours: 1 }
                 quests:
-                  easy:     { difficulty: EASY, material: SPONGE, amount: 10 }
-                  hard:     { difficulty: HARD, material: HEAVY_CORE, amount: 3 }
-                  hard_off: { difficulty: HARD, material: TOTEM_OF_UNDYING, amount: 3, weight: 0 }
-                  disabled: { difficulty: HARD, material: SNIFFER_EGG, amount: 3, enabled: false }
+                  easy:     { difficulty: EASY, material: SPONGE, amount: 10, reward: 100 }
+                  hard:     { difficulty: HARD, material: HEAVY_CORE, amount: 3, reward: 100 }
+                  hard_off: { difficulty: HARD, material: TOTEM_OF_UNDYING, amount: 3, weight: 0, reward: 100 }
+                  disabled: { difficulty: HARD, material: SNIFFER_EGG, amount: 3, enabled: false, reward: 100 }
                 """), resolver(), marketItems(), "GOLD_NUGGET", false);
         assertEquals(List.of("hard"), catalog.drawable().stream().map(QuestDefinition::id).toList(),
                 "difficulty of weight 0, quest of weight 0 and disabled quest never drawn");

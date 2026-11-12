@@ -25,21 +25,24 @@
 #                    WHITE ; inconnue = WHITE)
 #   weight         : poids au tirage (0 = jamais tirée). Une difficulté est
 #                    d'abord tirée selon ce poids, puis une de ses quêtes.
-#   default_reward : récompense (pièces) des quêtes qui n'en précisent pas
 #   duration_hours : durée des quêtes qui n'en précisent pas
+# La récompense ne dépend pas de la difficulté : elle se règle dans chaque
+# quête (reward), selon la rareté de l'item demandé.
 # Pour ajouter une difficulté : copier un bloc et changer sa clé.
 # -------------------------------------------------------------------
 difficulties:
-  EASY:   { name: "Facile",    color: GREEN,        weight: 40, default_reward: 400,  duration_hours: 24 }
-  MEDIUM: { name: "Moyenne",   color: YELLOW,       weight: 30, default_reward: 800,  duration_hours: 36 }
-  HARD:   { name: "Difficile", color: RED,          weight: 20, default_reward: 1500, duration_hours: 48 }
-  EPIC:   { name: "Épique",    color: LIGHT_PURPLE, weight: 10, default_reward: 3000, duration_hours: 48 }
+  EASY:   { name: "Facile",    color: GREEN,        weight: 40, duration_hours: 24 }
+  MEDIUM: { name: "Moyenne",   color: YELLOW,       weight: 30, duration_hours: 36 }
+  HARD:   { name: "Difficile", color: RED,          weight: 20, duration_hours: 48 }
+  EPIC:   { name: "Épique",    color: LIGHT_PURPLE, weight: 10, duration_hours: 48 }
 
 # -------------------------------------------------------------------
 # Quêtes (la clé est l'identifiant unique de la quête)
 #   name           : nom affiché
 #   difficulty     : clé d'une difficulté ci-dessus
 #   amount         : quantité à rassembler (> 0)
+#   reward         : récompense en pièces versée au solde de la cité (≥ 0),
+#                    obligatoire : une quête sans reward est ignorée
 #   item demandé, sous UNE des trois formes :
 #     material: X           un seul item (nom de Material Minecraft)
 #     materials: [X, Y]     n'importe lequel compte, additionnés
@@ -47,7 +50,6 @@ difficulties:
 #   Optionnels :
 #     enabled        : false pour désactiver la quête (sa progression est
 #                      conservée et reprend si elle est réactivée)
-#     reward         : récompense, sinon default_reward de la difficulté
 #     duration_hours : durée, sinon celle de la difficulté
 #     weight         : poids dans sa difficulté (défaut 1, 0 = jamais tirée)
 #     hint           : texte affiché pour les quêtes multi-items
@@ -73,26 +75,31 @@ quests:
     difficulty: EASY
     material: PHANTOM_MEMBRANE
     amount: 16
+    reward: 400
   glow_ink_sac:
     name: "Poches d'encre luisante"
     difficulty: EASY
     material: GLOW_INK_SAC
     amount: 24
+    reward: 400
   rabbit_foot:
     name: "Pattes de lapin"
     difficulty: EASY
     material: RABBIT_FOOT
     amount: 12
+    reward: 400
   sponge:
     name: "Éponges"
     difficulty: EASY
     material: SPONGE
     amount: 10
+    reward: 400
   armadillo_scute:
     name: "Écailles de tatou"
     difficulty: EASY
     material: ARMADILLO_SCUTE
     amount: 12
+    reward: 400
 
   # --- Moyenne --------------------------------------------------------
   echo_shard:
@@ -100,31 +107,37 @@ quests:
     difficulty: MEDIUM
     material: ECHO_SHARD
     amount: 8
+    reward: 800
   trial_key:
     name: "Clés des épreuves"
     difficulty: MEDIUM
     material: TRIAL_KEY
     amount: 10
+    reward: 800
   goat_horn:
     name: "Cornes de chèvre"
     difficulty: MEDIUM
     material: GOAT_HORN
     amount: 4
+    reward: 800
   creaking_heart:
     name: "Cœurs de grinceur"
     difficulty: MEDIUM
     material: CREAKING_HEART
     amount: 4
+    reward: 800
   disc_fragment_5:
     name: "Fragments de disque"
     difficulty: MEDIUM
     material: DISC_FRAGMENT_5
     amount: 9
+    reward: 800
   sculk_catalyst:
     name: "Catalyseurs de sculk"
     difficulty: MEDIUM
     material: SCULK_CATALYST
     amount: 6
+    reward: 800
   # Garnitures (trims) : chaque modèle vient d'une structure qui ne sert à
   # aucune autre quête. Structures exclues : cité antique, salles des
   # épreuves, monument océanique, manoir des bois et forteresse du Nether.
@@ -133,21 +146,25 @@ quests:
     difficulty: MEDIUM
     material: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 4
+    reward: 800
   dune_trim:
     name: "Garniture Dune (temple du désert)"
     difficulty: MEDIUM
     material: DUNE_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 4
+    reward: 800
   coast_trim:
     name: "Garniture Côte (épave)"
     difficulty: MEDIUM
     material: COAST_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 4
+    reward: 800
   pottery_sherds:
     name: "Tessons de poterie"
     difficulty: MEDIUM
     tag: "minecraft:decorated_pot_sherds"
     amount: 12
+    reward: 800
     hint: "N'importe quel tesson de poterie"
 
   # --- Difficile ------------------------------------------------------
@@ -156,56 +173,67 @@ quests:
     difficulty: HARD
     material: SNIFFER_EGG
     amount: 10
+    reward: 1500
   dried_ghast:
     name: "Ghasts desséchés"
     difficulty: HARD
     material: DRIED_GHAST
     amount: 20
+    reward: 1500
   ominous_trial_key:
     name: "Clés sinistres"
     difficulty: HARD
     material: OMINOUS_TRIAL_KEY
     amount: 6
+    reward: 1500
   heavy_core:
     name: "Noyaux lourds"
     difficulty: HARD
     material: HEAVY_CORE
     amount: 3
+    reward: 1500
   totem_of_undying:
     name: "Totems d'immortalité"
     difficulty: HARD
     material: TOTEM_OF_UNDYING
     amount: 4
+    reward: 1500
   wild_trim:
     name: "Garniture Sauvage (temple de la jungle)"
     difficulty: HARD
     material: WILD_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 3
+    reward: 1500
   eye_trim:
     name: "Garniture Œil (fort de l'End)"
     difficulty: HARD
     material: EYE_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 3
+    reward: 1500
   snout_trim:
     name: "Garniture Groin (vestige de bastion)"
     difficulty: HARD
     material: SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 3
+    reward: 1500
   spire_trim:
     name: "Garniture Flèche (cité de l'End)"
     difficulty: HARD
     material: SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 3
+    reward: 1500
   wayfinder_trim:
     name: "Garniture Éclaireur (ruines de sentier)"
     difficulty: HARD
     material: WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE
     amount: 3
+    reward: 1500
   pottery_sherds_hard:
     name: "Grande collection de tessons"
     difficulty: HARD
     tag: "minecraft:decorated_pot_sherds"
     amount: 30
+    reward: 1500
     hint: "N'importe quel tesson de poterie"
   # Seau de cube de soufre (26.3) : n'importe quel seau de cube de soufre,
   # quel que soit le bloc absorbé par le cube (un seul Material). Ignorée avec
@@ -215,6 +243,7 @@ quests:
     difficulty: HARD
     material: SULFUR_CUBE_BUCKET
     amount: 1
+    reward: 1500
 
   # --- Épique ---------------------------------------------------------
   enchanted_golden_apple:
@@ -222,23 +251,28 @@ quests:
     difficulty: EPIC
     material: ENCHANTED_GOLDEN_APPLE
     amount: 3
+    reward: 3000
   heart_of_the_sea:
     name: "Cœurs de la mer"
     difficulty: EPIC
     material: HEART_OF_THE_SEA
     amount: 3
+    reward: 3000
   wither_skeleton_skull:
     name: "Crânes de wither squelette"
     difficulty: EPIC
     material: WITHER_SKELETON_SKULL
     amount: 4
+    reward: 3000
   piglin_head:
     name: "Têtes de piglin"
     difficulty: EPIC
     material: PIGLIN_HEAD
     amount: 3
+    reward: 3000
   dragon_head:
     name: "Têtes de dragon"
     difficulty: EPIC
     material: DRAGON_HEAD
     amount: 2
+    reward: 3000

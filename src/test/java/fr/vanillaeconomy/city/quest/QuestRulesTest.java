@@ -28,7 +28,7 @@ class QuestRulesTest {
 
     static QuestCatalog catalog(Map<String, Integer> difficultyWeights, QuestDefinition... quests) {
         Map<String, QuestDifficulty> difficulties = new HashMap<>();
-        difficultyWeights.forEach((id, w) -> difficulties.put(id, new QuestDifficulty(id, id, "white", w, 100, 24)));
+        difficultyWeights.forEach((id, w) -> difficulties.put(id, new QuestDifficulty(id, id, "white", w, 24)));
         Map<String, QuestDefinition> map = new LinkedHashMap<>();
         for (QuestDefinition q : quests) {
             map.put(q.id(), q);

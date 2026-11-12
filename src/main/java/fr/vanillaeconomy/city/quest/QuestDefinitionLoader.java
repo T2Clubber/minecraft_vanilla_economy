@@ -85,14 +85,9 @@ public final class QuestDefinitionLoader {
                 continue;
             }
             int weight = d.getInt("weight", 1);
-            long reward = d.getLong("default_reward", -1);
             long hours = d.getLong("duration_hours", 0);
             if (weight < 0) {
                 warnings.add("difficulté « " + key + " » ignorée : weight négatif");
-                continue;
-            }
-            if (reward < 0) {
-                warnings.add("difficulté « " + key + " » ignorée : default_reward absent ou négatif");
                 continue;
             }
             if (hours <= 0) {
@@ -104,7 +99,11 @@ public final class QuestDefinitionLoader {
                 warnings.add("difficulté « " + key + " » : couleur inconnue « " + d.getString("color") + " », WHITE utilisée");
                 color = "white";
             }
-            result.put(id, new QuestDifficulty(id, d.getString("name", key), color, weight, reward, hours));
+            if (d.contains("default_reward")) {
+                warnings.add("difficulté « " + key + " » : default_reward n'est plus utilisé, la récompense se règle "
+                        + "dans chaque quête (reward)");
+            }
+            result.put(id, new QuestDifficulty(id, d.getString("name", key), color, weight, hours));
         }
         return result;
     }
@@ -121,7 +120,11 @@ public final class QuestDefinitionLoader {
         if (amount <= 0) {
             return fail("amount doit être > 0");
         }
-        long reward = q.getLong("reward", difficulty.defaultReward());
+        // the reward belongs to the quest (rarity of its item), never to its difficulty
+        if (!q.isInt("reward") && !q.isLong("reward")) {
+            return fail("reward manquant ou invalide (récompense en pièces, obligatoire pour chaque quête)");
+        }
+        long reward = q.getLong("reward");
         if (reward < 0) {
             return fail("reward négatif");
         }
