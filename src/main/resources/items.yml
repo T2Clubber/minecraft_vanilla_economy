@@ -114,15 +114,15 @@ categories:
     - { id: KELP,             tier: common,   base_price: 1,   base_number: 16 }
     - { id: GLOW_BERRIES,     tier: uncommon, base_price: 3,   base_number: 16 }
     - { id: SWEET_BERRIES,    tier: common,   base_price: 2,   base_number: 16 }
-    - { id: PITCHER_PLANT,    tier: uncommon, base_price: 4,   base_number: 16 }
+    - { id: PITCHER_PLANT,    tier: uncommon, base_price: 4,   base_number: 1 }
     - { id: HONEYCOMB,        tier: uncommon, base_price: 5,   base_number: 16 }
     - { id: PEONY,            tier: common,   base_price: 2,   base_number: 16 }
     - { id: SUNFLOWER,        tier: common,   base_price: 2,   base_number: 16 }
     - { id: LILAC,            tier: common,   base_price: 2,   base_number: 16 }
     - { id: ROSE_BUSH,        tier: common,   base_price: 2,   base_number: 16 }
     - { id: CACTUS,           tier: common,   base_price: 1,   base_number: 16 }
-    - { id: TORCHFLOWER,      tier: uncommon, base_price: 6,   base_number: 16 }
-    - { id: WITHER_ROSE,      tier: rare,     base_price: 15,  base_number: 1 }
+    - { id: TORCHFLOWER,      tier: uncommon, base_price: 4,   base_number: 1 }
+    - { id: WITHER_ROSE,      tier: rare,     base_price: 4,  base_number: 1 }
     - { id: BROWN_MUSHROOM,   tier: common,   base_price: 2,   base_number: 16 }
     - { id: RED_MUSHROOM,     tier: common,   base_price: 2,   base_number: 16 }
     - { id: MELON_SLICE,      tier: common,   base_price: 1,   base_number: 16 }
@@ -155,7 +155,7 @@ categories:
     - { id: GUNPOWDER,        tier: uncommon, base_price: 3,   base_number: 16 }
     - { id: ENDER_PEARL,      tier: rare,     base_price: 12,  base_number: 16 }
     - { id: NAUTILUS_SHELL,   tier: rare,     base_price: 25,  base_number: 8 }
-    - { id: SHULKER_SHELL,    tier: epic,     base_price: 40,  base_number: 4 }
+    - { id: SHULKER_SHELL,    tier: epic,     base_price: 5,  base_number: 1 }
 
   blocks:
     # base_number = 64 pour toute la catégorie (confirmé)

@@ -97,7 +97,7 @@ Le nombre de morts de chaque joueur s'affiche à côté de son nom dans la liste
 
 ## Les cités
 
-Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `/city create <nom>` et centré sur le fondateur. La fondation coûte 2 500 pièces, prélevées sur le solde du fondateur. La cité démarre en 32×32 et s'agrandit par paliers, payés avec le solde de la cité : 64×64 (5 000), 128×128 (20 000), 256×256 (50 000), 512×512 (100 000). Les valeurs sont réglables dans `cities.yml`.
+Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `/city create <nom>` et centré sur le fondateur. La fondation coûte 2 500 pièces, prélevées sur le solde du fondateur. La cité démarre en 32×32 et s'agrandit par paliers, payés avec le solde de la cité : 64×64 (10 000), 128×128 (30 000), 256×256 (75 000), 512×512 (150 000). Les valeurs sont réglables dans `cities.yml`.
 
 - **Rôles :**
   - **Propriétaire** : gère tout, achète les paliers et les extensions, renomme et dissout la cité. Un joueur ne peut posséder qu'une cité.

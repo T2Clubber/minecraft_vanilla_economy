@@ -23,10 +23,10 @@ name:
 # voir creation_cost). Agrandissement symétrique autour du centre d'origine.
 tiers:
   1: { size: 32,  price: 2500 }
-  2: { size: 64,  price: 5000 }
-  3: { size: 128,  price: 20000 }
-  4: { size: 256,  price: 50000 }
-  5: { size: 512, price: 100000 }
+  2: { size: 64,  price: 10000 }
+  3: { size: 128,  price: 30000 }
+  4: { size: 256,  price: 75000 }
+  5: { size: 512, price: 150000 }
 
 # Extensions achetées une fois avec le SOLDE DE LA CITÉ, par le
 # propriétaire (/cityboard, onglet Extensions).

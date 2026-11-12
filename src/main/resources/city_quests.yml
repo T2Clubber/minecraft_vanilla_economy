@@ -75,45 +75,45 @@ quests:
     difficulty: EASY
     material: PHANTOM_MEMBRANE
     amount: 16
-    reward: 400
+    reward: 500
   glow_ink_sac:
     name: "Poches d'encre luisante"
     difficulty: EASY
     material: GLOW_INK_SAC
     amount: 24
-    reward: 400
+    reward: 500
   rabbit_foot:
     name: "Pattes de lapin"
     difficulty: EASY
     material: RABBIT_FOOT
     amount: 12
-    reward: 400
-  sponge:
-    name: "Éponges"
-    difficulty: EASY
-    material: SPONGE
-    amount: 10
-    reward: 400
+    reward: 500
   armadillo_scute:
     name: "Écailles de tatou"
     difficulty: EASY
     material: ARMADILLO_SCUTE
-    amount: 12
-    reward: 400
+    amount: 20
+    reward: 200
 
   # --- Moyenne --------------------------------------------------------
-  echo_shard:
-    name: "Éclats d'écho"
-    difficulty: MEDIUM
-    material: ECHO_SHARD
-    amount: 8
-    reward: 800
+  dried_ghast:
+    name: "Ghasts desséchés"
+    difficulty: HARD
+    material: DRIED_GHAST
+    amount: 20
+    reward: 1500
+  sponge:
+    name: "Éponges"
+    difficulty: EASY
+    material: SPONGE
+    amount: 5
+    reward: 750
   trial_key:
     name: "Clés des épreuves"
     difficulty: MEDIUM
     material: TRIAL_KEY
-    amount: 10
-    reward: 800
+    amount: 5
+    reward: 1250
   goat_horn:
     name: "Cornes de chèvre"
     difficulty: MEDIUM
@@ -145,95 +145,95 @@ quests:
     name: "Garniture Sentinelle (avant-poste de pillards)"
     difficulty: MEDIUM
     material: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 4
-    reward: 800
+    amount: 1
+    reward: 1000
   dune_trim:
     name: "Garniture Dune (temple du désert)"
     difficulty: MEDIUM
     material: DUNE_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 4
-    reward: 800
+    amount: 1
+    reward: 1000
   coast_trim:
     name: "Garniture Côte (épave)"
     difficulty: MEDIUM
     material: COAST_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 4
-    reward: 800
+    amount: 1
+    reward: 1000
   pottery_sherds:
     name: "Tessons de poterie"
     difficulty: MEDIUM
     tag: "minecraft:decorated_pot_sherds"
-    amount: 12
-    reward: 800
+    amount: 10
+    reward: 3250
     hint: "N'importe quel tesson de poterie"
 
   # --- Difficile ------------------------------------------------------
+  echo_shard:
+    name: "Éclats d'écho"
+    difficulty: HARD
+    material: ECHO_SHARD
+    amount: 10
+    reward: 1000
   sniffer_egg:
     name: "Œufs de renifleur"
     difficulty: HARD
     material: SNIFFER_EGG
     amount: 10
     reward: 1500
-  dried_ghast:
-    name: "Ghasts desséchés"
-    difficulty: HARD
-    material: DRIED_GHAST
-    amount: 20
-    reward: 1500
   ominous_trial_key:
     name: "Clés sinistres"
     difficulty: HARD
     material: OMINOUS_TRIAL_KEY
-    amount: 6
-    reward: 1500
+    amount: 5
+    reward: 2500
   heavy_core:
     name: "Noyaux lourds"
     difficulty: HARD
     material: HEAVY_CORE
     amount: 3
-    reward: 1500
+    reward: 6000
   totem_of_undying:
     name: "Totems d'immortalité"
     difficulty: HARD
     material: TOTEM_OF_UNDYING
-    amount: 4
-    reward: 1500
+    amount: 10
+    reward: 5000
   wild_trim:
     name: "Garniture Sauvage (temple de la jungle)"
     difficulty: HARD
     material: WILD_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 3
-    reward: 1500
+    amount: 1
+    reward: 2000
   eye_trim:
     name: "Garniture Œil (fort de l'End)"
     difficulty: HARD
     material: EYE_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 3
-    reward: 1500
+    amount: 1
+    reward: 2000
   snout_trim:
     name: "Garniture Groin (vestige de bastion)"
     difficulty: HARD
     material: SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 3
-    reward: 1500
+    amount: 1
+    reward: 2000
   spire_trim:
     name: "Garniture Flèche (cité de l'End)"
     difficulty: HARD
     material: SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 3
-    reward: 1500
+    amount: 1
+    reward: 2000
   wayfinder_trim:
     name: "Garniture Éclaireur (ruines de sentier)"
     difficulty: HARD
     material: WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE
-    amount: 3
-    reward: 1500
+    amount: 1
+    reward: 2000
   pottery_sherds_hard:
     name: "Grande collection de tessons"
     difficulty: HARD
     tag: "minecraft:decorated_pot_sherds"
     amount: 30
-    reward: 1500
+    reward: 10000
     hint: "N'importe quel tesson de poterie"
   # Seau de cube de soufre (26.3) : n'importe quel seau de cube de soufre,
   # quel que soit le bloc absorbé par le cube (un seul Material). Ignorée avec
@@ -243,19 +243,19 @@ quests:
     difficulty: HARD
     material: SULFUR_CUBE_BUCKET
     amount: 1
-    reward: 1500
+    reward: 1000
+  heart_of_the_sea:
+    name: "Cœurs de la mer"
+    difficulty: EPIC
+    material: HEART_OF_THE_SEA
+    amount: 3
+    reward: 3000
 
   # --- Épique ---------------------------------------------------------
   enchanted_golden_apple:
     name: "Pommes d'or enchantées"
     difficulty: EPIC
     material: ENCHANTED_GOLDEN_APPLE
-    amount: 3
-    reward: 3000
-  heart_of_the_sea:
-    name: "Cœurs de la mer"
-    difficulty: EPIC
-    material: HEART_OF_THE_SEA
     amount: 3
     reward: 3000
   wither_skeleton_skull:
@@ -268,11 +268,11 @@ quests:
     name: "Têtes de piglin"
     difficulty: EPIC
     material: PIGLIN_HEAD
-    amount: 3
-    reward: 3000
+    amount: 4
+    reward: 20000
   dragon_head:
     name: "Têtes de dragon"
     difficulty: EPIC
     material: DRAGON_HEAD
     amount: 2
-    reward: 3000
+    reward: 2000

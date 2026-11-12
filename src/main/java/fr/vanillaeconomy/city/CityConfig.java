@@ -86,8 +86,8 @@ public final class CityConfig {
         if (!errors.isEmpty()) {
             errors.forEach(e -> logger.warning("cities.yml : " + e));
             logger.warning("cities.yml : paliers invalides, utilisation des paliers par défaut.");
-            parsed = List.of(new Tier(1, 32, 0), new Tier(2, 64, 5000), new Tier(3, 128, 20000),
-                    new Tier(4, 256, 50000), new Tier(5, 512, 100000));
+            parsed = List.of(new Tier(1, 32, 0), new Tier(2, 64, 10000), new Tier(3, 128, 30000),
+                    new Tier(4, 256, 75000), new Tier(5, 512, 150000));
         }
         tiers = List.copyOf(parsed);
         // cities.yml is never overwritten by an update: show what is really in use.
