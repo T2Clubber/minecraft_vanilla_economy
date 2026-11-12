@@ -454,12 +454,12 @@ public final class CityBoardGUI implements InventoryHolder {
                             Messages.p("amount", top.get(i).amount())));
                 }
             } catch (java.sql.SQLException e) {
-                ranking.add(Messages.item("<red>Classement indisponible"));
+                ranking.add(Messages.item("<red>Contributeurs indisponibles"));
             }
             if (ranking.isEmpty()) {
                 ranking.add(Messages.item("<gray>Aucune contribution pour l'instant."));
             }
-            contents[QUEST_RANKING] = named(Material.GOLDEN_HELMET, "<gold>Classement de la quête", ranking);
+            contents[QUEST_RANKING] = named(Material.PAINTING, "<gold>Contributeurs de la quête", ranking);
         }
         contents[QUEST_HISTORY] = named(Material.BOOKSHELF, "<aqua>Historique",
                 List.of(Messages.item("<gray>Quêtes réussies par la cité."), Messages.item("<yellow>Clic : afficher")));

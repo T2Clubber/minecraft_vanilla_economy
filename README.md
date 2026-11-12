@@ -135,7 +135,7 @@ Une cité est un territoire carré, sur toute la hauteur du monde, fondé avec `
 | `/city rename <nom> <nouveau nom>` | Renomme la cité (propriétaire uniquement, mêmes règles qu'à la création) ; les membres sont prévenus |
 | `/city tp <nom>` | Téléporte au centre de la cité (extension Téléportation, 100 pièces par utilisation) |
 | `/cityboard <nom>` | Tableau de bord des membres : onglets Membres, Paliers, Trésorerie, Extensions |
-| `/city quest [nom]` | Quête de la cité (extension) : progression, temps restant, récompense, classement ; `deposit <nom> [quantité\|all]` dépose les items (consommés), `history [nom] [page]` l'historique |
+| `/city quest [nom]` | Quête de la cité (extension) : progression, temps restant, récompense, contributeurs ; `deposit <nom> [quantité\|all]` dépose les items (consommés), `history [nom] [page]` l'historique |
 | `/classement on\|off` | Affiche ou masque le classement des cités à droite de l'écran (choix mémorisé) |
 | `/border <nom> on\|off` | Affiche les bordures de la cité en particules, visibles par ce seul joueur |
 | `/cityadmin info\|delete\|settier\|rename\|promos\|promo\|quests reload` | Administration (`promos` : planning Promotion en folie, `promo <cité> <%>` : force une promo de cité, `quests reload` : recharge `city_quests.yml`, permission `cities.admin.quests`) |
