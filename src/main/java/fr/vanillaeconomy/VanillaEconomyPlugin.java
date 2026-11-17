@@ -90,6 +90,7 @@ public final class VanillaEconomyPlugin extends JavaPlugin {
             staffLog = new StaffLog(config.getConfigurationSection("discord"), getLogger());
             // journal of the successful commands, grouped into one Discord message every 10 s
             getServer().getScheduler().runTaskTimer(this, () -> staffLog.flushJournal(false), 200L, 200L);
+            getServer().getPluginManager().registerEvents(new fr.vanillaeconomy.discord.ConnectionLogListener(staffLog), this);
             register("solde", new SoldeCommand(currency, getLogger(), staffLog));
             register("pay", new PayCommand(currency, getLogger(), config.getDouble("pay.max_distance", 10.0), staffLog));
             register("money", new MoneyCommand(currency, getLogger(),

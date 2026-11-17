@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 /**
  * Staff journal posted to #logs-serveur through its own webhook (discord.logs_webhook_url):
  * anti-dupe alerts, admin commands, city life cycle, large payments, server start / stop,
- * and a journal of every other successful plugin command. Every method is a no-op when
- * the webhook is not configured.
+ * a journal of every other successful plugin command and a journal of the connections. Every
+ * method is a no-op when the webhook is not configured.
  */
 public final class StaffLog {
 
@@ -25,6 +25,7 @@ public final class StaffLog {
     private static final int BLUE = 0x3498DB;
     private static final int GREY = 0x95A5A6;
     private static final int PURPLE = 0x9B59B6;
+    private static final int GREEN = 0x2ECC71;
     /** Below Discord's 4096 characters per embed description. */
     private static final int MAX_JOURNAL = 3800;
     private static final DateTimeFormatter HOUR = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -32,7 +33,9 @@ public final class StaffLog {
     private final DiscordWebhook webhook;
     private final long payThreshold;
     private final boolean logCommands;
+    private final boolean logConnections;
     private final List<String> journal = new ArrayList<>();
+    private final List<String> connections = new ArrayList<>();
 
     public StaffLog(ConfigurationSection cfg, Logger logger) {
         this.webhook = new DiscordWebhook(
@@ -42,6 +45,7 @@ public final class StaffLog {
                 "", "discord.logs_webhook_url", logger);
         this.payThreshold = cfg == null ? 1000 : Math.max(1, cfg.getLong("logs_pay_threshold", 1000));
         this.logCommands = cfg == null || cfg.getBoolean("logs_commands", true);
+        this.logConnections = cfg == null || cfg.getBoolean("logs_connections", true);
     }
 
     public boolean enabled() {
@@ -91,31 +95,73 @@ public final class StaffLog {
         if (!enabled() || !logCommands) {
             return;
         }
-        journal.add("`" + LocalTime.now(ServerTime.zone()).format(HOUR) + "` **" + md(sender.getName()) + "** `"
+        journal.add("`" + now() + "` **" + md(sender.getName()) + "** `"
                 + line.replace('`', '\'') + "` → " + result);
     }
 
+    // ------------------------------------------------------------------
+    // Connections (grouped like the commands)
+    // ------------------------------------------------------------------
+
+    /** A player joined; {@code online}: players online, him included. */
+    public void joined(String player, boolean firstJoin, int online) {
+        if (enabled() && logConnections) {
+            connections.add(joinLine(now(), player, firstJoin, online));
+        }
+    }
+
+    /** A player left; {@code reason} null for a normal disconnection, {@code online}: players still online. */
+    public void left(String player, long sessionMillis, String reason, int online) {
+        if (enabled() && logConnections) {
+            connections.add(quitLine(now(), player, sessionMillis, reason, online));
+        }
+    }
+
+    static String joinLine(String hour, String player, boolean firstJoin, int online) {
+        return "`" + hour + "` 🟢 **" + md(player) + "** connexion" + (firstJoin ? " *(première connexion)*" : "")
+                + " · " + online + " en ligne";
+    }
+
+    /** {@code reason}: null for a normal disconnection, else why the player left (kick, timeout). */
+    static String quitLine(String hour, String player, long sessionMillis, String reason, int online) {
+        return "`" + hour + "` 🔴 **" + md(player) + "** " + (reason == null ? "déconnexion" : md(reason))
+                + " après " + fr.vanillaeconomy.util.Messages.duration(sessionMillis) + " · " + online + " en ligne";
+    }
+
+    private static String now() {
+        return LocalTime.now(ServerTime.zone()).format(HOUR);
+    }
+
+    // ------------------------------------------------------------------
+    // Posting
+    // ------------------------------------------------------------------
+
     /** Posts the pending journal lines (main thread, every few seconds and at shutdown). */
     public void flushJournal(boolean wait) {
+        flush(journal, "📜 Commandes", PURPLE, wait);
+        flush(connections, "👥 Connexions", GREEN, wait);
+    }
+
+    private void flush(List<String> lines, String title, int colour, boolean wait) {
         StringBuilder chunk = new StringBuilder();
-        for (String line : journal) {
+        for (String line : lines) {
             if (!chunk.isEmpty() && chunk.length() + line.length() + 1 > MAX_JOURNAL) {
-                post(chunk.toString(), wait);
+                post(title, chunk.toString(), colour, wait);
                 chunk.setLength(0);
             }
             chunk.append(chunk.isEmpty() ? "" : "\n").append(line.length() > MAX_JOURNAL ? line.substring(0, MAX_JOURNAL) : line);
         }
         if (!chunk.isEmpty()) {
-            post(chunk.toString(), wait);
+            post(title, chunk.toString(), colour, wait);
         }
-        journal.clear();
+        lines.clear();
     }
 
-    private void post(String text, boolean wait) {
+    private void post(String title, String text, int colour, boolean wait) {
         if (wait) {
-            webhook.sendAndWait("📜 Commandes", text, PURPLE);
+            webhook.sendAndWait(title, text, colour);
         } else {
-            webhook.send("📜 Commandes", text, PURPLE);
+            webhook.send(title, text, colour);
         }
     }
 

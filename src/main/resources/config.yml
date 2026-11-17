@@ -98,7 +98,8 @@ discord:
   # Journal staff dans #logs-serveur (webhook de ce salon, vide = désactivé) :
   # pièces falsifiées / dupliquées, commandes /eco, /marketadmin, /cityadmin,
   # création / agrandissement / dissolution des cités, gros /pay, démarrage et
-  # arrêt du serveur, et journal des commandes (logs_commands).
+  # arrêt du serveur, journal des commandes (logs_commands) et des
+  # connexions (logs_connections).
   logs_webhook_url: ""
   # Montant à partir duquel un /pay a son propre message (« Gros transfert ») ;
   # les plus petits apparaissent dans le journal des commandes.
@@ -109,6 +110,11 @@ discord:
   # ont déjà leur message (admin, cités fondées / agrandies / dissoutes,
   # gros transferts, pièces suspectes) n'y sont pas répétées.
   logs_commands: true
+  # Journal des connexions : connexions et déconnexions des joueurs
+  # (première connexion, durée de la session, motif d'une expulsion, nombre
+  # de joueurs en ligne), regroupées en un message « 👥 Connexions » toutes
+  # les 10 secondes. Aucune adresse IP n'est tracée.
+  logs_connections: true
 
 # Liste des joueurs (touche TAB) : nombre de morts affiché à côté du nom
 # (« ☠ 3 »), d'après les statistiques du monde, donc morts passées comprises.
