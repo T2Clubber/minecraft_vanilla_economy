@@ -130,7 +130,7 @@ categories:
     - { id: LEATHER,          tier: common,   base_price: 4,   base_number: 16 }
     - { id: TURTLE_SCUTE,     tier: rare,     base_price: 20,  base_number: 16 }
     - { id: NETHER_WART,          tier: common,    base_price: 2,  base_number: 16 }
-    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 2,  base_number: 16 }
+    - { id: GLOWSTONE_DUST,       tier: common,    base_price: 4,  base_number: 16 }
     # Ajouts 26.3 (Wilderness Bound) - forêt mouchetée. Ignorés avec un
     # avertissement sur un serveur 26.2. Prix calés sur RED/BROWN_MUSHROOM
     # et les fleurs.
@@ -159,52 +159,52 @@ categories:
 
   blocks:
     # base_number = 64 pour toute la catégorie (confirmé)
-    - { id: OAK_LOG,          tier: common, base_price: 2, base_number: 64 }
-    - { id: SPRUCE_LOG,       tier: common, base_price: 2, base_number: 64 }
-    - { id: BIRCH_LOG,        tier: common, base_price: 2, base_number: 64 }
-    - { id: JUNGLE_LOG,       tier: common, base_price: 2, base_number: 64 }
-    - { id: ACACIA_LOG,       tier: common, base_price: 2, base_number: 64 }
-    - { id: DARK_OAK_LOG,     tier: common, base_price: 2, base_number: 64 }
-    - { id: MANGROVE_LOG,     tier: common, base_price: 2, base_number: 64 }
-    - { id: CHERRY_LOG,       tier: common, base_price: 2, base_number: 64 }
-    - { id: PALE_OAK_LOG,     tier: common, base_price: 2, base_number: 64 }
+    - { id: OAK_LOG,          tier: common, base_price: 4, base_number: 64 }
+    - { id: SPRUCE_LOG,       tier: common, base_price: 4, base_number: 64 }
+    - { id: BIRCH_LOG,        tier: common, base_price: 4, base_number: 64 }
+    - { id: JUNGLE_LOG,       tier: common, base_price: 4, base_number: 64 }
+    - { id: ACACIA_LOG,       tier: common, base_price: 4, base_number: 64 }
+    - { id: DARK_OAK_LOG,     tier: common, base_price: 4, base_number: 64 }
+    - { id: MANGROVE_LOG,     tier: common, base_price: 4, base_number: 64 }
+    - { id: CHERRY_LOG,       tier: common, base_price: 4, base_number: 64 }
+    - { id: PALE_OAK_LOG,     tier: common, base_price: 4, base_number: 64 }
     # Ajout 26.3 : bûche de peuplier, même prix que les autres bûches
-    - { id: POPLAR_LOG,       tier: common, base_price: 2, base_number: 64 }
-    - { id: CRIMSON_STEM,     tier: common, base_price: 3, base_number: 64 }
-    - { id: WARPED_STEM,      tier: common, base_price: 3, base_number: 64 }
-    - { id: OCHRE_FROGLIGHT,       tier: rare, base_price: 10, base_number: 64 }
-    - { id: VERDANT_FROGLIGHT,     tier: rare, base_price: 10, base_number: 64 }
-    - { id: PEARLESCENT_FROGLIGHT, tier: rare, base_price: 10, base_number: 64 }
-    - { id: PACKED_ICE,       tier: common,   base_price: 4, base_number: 64 }
+    - { id: POPLAR_LOG,       tier: common, base_price: 4, base_number: 64 }
+    - { id: CRIMSON_STEM,     tier: common, base_price: 6, base_number: 64 }
+    - { id: WARPED_STEM,      tier: common, base_price: 6, base_number: 64 }
+    - { id: OCHRE_FROGLIGHT,       tier: rare, base_price: 20, base_number: 64 }
+    - { id: VERDANT_FROGLIGHT,     tier: rare, base_price: 20, base_number: 64 }
+    - { id: PEARLESCENT_FROGLIGHT, tier: rare, base_price: 20, base_number: 64 }
+    - { id: PACKED_ICE,       tier: common,   base_price: 8, base_number: 64 }
     - { id: BLUE_ICE,         tier: uncommon, base_price: 8, base_number: 64 }
-    - { id: CALCITE,          tier: common,   base_price: 2, base_number: 64 }
-    - { id: WHITE_WOOL,       tier: common, base_price: 2, base_number: 32 }
-    - { id: ORANGE_WOOL,      tier: common, base_price: 2, base_number: 32 }
-    - { id: MAGENTA_WOOL,     tier: common, base_price: 2, base_number: 32 }
-    - { id: LIGHT_BLUE_WOOL,  tier: common, base_price: 2, base_number: 32 }
-    - { id: YELLOW_WOOL,      tier: common, base_price: 2, base_number: 32 }
-    - { id: LIME_WOOL,        tier: common, base_price: 2, base_number: 32 }
-    - { id: PINK_WOOL,        tier: common, base_price: 2, base_number: 32 }
-    - { id: GRAY_WOOL,        tier: common, base_price: 2, base_number: 32 }
-    - { id: LIGHT_GRAY_WOOL,  tier: common, base_price: 2, base_number: 32 }
-    - { id: CYAN_WOOL,        tier: common, base_price: 2, base_number: 32 }
-    - { id: PURPLE_WOOL,      tier: common, base_price: 2, base_number: 32 }
-    - { id: BLUE_WOOL,        tier: common, base_price: 2, base_number: 32 }
-    - { id: BROWN_WOOL,       tier: common, base_price: 2, base_number: 32 }
-    - { id: GREEN_WOOL,       tier: common, base_price: 2, base_number: 32 }
-    - { id: RED_WOOL,         tier: common, base_price: 2, base_number: 32 }
-    - { id: BLACK_WOOL,       tier: common, base_price: 2, base_number: 32 }
+    - { id: CALCITE,          tier: common,   base_price: 4, base_number: 64 }
+    - { id: WHITE_WOOL,       tier: common, base_price: 4, base_number: 32 }
+    - { id: ORANGE_WOOL,      tier: common, base_price: 4, base_number: 32 }
+    - { id: MAGENTA_WOOL,     tier: common, base_price: 4, base_number: 32 }
+    - { id: LIGHT_BLUE_WOOL,  tier: common, base_price: 4, base_number: 32 }
+    - { id: YELLOW_WOOL,      tier: common, base_price: 4, base_number: 32 }
+    - { id: LIME_WOOL,        tier: common, base_price: 4, base_number: 32 }
+    - { id: PINK_WOOL,        tier: common, base_price: 4, base_number: 32 }
+    - { id: GRAY_WOOL,        tier: common, base_price: 4, base_number: 32 }
+    - { id: LIGHT_GRAY_WOOL,  tier: common, base_price: 4, base_number: 32 }
+    - { id: CYAN_WOOL,        tier: common, base_price: 4, base_number: 32 }
+    - { id: PURPLE_WOOL,      tier: common, base_price: 4, base_number: 32 }
+    - { id: BLUE_WOOL,        tier: common, base_price: 4, base_number: 32 }
+    - { id: BROWN_WOOL,       tier: common, base_price: 4, base_number: 32 }
+    - { id: GREEN_WOOL,       tier: common, base_price: 4, base_number: 32 }
+    - { id: RED_WOOL,         tier: common, base_price: 4, base_number: 32 }
+    - { id: BLACK_WOOL,       tier: common, base_price: 4, base_number: 32 }
     - { id: HONEY_BLOCK,      tier: uncommon, base_price: 6, base_number: 16 }
-    - { id: SAND,             tier: common,   base_price: 1, base_number: 64 }
-    - { id: RED_SAND,         tier: common,   base_price: 1, base_number: 64 }
-    - { id: BLACKSTONE,       tier: common,   base_price: 1, base_number: 64 }
-    - { id: DIRT,             tier: common,   base_price: 1, base_number: 64 }
-    - { id: MOSS_BLOCK,       tier: uncommon, base_price: 3, base_number: 32 }
+    - { id: SAND,             tier: common,   base_price: 4, base_number: 64 }
+    - { id: RED_SAND,         tier: common,   base_price: 4, base_number: 64 }
+    - { id: BLACKSTONE,       tier: common,   base_price: 4, base_number: 64 }
+    - { id: DIRT,             tier: common,   base_price: 4, base_number: 64 }
+    - { id: MOSS_BLOCK,       tier: uncommon, base_price: 6, base_number: 32 }
     # Ajouts 26.3 : feuilles de peuplier (cisailles, forêt mouchetée
     # uniquement), abondantes : prix du sable / de la terre
-    - { id: RED_POPLAR_LEAVES,    tier: common, base_price: 1, base_number: 64 }
-    - { id: ORANGE_POPLAR_LEAVES, tier: common, base_price: 1, base_number: 64 }
-    - { id: YELLOW_POPLAR_LEAVES, tier: common, base_price: 1, base_number: 64 }
+    - { id: RED_POPLAR_LEAVES,    tier: common, base_price: 4, base_number: 64 }
+    - { id: ORANGE_POPLAR_LEAVES, tier: common, base_price: 4, base_number: 64 }
+    - { id: YELLOW_POPLAR_LEAVES, tier: common, base_price: 4, base_number: 64 }
 
   other:
     # Disques musicaux : stack vanilla max = 1, donc base_number = 1
